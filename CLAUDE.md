@@ -6,8 +6,26 @@ Read [CONTEXT.md](./CONTEXT.md) for the vocabulary and [docs/adr/](./docs/adr/)
 for the decisions before proposing anything structural. The ADRs record rejected
 alternatives — do not re-argue them from scratch.
 
-There is no code yet. See [README.md](./README.md) for what gets scaffolded and
-what gets ported from `../the-cozy-keys`.
+## Commands
+
+```bash
+npm run dev            # Next dev server
+npm run build          # production build (also type-checks)
+npm run lint           # eslint
+npm test               # every test — needs the database for tests/rls
+npx vitest run lib/payments.test.ts        # one file
+npx vitest run -t "clamps Jan 31 to Feb 28"  # one test by name
+
+docker compose up -d   # local Postgres on 54329, for the schema tests
+npm run db:reset       # drop public, re-apply shims + supabase/migrations/*
+npm run test:rls       # the ADR 0001 guard, on its own
+```
+
+`npm run db:reset` refuses any host that is not local — it drops the public
+schema. The local database is not a Supabase stand-in: no `storage` schema, no
+GoTrue, so `0002_storage.sql` no-ops and `auth.uid()` comes from
+`tests/rls/shims.sql`. Nothing under `supabase/migrations/` may depend on
+anything defined in that shim file.
 
 ## Ported code is not blessed code
 

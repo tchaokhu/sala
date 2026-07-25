@@ -1,30 +1,59 @@
+import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase-server'
 import { SalaMark } from '@/components/SalaMark'
 
-// Placeholder. Once Orgs and sign-in exist this redirects to the Org picker,
-// or straight into the single Org a person belongs to.
-export default function Home() {
+// The front door. Middleware has already sent a signed-out visitor to /login, so
+// here there is a session: resolve which Org(s) it belongs to and route. One Org
+// is the common case and skips straight in; several show a picker; none means an
+// account that exists but was never given a Membership — a bootstrapping state an
+// owner resolves in the SQL editor (ADR 0002).
+export default async function Home() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { data } = await supabase
+    .from('memberships')
+    .select('org:orgs(slug, name)')
+    .order('created_at', { ascending: true })
+
+  const orgs = (data ?? [])
+    .map((m) => m.org as unknown as { slug: string; name: string } | null)
+    .filter((o): o is { slug: string; name: string } => o !== null)
+
+  if (orgs.length === 1) redirect(`/o/${orgs[0].slug}`)
+
   return (
-    <main className="flex flex-1 items-center justify-center p-8">
-      <div className="flex w-full max-w-md flex-col gap-6">
+    <main className="flex flex-1 items-center justify-center p-6">
+      <div className="flex w-full max-w-sm flex-col gap-6">
         <div className="flex items-center gap-3">
-          <SalaMark className="h-10 w-10 text-ink" />
-          <div className="flex flex-col leading-tight">
-            <span className="text-2xl font-bold">Sala</span>
-            <span className="font-mono text-xs text-muted">ศาลา</span>
+          <SalaMark className="h-9 w-9 text-ink" />
+          <span className="text-xl font-bold">Sala</span>
+        </div>
+
+        {orgs.length === 0 ? (
+          <div className="rounded-lg border border-border bg-surface p-4 text-sm">
+            <p className="font-semibold">ยังไม่มีเอเจนซี่</p>
+            <p className="mt-1 text-muted">
+              บัญชีนี้ยังไม่ได้ถูกเพิ่มเข้าเอเจนซี่ใด ติดต่อผู้ดูแลเพื่อขอสิทธิ์เข้าใช้งาน
+            </p>
           </div>
-        </div>
-
-        <p className="text-muted">
-          หลังบ้านสำหรับเอเจนซี่เช่าอสังหาฯ หลายเจ้าในระบบเดียว
-        </p>
-
-        <div className="rounded-lg border border-border bg-surface p-4 text-sm">
-          <p className="mb-2 font-semibold">ยังไม่เปิดใช้งาน</p>
-          <p className="text-muted">
-            ตอนนี้มีแค่โครงและตรรกะการเงินที่ยกมาจาก the-cozy-keys
-            ยังไม่มีฐานข้อมูล ยังเข้าสู่ระบบไม่ได้
-          </p>
-        </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <p className="text-sm text-muted">เลือกเอเจนซี่</p>
+            {orgs.map((o) => (
+              <Link
+                key={o.slug}
+                href={`/o/${o.slug}`}
+                className="flex items-center justify-between rounded-lg border border-border bg-surface px-4 py-3 transition-colors hover:border-accent"
+              >
+                <span className="font-semibold">{o.name}</span>
+                <span className="font-mono text-xs text-muted">{o.slug}</span>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </main>
   )

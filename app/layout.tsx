@@ -31,6 +31,16 @@ export default function RootLayout({
       lang="th"
       className={`${sarabun.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        {/* Apply the stored theme before first paint, so an explicit choice does
+            not flash the OS default on the way in. Only stamps data-theme when a
+            choice was saved; otherwise globals.css follows prefers-color-scheme. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}`,
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col font-sans">{children}</body>
     </html>
   )

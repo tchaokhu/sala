@@ -14,6 +14,21 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+/** Missing configuration fails here first, on the very first request, and the
+ *  Supabase client's own message points at the dashboard rather than at what is
+ *  actually absent: the file. Say which name is missing and where it goes. */
+function env(name: string): string {
+  const value = process.env[name]
+  if (!value) {
+    throw new Error(
+      `${name} is not set. Copy .env.local.example to .env.local and fill in the ` +
+      `Project URL and anon key from Supabase → Settings → API, then restart the ` +
+      `dev server — Next reads .env.local at boot.`,
+    )
+  }
+  return value
+}
+
 // Paths a signed-out visitor may reach: the sign-in page and the magic-link
 // callback that establishes the session in the first place.
 const PUBLIC_PREFIXES = ['/login', '/auth']
@@ -22,8 +37,8 @@ export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request })
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    env('NEXT_PUBLIC_SUPABASE_URL'),
+    env('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
     {
       cookies: {
         getAll: () => request.cookies.getAll(),

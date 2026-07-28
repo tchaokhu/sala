@@ -1,5 +1,8 @@
 # Writes go through Server Actions; reads stay on the browser client
 
+> **Amended by [ADR 0005](./0005-dashboard-aggregates-as-invoker-rpc.md):**
+> Org-scoped reads moved to the server too. The decision about writes stands.
+
 The Cozy Keys codebase this one grows out of does all its CRUD from the browser
 through a Supabase client, leaving RLS as the only thing between a user and the
 data. In a single-agency tool a gap there is an internal accident; in Sala it is

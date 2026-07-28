@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 import {
-  createClient,
+  currentUser,
   requireMember,
   NotAMemberError,
   NotAuthenticatedError,
@@ -31,8 +31,9 @@ export default async function OrgLayout({
     throw err
   }
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  // Free: requireMember has already resolved the user this request, and
+  // currentUser is memoised per render rather than asking the auth server again.
+  const user = await currentUser()
 
   return (
     <Shell org={org} email={user?.email ?? null}>

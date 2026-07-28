@@ -13,6 +13,7 @@
 
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { cache } from 'react'
 import {
   requireMember as decideMembership,
   type MemberGateway,
@@ -32,7 +33,7 @@ function env(name: string): string {
  *  key is safe in the browser and safer still on the server, because RLS — not
  *  the key — is what limits what it can see. The service role key never appears
  *  in this path (ADR 0001). */
-export async function createClient() {
+export const createClient = cache(async function createClient() {
   const cookieStore = await cookies()
   return createServerClient(
     env('NEXT_PUBLIC_SUPABASE_URL'),
@@ -53,14 +54,21 @@ export async function createClient() {
       },
     },
   )
-}
+})
+
+/** The signed-in user, or null. Cached per request because both the gate and
+ *  the shell want it and `getUser()` is a round-trip to the auth server each
+ *  time — asking twice for the same answer inside one render is exactly the
+ *  chained-request habit CLAUDE.md is about. */
+export const currentUser = cache(async function currentUser() {
+  const supabase = await createClient()
+  const { data } = await supabase.auth.getUser()
+  return data.user ?? null
+})
 
 function supabaseGateway(supabase: Awaited<ReturnType<typeof createClient>>): MemberGateway {
   return {
-    currentUserId: async () => {
-      const { data } = await supabase.auth.getUser()
-      return data.user?.id ?? null
-    },
+    currentUserId: async () => (await currentUser())?.id ?? null,
     // The RLS-guarded read. For a non-member the policy admits no row and this
     // returns null, which decideMembership turns into a refusal — the isolation
     // is the database's, not this function's. Columns are named, never '*'.
@@ -79,8 +87,13 @@ function supabaseGateway(supabase: Awaited<ReturnType<typeof createClient>>): Me
 /** Resolve the Org named by `slug` for the current caller, or refuse. The single
  *  point ADR 0002 rests on: the Org is never taken from the request body, only
  *  from the session plus the slug, and a caller with no Membership is turned
- *  away. Use it as the first line of every Org-scoped page and Server Action. */
-export async function requireMember(slug: string): Promise<Org> {
+ *  away. Use it as the first line of every Org-scoped page and Server Action.
+ *
+ *  Cached per request, so the layout's gate and a page that needs the Org's id
+ *  share one pair of round-trips instead of repeating them. The cache is a
+ *  render-scoped memo, not a session one: a second request re-checks Membership
+ *  from scratch, which is what keeps this a gate rather than a stale verdict. */
+export const requireMember = cache(async function requireMember(slug: string): Promise<Org> {
   const supabase = await createClient()
   return decideMembership(slug, supabaseGateway(supabase))
-}
+})

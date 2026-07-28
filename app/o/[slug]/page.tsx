@@ -1,21 +1,27 @@
-// The Org landing. The counts a person comes for sit above any table (CLAUDE.md);
-// the tiles are here now, their numbers arrive with the data layer. Money will be
-// tabular-nums and right-aligned when it lands — the shape is reserved so nothing
-// shifts when it does.
+// The Org landing. The counts a person came for sit above any table
+// (CLAUDE.md), and they arrive with the render rather than after the bundle
+// hydrates: this is a Server Component, and the four numbers are one aggregate
+// query rather than four counts or a table download reduced in the browser.
 
-const TILES: { label: string; tone: 'plain' | 'ok' | 'warn' }[] = [
-  { label: 'ทรัพย์ทั้งหมด', tone: 'plain' },
-  { label: 'สัญญาที่ใช้งาน', tone: 'plain' },
-  { label: 'ครบกำหนดเดือนนี้', tone: 'ok' },
-  { label: 'ค้างชำระ', tone: 'warn' },
-]
+import { requireMember } from '@/lib/supabase-server'
+import { getOrgDashboard } from '@/lib/dashboard'
+import { formatBaht } from '@/lib/format'
+import { StatTile } from '@/components/StatTile'
+import { TILE_LABELS } from './tiles'
 
 export default async function OrgHome({
   params,
 }: {
   params: Promise<{ slug: string }>
 }) {
-  await params
+  const { slug } = await params
+  // The layout has already gated this route; the call is repeated because the
+  // page needs the Org's id, and requireMember is memoised per request so the
+  // repeat costs nothing.
+  const org = await requireMember(slug)
+  const summary = await getOrgDashboard(org.id)
+
+  const [properties, active, ending, overdue] = TILE_LABELS
 
   return (
     <div className="flex flex-col gap-6">
@@ -25,24 +31,33 @@ export default async function OrgHome({
       </div>
 
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {TILES.map(({ label, tone }) => (
-          <div key={label} className="rounded-xl border border-border bg-surface p-4">
-            <p className="text-sm text-muted">{label}</p>
-            <p
-              className={
-                'tabular mt-2 text-2xl font-bold ' +
-                (tone === 'warn' ? 'text-warn' : tone === 'ok' ? 'text-ok' : 'text-ink')
-              }
-            >
-              —
-            </p>
-          </div>
-        ))}
-      </section>
+        <StatTile label={properties}>{summary.propertiesTotal}</StatTile>
 
-      <div className="rounded-xl border border-dashed border-border bg-surface p-4 text-sm text-muted">
-        ตัวเลขจะแสดงเมื่อเชื่อมชั้นข้อมูลแล้ว — ตอนนี้เป็นโครงหน้าเพื่อยืนยันสิทธิ์และเลย์เอาต์
-      </div>
+        <StatTile label={active}>{summary.rentalsActive}</StatTile>
+
+        <StatTile
+          label={ending}
+          tone={summary.rentalsEndingThisMonth > 0 ? 'ok' : 'plain'}
+          hint={summary.rentalsEndingThisMonth > 0 ? 'ต่อสัญญาหรือหาผู้เช่าใหม่' : null}
+        >
+          {summary.rentalsEndingThisMonth}
+        </StatTile>
+
+        {/* Colour marks a problem, so ฿0 owed stays plain — red on good news
+            trains people to ignore red. The count repeats the state as words,
+            so the tile does not rest on the shade alone. */}
+        <StatTile
+          label={overdue}
+          tone={summary.overdueAmount > 0 ? 'warn' : 'plain'}
+          hint={
+            summary.overdueCount > 0
+              ? `เกินกำหนด ${summary.overdueCount} รายการ`
+              : 'ไม่มีรายการค้าง'
+          }
+        >
+          {formatBaht(summary.overdueAmount)}
+        </StatTile>
+      </section>
     </div>
   )
 }

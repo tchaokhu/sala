@@ -38,3 +38,14 @@ END $$;
 GRANT USAGE ON SCHEMA public TO authenticated;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public
   GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO authenticated;
+
+-- Supabase also hands anon the same table privileges, on every table in public,
+-- by default. RLS is what actually stops it — there is no policy naming anon,
+-- so the grants buy it nothing — but a privilege that exists only because
+-- nobody removed it is one policy mistake away from mattering. Mirrored here
+-- so that 0004's REVOKE has something to remove and the shape test's assertion
+-- is not vacuous. anon keeps USAGE on the schema: it needs it to reach
+-- create_inquiry_via_token(), which is SECURITY DEFINER and its only way in.
+GRANT USAGE ON SCHEMA public TO anon;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO anon;

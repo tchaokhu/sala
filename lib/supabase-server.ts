@@ -4,9 +4,9 @@
 // process: it reads the session from request cookies and performs the org read
 // as the signed-in user, so RLS does the filtering. The decision it feeds —
 // return the Org, or refuse — lives in ./require-member, which stays free of any
-// Next or Supabase import and is unit-tested there. Once a Supabase project
-// exists (ADR 0004) the read path here is exercised for real; until then it
-// compiles but is unverified, and the seam is what keeps that honest.
+// Next or Supabase import and is unit-tested there. This half has since run
+// against the real project (ADR 0004) — a signed-in user, RLS doing the
+// filtering — which is what the seam was holding open until it could.
 //
 // See docs/adr/0002-writes-through-server-actions.md and
 // docs/adr/0004-fresh-supabase-project-cozy-keys-etl.md.

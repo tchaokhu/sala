@@ -19,7 +19,16 @@ npx vitest run -t "clamps Jan 31 to Feb 28"  # one test by name
 docker compose up -d   # local Postgres on 54329, for the schema tests
 npm run db:reset       # drop public, re-apply shims + supabase/migrations/*
 npm run test:rls       # the ADR 0001 guard, on its own
+
+npm run db:apply-remote                        # first run only: every migration
+node scripts/db-apply-remote.mjs 0005_x.sql    # afterwards: name the new one
 ```
+
+The remote applier reads `SUPABASE_DB_URL` from `.env.migrate` and needs the
+**session pooler** URI — the project's direct host is IPv6-only. It never drops
+and never applies the shims. There is no migration ledger on the project, so a
+migration written after the first run reaches it only by being named on that
+command line; git history is the record that it was.
 
 `npm run db:reset` refuses any host that is not local — it drops the public
 schema. The local database is not a Supabase stand-in: no `storage` schema, no

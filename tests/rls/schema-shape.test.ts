@@ -168,6 +168,20 @@ describe('schema shape', () => {
     expect(offenders).toEqual([])
   })
 
+  it.runIf(reachable)('leaves anon no table privilege to fall back on', async () => {
+    // Supabase grants anon SELECT/INSERT/UPDATE/DELETE on every table in public
+    // as a default, and the local shims mirror that. RLS already refuses it —
+    // no policy names anon — so today the grants are inert. They are removed
+    // anyway: the day someone adds a permissive policy for a public listing
+    // page, the grant decides how far that mistake reaches. anon's one way in
+    // is create_inquiry_via_token(), which needs no table privilege at all.
+    const rows = await q<{ table_name: string; privilege_type: string }>(
+      `SELECT table_name, privilege_type FROM information_schema.role_table_grants
+        WHERE grantee = 'anon' AND table_schema = 'public'`,
+    )
+    expect(rows.map(r => `${r.table_name}.${r.privilege_type}`)).toEqual([])
+  })
+
   it.runIf(reachable)('wraps membership checks in a subquery so they are planned once', async () => {
     // `is_member(org_id)` risks a call per row; `(SELECT is_member(org_id))`
     // becomes an InitPlan. Postgres renders the latter with a SELECT in the

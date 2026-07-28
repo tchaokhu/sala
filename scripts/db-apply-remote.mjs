@@ -6,6 +6,11 @@
 //      or the pooler URI from Settings → Database → Connection string.
 //   3. node scripts/db-apply-remote.mjs
 //
+// Name files to apply a subset — the way a migration written after the first
+// run reaches the project, since re-running 0001 would error:
+//
+//   node scripts/db-apply-remote.mjs 0004_revoke_anon_table_grants.sql
+//
 // Unlike db-reset.mjs this never drops anything and never applies the test
 // shims: on Supabase the auth and storage schemas, auth.uid() and the anon /
 // authenticated roles are real. It runs 0002_storage.sql for the first time —
@@ -54,7 +59,17 @@ await client.connect()
 console.log(`Applying migrations to ${host}…`)
 
 const dir = join(import.meta.dirname, '..', 'supabase', 'migrations')
-const files = (await readdir(dir)).filter((f) => f.endsWith('.sql')).sort()
+const all = (await readdir(dir)).filter((f) => f.endsWith('.sql')).sort()
+
+// Named files run in the order given on the command line, not in file order:
+// applying a subset is a deliberate act and the caller decides the sequence.
+const wanted = process.argv.slice(2)
+const missing = wanted.filter((f) => !all.includes(f))
+if (missing.length) {
+  console.error(`No such migration: ${missing.join(', ')}\nAvailable: ${all.join(', ')}`)
+  process.exit(1)
+}
+const files = wanted.length ? wanted : all
 
 for (const file of files) {
   const sql = await readFile(join(dir, file), 'utf8')

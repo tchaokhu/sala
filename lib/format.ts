@@ -1,5 +1,7 @@
 // Display formatting. Pure, no I/O.
 
+import { parseIsoDate } from './dates'
+
 /** Baht for the screen: grouped, symbol attached, satang only when there are
  *  any. Render it in a `.tabular` element and right-align it (CLAUDE.md) — the
  *  grouping is only half of what makes a column of money scannable.
@@ -19,4 +21,21 @@ export function formatBaht(amount: number | null | undefined): string {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   }).format(amount)
+}
+
+/** A `date` column as Thai readers write it: `31 ส.ค. 2569`, Buddhist era.
+ *
+ *  Built from the date parts and formatted in UTC, never from
+ *  `new Date('2026-12-31')` interpreted in the host zone — that is the ported
+ *  bug in lib/dates.ts, and it moves a day backwards for any negative offset.
+ *  A `date` has no time in it, so there is no instant to convert. */
+export function formatDateThai(iso: string | null | undefined): string {
+  if (!iso) return '—'
+  const { year, month, day } = parseIsoDate(iso)
+  return new Intl.DateTimeFormat('th-TH', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(Date.UTC(year, month - 1, day)))
 }

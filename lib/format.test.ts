@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatBaht } from './format'
+import { formatBaht, formatDateThai } from './format'
 
 describe('formatBaht', () => {
   it('groups thousands and drops the satang on a whole amount', () => {
@@ -32,5 +32,33 @@ describe('formatBaht', () => {
   it('renders an absent amount as a dash', () => {
     expect(formatBaht(null)).toBe('—')
     expect(formatBaht(undefined)).toBe('—')
+  })
+})
+
+describe('formatDateThai', () => {
+  it('writes a date the way a Thai reader expects, in the Buddhist era', () => {
+    expect(formatDateThai('2026-08-31')).toBe('31 ส.ค. 2569')
+    expect(formatDateThai('2026-01-01')).toBe('1 ม.ค. 2569')
+  })
+
+  // The bug this guards: a `date` column is a calendar day with no time in it,
+  // and reading it through the host clock moves it. The ported code had exactly
+  // this, and 31 August became 30 August for anyone west of UTC.
+  it('does not shift the day, whatever the host timezone', () => {
+    const original = process.env.TZ
+    for (const tz of ['UTC', 'America/Los_Angeles', 'Asia/Bangkok', 'Pacific/Kiritimati']) {
+      process.env.TZ = tz
+      expect(formatDateThai('2026-12-31')).toBe('31 ธ.ค. 2569')
+    }
+    process.env.TZ = original
+  })
+
+  it('refuses a string that is not a calendar day', () => {
+    expect(() => formatDateThai('31/12/2026')).toThrow(/YYYY-MM-DD/)
+  })
+
+  it('renders an absent date as a dash', () => {
+    expect(formatDateThai(null)).toBe('—')
+    expect(formatDateThai(undefined)).toBe('—')
   })
 })

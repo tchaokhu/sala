@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:rls": "vitest run tests/rls",
-    "db:reset": "node scripts/db-reset.mjs"
+    "db:reset": "node scripts/db-reset.mjs",
+    "db:apply-remote": "node scripts/db-apply-remote.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",

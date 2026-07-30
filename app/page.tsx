@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase-server'
+import { isSuperadmin } from '@/lib/superadmin'
 import { SalaMark } from '@/components/SalaMark'
 
 // The front door. Middleware has already sent a signed-out visitor to /login, so
@@ -22,7 +23,17 @@ export default async function Home() {
     .map((m) => m.org as unknown as { slug: string; name: string } | null)
     .filter((o): o is { slug: string; name: string } => o !== null)
 
-  if (orgs.length === 1) redirect(`/o/${orgs[0].slug}`)
+  const operator = isSuperadmin(user.id)
+
+  if (orgs.length === 1 && !operator) redirect(`/o/${orgs[0].slug}`)
+
+  // An operator is not redirected past the picker even when they hold exactly
+  // one Membership: the console is the other place they might be going, and a
+  // redirect that skips it makes /admin reachable only by typing the path.
+  //
+  // An operator with no Membership at all is the ordinary case (Superadmin sits
+  // outside every Org, CONTEXT.md) — for them this is the console's front door,
+  // not an error state.
 
   return (
     <main className="flex flex-1 items-center justify-center p-6">
@@ -32,14 +43,7 @@ export default async function Home() {
           <span className="text-xl font-bold">Sala</span>
         </div>
 
-        {orgs.length === 0 ? (
-          <div className="rounded-lg border border-border bg-surface p-4 text-sm">
-            <p className="font-semibold">ยังไม่มีเอเจนซี่</p>
-            <p className="mt-1 text-muted">
-              บัญชีนี้ยังไม่ได้ถูกเพิ่มเข้าเอเจนซี่ใด ติดต่อผู้ดูแลเพื่อขอสิทธิ์เข้าใช้งาน
-            </p>
-          </div>
-        ) : (
+        {orgs.length > 0 && (
           <div className="flex flex-col gap-2">
             <p className="text-sm text-muted">เลือกเอเจนซี่</p>
             {orgs.map((o) => (
@@ -53,6 +57,25 @@ export default async function Home() {
               </Link>
             ))}
           </div>
+        )}
+
+        {orgs.length === 0 && !operator && (
+          <div className="rounded-lg border border-border bg-surface p-4 text-sm">
+            <p className="font-semibold">ยังไม่มีเอเจนซี่</p>
+            <p className="mt-1 text-muted">
+              บัญชีนี้ยังไม่ได้ถูกเพิ่มเข้าเอเจนซี่ใด ติดต่อผู้ดูแลเพื่อขอสิทธิ์เข้าใช้งาน
+            </p>
+          </div>
+        )}
+
+        {operator && (
+          <Link
+            href="/admin"
+            className="flex items-center justify-between rounded-lg border border-border bg-surface px-4 py-3 transition-colors hover:border-accent"
+          >
+            <span className="font-semibold">ผู้ดูแลระบบ</span>
+            <span className="text-xs text-muted">จัดการเอเจนซี่และสมาชิก</span>
+          </Link>
         )}
       </div>
     </main>

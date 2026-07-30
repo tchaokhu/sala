@@ -21,10 +21,14 @@ const NAV: { label: string; sub: string }[] = [
 export function Shell({
   org,
   email,
+  isSuperadmin = false,
   children,
 }: {
   org: { slug: string; name: string }
   email: string | null
+  /** Decided on the server (ADR 0006). This only chooses whether a link is
+   *  drawn — /admin gates itself, and hiding the link protects nothing. */
+  isSuperadmin?: boolean
   children: React.ReactNode
 }) {
   const pathname = usePathname()
@@ -43,9 +47,20 @@ export function Shell({
           </Link>
 
           <div className="flex items-center gap-2">
-            {email && (
-              <span className="hidden text-xs text-muted sm:inline">{email}</span>
+            {isSuperadmin && (
+              <Link
+                href="/admin"
+                className="hidden rounded-lg border border-border px-3 py-1.5 text-sm text-muted transition-colors hover:text-ink sm:inline-block"
+              >
+                ผู้ดูแลระบบ
+              </Link>
             )}
+            <Link
+              href={`${base}/settings`}
+              className="text-xs text-muted transition-colors hover:text-ink"
+            >
+              {email ?? 'บัญชีของฉัน'}
+            </Link>
             <ThemeToggle />
             <form action="/auth/signout" method="post">
               <button

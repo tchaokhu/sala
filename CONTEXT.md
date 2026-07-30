@@ -20,12 +20,22 @@ _Avoid_: Seat, user-org link
 **Role**:
 What a Member may do inside their Org. Either `owner` (may invite and remove
 Members, edit the Org) or `member` (everything else). Roles never restrict which
-Properties a person can see — all Members see all of their Org's data.
+Properties a person can see — all Members see all of their Org's data. Both may
+change their own Display Name and their own login email; neither may change
+anyone else's email.
 _Avoid_: Permission, access level
+
+**Display Name**:
+What a person is called inside one Org. Carried on the Membership, not on the
+person, so someone holding Memberships in two Orgs is named separately in each.
+Falls back to the login email when unset.
+_Avoid_: Full name, username, profile
 
 **Superadmin**:
 The operator of Sala, who creates Orgs and invites their first owner. Not a Role
-— Superadmin sits outside every Org and is not a Member of any.
+— Superadmin sits outside every Org and is not a Member of any. Reaches Orgs and
+Memberships through `/admin` and nothing else: an Org's Properties, Rentals,
+Payments, Tenants and Inquiries are closed to the operator too (ADR 0006).
 _Avoid_: Platform admin, root, god mode
 
 ## Inventory

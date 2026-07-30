@@ -30,6 +30,12 @@ export default function RootLayout({
     <html
       lang="th"
       className={`${sarabun.variable} ${geistMono.variable} h-full antialiased`}
+      // The script below stamps data-theme on this element before React
+      // hydrates, so the served HTML and the live DOM disagree here by design.
+      // Without this React reports it as a mismatch on every page load, and a
+      // warning that always fires is a warning nobody reads. Scoped to <html>'s
+      // own attributes — it does not reach the tree underneath.
+      suppressHydrationWarning
     >
       <head>
         {/* Apply the stored theme before first paint, so an explicit choice does

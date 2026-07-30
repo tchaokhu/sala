@@ -95,11 +95,18 @@ ADR 0002 are the shape of that; these are the rules that keep it true.
   the session plus the URL slug, and a caller without a Membership there is
   refused. An `org_id` arriving in a request body or form field is a bug.
 - **Writes go through Server Actions**, each beginning by establishing
-  Membership. The two exceptions are named in ADR 0002 (the nightly job, the
-  Inquiry intake webhook); a third exception needs an ADR.
-- **The service role key belongs to the cron job.** It never reaches a request
-  handler, a Server Action, or the browser. Any new use of it is wrong until
-  argued otherwise.
+  Membership. Three exceptions exist, each with an ADR: the nightly job and the
+  Inquiry intake webhook (ADR 0002), and the Superadmin console (ADR 0006). A
+  fourth needs an ADR too.
+- **The service role key belongs to the cron job and `app/admin/`.** It never
+  reaches any other request handler, any other Server Action, or the browser. It
+  lives in `lib/supabase-admin.ts`, which is `server-only`;
+  `tests/no-service-role-leak.test.ts` fails the build if it is imported from
+  anywhere else. Any further use of it is wrong until argued otherwise.
+- **A Superadmin sees Orgs and Memberships, never an Org's books.** The console
+  manages who is in which Org and nothing under Inventory, Tenancy or Leads in
+  CONTEXT.md. Every action in `app/admin/` re-checks `isSuperadmin` itself — the
+  layout gate does not run in front of a Server Action.
 - **No policy grants `anon` a write.** Cozy Keys left `INSERT` on `inquiries`
   open to the anonymous role; in a shared database that is a hole into every Org.
 - **Uploads are org-prefixed and verified.** Files live under `{org_id}/…` and
@@ -108,10 +115,22 @@ ADR 0002 are the shape of that; these are the rules that keep it true.
 - **Tenants carry identity documents.** `id_card` and its neighbours never appear
   in logs, error messages, analytics, or an LLM prompt. When an error needs to
   identify a Tenant, use the id.
-- **The RLS shape test is not optional.** It reads `pg_tables` and `pg_policies`
-  against a real database and fails when any table in `public` lacks RLS,
-  `org_id NOT NULL`, or a policy per operation. If it is failing, the fix is the
-  migration, never the allowlist.
+- **`REVOKE ... FROM public` does not revoke `anon`.** Supabase's default
+  privileges grant EXECUTE on every new function in `public` to `anon`,
+  `authenticated` and `service_role` *as roles*, and `PUBLIC` is a different
+  grantee. A function meant for one role needs
+  `REVOKE ALL ON FUNCTION f(...) FROM PUBLIC, anon, authenticated` and then the
+  grant it should have. This shipped wrong once; see 0007 and ADR 0006.
+- **The RLS shape test is not optional.** It reads `pg_tables`, `pg_policies` and
+  the function privileges against a real database and fails when any table in
+  `public` lacks RLS, `org_id NOT NULL`, or a policy per operation — or when
+  `anon` can execute anything but `create_inquiry_via_token`. If it is failing,
+  the fix is the migration, never the allowlist.
+- **Assert privileges from the catalog, not from the migration.** The SQL that
+  was meant to produce a grant is not evidence that it did. `tests/rls/` reads
+  `has_function_privilege` and `information_schema`; the local shims mirror
+  Supabase's default privileges so that a mistake of this kind fails on a laptop
+  rather than on the project.
 
 ## UX
 

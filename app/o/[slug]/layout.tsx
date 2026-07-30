@@ -6,6 +6,7 @@ import {
   NotAuthenticatedError,
 } from '@/lib/supabase-server'
 import { Shell } from '@/components/Shell'
+import { isSuperadmin } from '@/lib/superadmin'
 
 // The gate on every Org page. requireMember resolves the Org from the session
 // plus the slug and refuses a caller who holds no Membership — the two refusals
@@ -36,7 +37,13 @@ export default async function OrgLayout({
   const user = await currentUser()
 
   return (
-    <Shell org={org} email={user?.email ?? null}>
+    <Shell
+      org={org}
+      email={user?.email ?? null}
+      // Draws the link to the console. The console gates itself; this only
+      // saves an operator from typing the path.
+      isSuperadmin={isSuperadmin(user?.id)}
+    >
       {children}
     </Shell>
   )

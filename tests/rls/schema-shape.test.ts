@@ -182,6 +182,72 @@ describe('schema shape', () => {
     expect(rows.map(r => `${r.table_name}.${r.privilege_type}`)).toEqual([])
   })
 
+  it.runIf(reachable)('lets anon execute only the one function it is meant to', async () => {
+    // Read from the catalog, not from the migration's intent. 0006 wrote
+    // `REVOKE ALL ON FUNCTION f FROM public` and shipped a SECURITY DEFINER
+    // function that `anon` could still call, because Supabase's default
+    // privileges grant EXECUTE to `anon` as a role and PUBLIC is a different
+    // grantee. The SQL looked right; only the resulting privilege was wrong.
+    //
+    // An Inquiry from a bot is the single case anon has business calling
+    // anything: create_inquiry_via_token authenticates on a secret and is the
+    // only write path anon gets (ADR 0002). A second name appearing here is a
+    // hole into every Org, and the fix is the migration, never this list.
+    const ANON_MAY_EXECUTE = new Set(['create_inquiry_via_token'])
+
+    // Extension-owned functions are excluded: locally `CREATE EXTENSION
+    // pgcrypto` lands digest() and its two dozen neighbours in `public`, where
+    // on Supabase they live in `extensions`. They are not ours to grant, and
+    // listing them would make this assertion about the local layout rather than
+    // about the schema under test.
+    const rows = await q<{ proname: string }>(
+      `SELECT DISTINCT p.proname
+         FROM pg_proc p
+         JOIN pg_namespace n ON n.oid = p.pronamespace AND n.nspname = 'public'
+        WHERE has_function_privilege('anon', p.oid, 'EXECUTE')
+          AND NOT EXISTS (
+            SELECT 1 FROM pg_depend d
+             WHERE d.objid = p.oid
+               AND d.classid = 'pg_proc'::regclass
+               AND d.deptype = 'e'
+          )`,
+    )
+
+    const unexpected = rows.map(r => r.proname).filter(name => !ANON_MAY_EXECUTE.has(name))
+    expect(unexpected.sort()).toEqual([])
+  })
+
+  it.runIf(reachable)('never lets a signed-in user call the Superadmin console\'s reads', async () => {
+    // These are SECURITY DEFINER with no guard in the body — a Superadmin holds
+    // no Membership, so there is nothing for the function to check. The grant is
+    // the whole of the access control, which is why it is asserted rather than
+    // assumed. See ADR 0006.
+    const SERVICE_ROLE_ONLY = ['admin_orgs', 'admin_org_members', 'admin_user_id_by_email', 'admin_owner_count']
+
+    const rows = await q<{ proname: string; role: string }>(
+      `SELECT p.proname, r.rolname AS role
+         FROM pg_proc p
+         JOIN pg_namespace n ON n.oid = p.pronamespace AND n.nspname = 'public'
+         CROSS JOIN (SELECT unnest(ARRAY['anon', 'authenticated']) AS rolname) r
+        WHERE p.proname = ANY ($1)
+          AND has_function_privilege(r.rolname, p.oid, 'EXECUTE')`,
+      [SERVICE_ROLE_ONLY],
+    )
+    expect(rows.map(r => `${r.proname} → ${r.role}`)).toEqual([])
+
+    // And the other half: they exist and service_role can reach them, so the
+    // assertion above is not passing because the functions are simply absent.
+    const reachableByService = await q<{ n: number }>(
+      `SELECT count(*)::int AS n
+         FROM pg_proc p
+         JOIN pg_namespace n ON n.oid = p.pronamespace AND n.nspname = 'public'
+        WHERE p.proname = ANY ($1)
+          AND has_function_privilege('service_role', p.oid, 'EXECUTE')`,
+      [SERVICE_ROLE_ONLY],
+    )
+    expect(reachableByService[0].n).toBe(SERVICE_ROLE_ONLY.length)
+  })
+
   it.runIf(reachable)('wraps membership checks in a subquery so they are planned once', async () => {
     // `is_member(org_id)` risks a call per row; `(SELECT is_member(org_id))`
     // becomes an InitPlan. Postgres renders the latter with a SELECT in the

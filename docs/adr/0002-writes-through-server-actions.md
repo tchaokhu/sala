@@ -2,6 +2,11 @@
 
 > **Amended by [ADR 0005](./0005-dashboard-aggregates-as-invoker-rpc.md):**
 > Org-scoped reads moved to the server too. The decision about writes stands.
+>
+> **Amended by [ADR 0006](./0006-superadmin-console-and-the-service-role.md):**
+> A third exception to Membership-first writes — the Superadmin console, which
+> manages Orgs and Memberships with the service role. Scope and bounds are in
+> that ADR. The rule for every other write is unchanged.
 
 The Cozy Keys codebase this one grows out of does all its CRUD from the browser
 through a Supabase client, leaving RLS as the only thing between a user and the

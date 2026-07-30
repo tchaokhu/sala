@@ -1,6 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import {
+  isAuthRetryableFetchError,
+  type AuthError,
+} from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase-browser'
 
 type State =
@@ -9,7 +13,10 @@ type State =
   | { kind: 'sent' }
   | { kind: 'error'; message: string }
 
-export function LoginForm({ next }: { next?: string }) {
+/** Why the callback sent them back here, if it did. */
+export type LinkError = 'expired' | 'device'
+
+export function LoginForm({ next, linkError }: { next?: string; linkError?: LinkError }) {
   const [email, setEmail] = useState('')
   const [state, setState] = useState<State>({ kind: 'idle' })
 
@@ -27,14 +34,17 @@ export function LoginForm({ next }: { next?: string }) {
 
     const { error } = await supabase.auth.signInWithOtp({
       email: address,
-      options: { emailRedirectTo: callback.toString() },
+      options: {
+        emailRedirectTo: callback.toString(),
+        // Invite-only, and this is what makes it true. The default is to create
+        // the account, which would let anyone who can type an address mint a
+        // user and make us send mail to it — the opposite of what this page says.
+        shouldCreateUser: false,
+      },
     })
 
-    // Do not reveal whether the address belongs to a user: a wrong email and a
-    // real one both report "check your inbox". Invite-only means a probe here
-    // should learn nothing. A genuine transport failure is the only error shown.
-    if (error && error.status && error.status >= 500) {
-      setState({ kind: 'error', message: 'ส่งลิงก์ไม่สำเร็จ ลองใหม่อีกครั้งในอีกสักครู่' })
+    if (error && !isUnknownAddress(error)) {
+      setState({ kind: 'error', message: describe(error) })
       return
     }
     setState({ kind: 'sent' })
@@ -56,6 +66,10 @@ export function LoginForm({ next }: { next?: string }) {
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-3">
+      {/* Only while idle: once they have asked for another link the old failure
+          is no longer the thing on screen. */}
+      {linkError && state.kind === 'idle' && <LinkErrorNotice reason={linkError} />}
+
       <label className="flex flex-col gap-1.5">
         <span className="text-sm font-medium">อีเมล</span>
         <input
@@ -84,4 +98,46 @@ export function LoginForm({ next }: { next?: string }) {
       </button>
     </form>
   )
+}
+
+/** A link that did not work, and the one thing to do about it. The two reasons
+ *  are separated because the instructions differ: an expired link is fixed from
+ *  here, a link opened on the wrong device is not. */
+function LinkErrorNotice({ reason }: { reason: LinkError }) {
+  const copy =
+    reason === 'device'
+      ? {
+          title: 'ลิงก์นี้ต้องเปิดบนเครื่องเดิม',
+          body:
+            'ลิงก์เข้าสู่ระบบใช้ได้เฉพาะในเบราว์เซอร์ที่กดขอ ถ้าขอจากคอมพิวเตอร์ ให้เปิดอีเมลบนคอมพิวเตอร์เครื่องนั้น หรือขอลิงก์ใหม่จากเครื่องที่กำลังใช้อยู่นี้',
+        }
+      : {
+          title: 'ลิงก์นี้ใช้ไม่ได้แล้ว',
+          body: 'ลิงก์หมดอายุหรือถูกใช้ไปแล้ว กรอกอีเมลด้านล่างเพื่อขอลิงก์ใหม่',
+        }
+
+  return (
+    <div className="rounded-lg border border-warn bg-surface p-4 text-sm" role="status">
+      <p className="font-semibold text-warn">{copy.title}</p>
+      <p className="mt-1 text-muted">{copy.body}</p>
+    </div>
+  )
+}
+
+/** The one failure that must not reach the screen. With account creation off, an
+ *  address nobody has been invited under comes back as `otp_disabled`; showing it
+ *  would turn this form into an oracle for who is registered. Everything else is
+ *  a fact about us, not about who exists, and is safe to say out loud. */
+function isUnknownAddress(error: AuthError): boolean {
+  return error.code === 'otp_disabled' || error.status === 422
+}
+
+function describe(error: AuthError): string {
+  if (isAuthRetryableFetchError(error)) {
+    return 'เชื่อมต่อไม่ได้ ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่'
+  }
+  if (error.status === 429) {
+    return 'ขอลิงก์ถี่เกินไป รอสักครู่แล้วลองใหม่'
+  }
+  return 'ส่งลิงก์ไม่สำเร็จ ลองใหม่อีกครั้งในอีกสักครู่'
 }

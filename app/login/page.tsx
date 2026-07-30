@@ -1,14 +1,17 @@
 import { SalaMark } from '@/components/SalaMark'
-import { LoginForm } from './login-form'
+import { LoginForm, type LinkError } from './login-form'
 
-// Sign-in only. Sala is invite-only (ADR 0003) — there is no sign-up path, and a
-// person who is not already a user in Supabase cannot make themselves one here.
+// Sign-in only. Sala is invite-only — there is no sign-up path, and a person who
+// is not already a user in Supabase cannot make themselves one here. What
+// enforces that is `shouldCreateUser: false` in the form; Memberships are granted
+// out of band (ADR 0002), so an account without one lands on the "no agency yet"
+// state at the root rather than anywhere with data.
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string }>
+  searchParams: Promise<{ next?: string; error?: string }>
 }) {
-  const { next } = await searchParams
+  const { next, error } = await searchParams
 
   return (
     <main className="flex flex-1 items-center justify-center p-6">
@@ -28,8 +31,14 @@ export default async function LoginPage({
           </p>
         </div>
 
-        <LoginForm next={next} />
+        <LoginForm next={next} linkError={parseLinkError(error)} />
       </div>
     </main>
   )
+}
+
+/** Only the two reasons the callback sends. A typo or a hand-edited param shows
+ *  no notice at all, rather than an empty box claiming something went wrong. */
+function parseLinkError(value: string | undefined): LinkError | undefined {
+  return value === 'expired' || value === 'device' ? value : undefined
 }

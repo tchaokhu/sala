@@ -12,7 +12,8 @@ import {
   validateImages,
   type NewProperty,
 } from '@/lib/property-input'
-import { buildingName } from '@/lib/buildings'
+import { resolveBuilding, UnknownBuildingError } from '@/lib/buildings'
+import { BUCKET, discard } from '@/lib/property-storage'
 import type { ActionResult } from '@/lib/action-result'
 
 // Creating a Property. The first write in the product that moves bytes as well
@@ -23,8 +24,10 @@ import type { ActionResult } from '@/lib/action-result'
 // anything the form sent. The `slug` field names which Org to *resolve*; a
 // caller holding no Membership there is refused before a single byte is stored.
 // RLS is the second check, not the only one.
-
-const BUCKET = 'sala-images'
+//
+// The bucket, the Storage sweep and `resolveBuilding` live in lib/ rather than
+// here: editing a Property needs all three, and the ordering rules around them
+// (ADR 0007, ADR 0009) only hold if both paths run the same code.
 
 /** Errors say what to do next and never carry raw Postgres or Storage text
  *  (CLAUDE.md). The detail goes to the server log, where an operator can read
@@ -122,59 +125,4 @@ export async function createProperty(formData: FormData): Promise<ActionResult> 
   // Throws NEXT_REDIRECT, so it goes after everything that can fail and outside
   // any try — a catch here would swallow the navigation.
   redirect(`/o/${slug}/properties?created=${id}&photos=${paths.length}`)
-}
-
-class UnknownBuildingError extends Error {}
-
-/**
- * The Building this Property belongs to, creating it when the combobox carried
- * a name nobody has entered yet.
- *
- * The id path re-reads the name from the database instead of taking the text
- * beside it: the two fields are posted together and only one of them is checked
- * against the Org. A `building_id` from another agency finds no row — the read
- * runs as the caller, under RLS, filtered by the Org `requireMember` returned —
- * and becomes a refusal rather than a Property titled after someone else's
- * building.
- *
- * The created Building gets a name and nothing else. Its district and its map
- * link belong to จัดการโครงการ, which is a page rather than a field on this form.
- */
-async function resolveBuilding(
-  orgId: string,
-  choice: { buildingId: string | null; newName: string | null },
-): Promise<{ id: string; name: string }> {
-  if (choice.buildingId) {
-    const name = await buildingName(orgId, choice.buildingId)
-    if (!name) throw new UnknownBuildingError()
-    return { id: choice.buildingId, name }
-  }
-
-  const name = choice.newName as string
-  const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('buildings')
-    .insert({ org_id: orgId, name, district: '', province: '' })
-    .select('id, name')
-    .single()
-  if (error) throw error
-
-  return data as { id: string; name: string }
-}
-
-/** Best-effort removal of bytes no Property will point at. A failure here is
- *  logged and swallowed: the person's answer is already decided, and orphaned
- *  objects under a prefix nothing references are an operator's problem, not
- *  theirs. */
-async function discard(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  paths: string[],
-): Promise<void> {
-  if (paths.length === 0) return
-  try {
-    const { error } = await supabase.storage.from(BUCKET).remove(paths)
-    if (error) throw error
-  } catch (err) {
-    console.error('[properties] could not remove orphaned uploads:', err)
-  }
 }

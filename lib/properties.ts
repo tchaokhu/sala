@@ -16,6 +16,9 @@ import { decodeCursor, encodeCursor, type PageKey } from './cursor'
 // list of Property types lives in property-input.ts, which a client form can
 // import without dragging next/headers into the browser bundle.
 import type { PropertyType } from './property-input'
+// Also type-only, and the other way round: buildings.ts imports keysetFilter
+// from here at runtime, so a value import back would close the cycle.
+import type { BuildingOption } from './buildings'
 
 export const PAGE_SIZE = 25
 
@@ -161,6 +164,106 @@ async function activeRentalsFor(
     found.set(r.property_id, { tenantName: r.tenant_name_snapshot, endDate: r.end_date })
   }
   return found
+}
+
+/** One Property as the edit form needs it: every column the form can change,
+ *  plus its Building in the shape the combobox already takes so the page can
+ *  hand it straight over. */
+export interface PropertyEditRow {
+  id: string
+  title: string
+  roomNumber: string | null
+  propertyType: PropertyType
+  bedrooms: number
+  bathrooms: number
+  areaSqm: number
+  priceMonthly: number
+  floor: number | null
+  description: string | null
+  contactLine: string | null
+  status: PropertyStatus
+  /** Storage keys, not URLs — the bucket is private. `signedPropertyImageUrls`
+   *  turns them into something renderable. */
+  images: string[]
+  /** null for an ETL-imported row, which has no Building yet (CONTEXT.md). */
+  building: BuildingOption | null
+}
+
+/**
+ * The Property behind the edit page, or null.
+ *
+ * A row belonging to another Org and a row that does not exist collapse to the
+ * same answer on purpose: the page turns either into `notFound()`, so a probe
+ * for a real id in an Org the caller cannot reach learns nothing from the
+ * difference. RLS refuses it anyway; the `org_id` filter makes that a zero-row
+ * read rather than a policy denial.
+ *
+ * `status` and `images` are read here rather than accepted from the form:
+ * `updateProperty` decides the status lock and which photos really belong to
+ * this row against these values, not against hidden fields a client sent.
+ */
+export async function getPropertyForEdit(
+  orgId: string,
+  id: string,
+): Promise<PropertyEditRow | null> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('properties')
+    .select(
+      'id, title, room_number, property_type, bedrooms, bathrooms, area_sqm, price_monthly, ' +
+        'floor, description, contact_line, status, images, ' +
+        'buildings(id, name, district, google_map_url)',
+    )
+    .eq('id', id)
+    .eq('org_id', orgId)
+    .maybeSingle()
+  if (error) throw error
+  if (!data) return null
+
+  const row = data as unknown as PropertyEditRecord
+  // PostgREST renders an embedded to-one as an object, but types it as either
+  // depending on how it inferred the relationship; normalising here keeps that
+  // detail out of the page.
+  const b = Array.isArray(row.buildings) ? (row.buildings[0] ?? null) : row.buildings
+
+  return {
+    id: row.id,
+    title: row.title,
+    roomNumber: row.room_number,
+    propertyType: row.property_type,
+    bedrooms: row.bedrooms,
+    bathrooms: row.bathrooms,
+    areaSqm: Number(row.area_sqm),
+    priceMonthly: Number(row.price_monthly),
+    floor: row.floor,
+    description: row.description,
+    contactLine: row.contact_line,
+    status: row.status,
+    images: row.images ?? [],
+    building: b
+      ? { id: b.id, name: b.name, district: b.district, googleMapUrl: b.google_map_url }
+      : null,
+  }
+}
+
+interface PropertyEditRecord {
+  id: string
+  title: string
+  room_number: string | null
+  property_type: PropertyType
+  bedrooms: number
+  bathrooms: number
+  area_sqm: number
+  price_monthly: number
+  floor: number | null
+  description: string | null
+  contact_line: string | null
+  status: PropertyStatus
+  images: string[] | null
+  buildings:
+    | { id: string; name: string; district: string; google_map_url: string | null }
+    | { id: string; name: string; district: string; google_map_url: string | null }[]
+    | null
 }
 
 export interface PropertyCounts {

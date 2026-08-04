@@ -9,6 +9,10 @@
 //     downloading Properties and grouping them here.
 //
 // Both are org-scoped through `requireMember`'s Org id, with RLS behind that.
+//
+// `resolveBuilding` at the bottom is the one thing here that writes: the
+// Property form's combobox may name a โครงการ that does not exist yet, and both
+// creating and editing a Property need that resolved the same way.
 
 import { createClient } from './supabase-server'
 import { decodeCursor, encodeCursor } from './cursor'
@@ -145,4 +149,45 @@ export async function buildingName(orgId: string, buildingId: string): Promise<s
     .maybeSingle()
   if (error) throw error
   return (data as { name: string } | null)?.name ?? null
+}
+
+export class UnknownBuildingError extends Error {}
+
+/**
+ * The Building this Property belongs to, creating it when the combobox carried
+ * a name nobody has entered yet.
+ *
+ * The id path re-reads the name from the database instead of taking the text
+ * beside it: the two fields are posted together and only one of them is checked
+ * against the Org. A `building_id` from another agency finds no row — the read
+ * runs as the caller, under RLS, filtered by the Org `requireMember` returned —
+ * and becomes a refusal rather than a Property titled after someone else's
+ * building.
+ *
+ * The created Building gets a name and nothing else. Its district and its map
+ * link belong to จัดการโครงการ, which is a page rather than a field on this form.
+ *
+ * Lives here rather than beside `createProperty` because editing a Property may
+ * reassign its Building, and both paths have to refuse a foreign id the same way.
+ */
+export async function resolveBuilding(
+  orgId: string,
+  choice: { buildingId: string | null; newName: string | null },
+): Promise<{ id: string; name: string }> {
+  if (choice.buildingId) {
+    const name = await buildingName(orgId, choice.buildingId)
+    if (!name) throw new UnknownBuildingError()
+    return { id: choice.buildingId, name }
+  }
+
+  const name = choice.newName as string
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('buildings')
+    .insert({ org_id: orgId, name, district: '', province: '' })
+    .select('id, name')
+    .single()
+  if (error) throw error
+
+  return data as { id: string; name: string }
 }

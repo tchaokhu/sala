@@ -78,6 +78,10 @@ export const MAX_TITLE = 200
 export const MAX_ROOM_NUMBER = 40
 export const MAX_DESCRIPTION = 4000
 
+/** Everything on the form except `status`, which is the one field create and
+ *  edit disagree about — see `parsePropertyForm` and `parsePropertyEditForm`. */
+export type PropertyFields = Omit<NewProperty, 'status'>
+
 /**
  * Read the form, or say what is wrong with it in words the person can act on.
  *
@@ -86,6 +90,62 @@ export const MAX_DESCRIPTION = 4000
  * fixing them in order terminates.
  */
 export function parsePropertyForm(form: FormLike): Parsed<NewProperty> {
+  const fields = parsePropertyFields(form)
+  if (!fields.ok) return fields
+
+  // Absent means the ordinary case rather than a mistake: a Property nobody said
+  // anything about is empty, which is also the column's default. Present but
+  // unrecognised is refused — including 'rented', which is the one somebody will
+  // try to post by hand.
+  let status: CreatableStatus = 'available'
+  const rawStatus = form.get('status')
+  if (rawStatus != null && rawStatus !== '') {
+    if (!isCreatableStatus(rawStatus)) return fail(STATUS_MESSAGE)
+    status = rawStatus
+  }
+
+  return { ok: true, values: { ...fields.values, status } }
+}
+
+/**
+ * The same fields, with edit's rules for `status`.
+ *
+ * `currentStatus` is read from the row by the action, never from the form — the
+ * lock below is only a lock if the thing it locks on is the database's answer.
+ *
+ * Two ways this differs from create:
+ *   * A Property already at `rented` stays there whatever was posted. There is
+ *     no Rental-management flow that could end the tenancy (ADR 0009), so the
+ *     form hides the field — and this is what makes a hand-built POST hiding
+ *     nothing hit the same wall.
+ *   * Blank or absent means *no change*, not `'available'`. Create's default is
+ *     right for a row that does not exist yet; on edit it would quietly demote a
+ *     `reserved` Property the moment somebody saved a price correction.
+ */
+export function parsePropertyEditForm(
+  form: FormLike,
+  currentStatus: PropertyStatus,
+): Parsed<PropertyFields & { status: PropertyStatus }> {
+  const fields = parsePropertyFields(form)
+  if (!fields.ok) return fields
+
+  if (currentStatus === 'rented') {
+    return { ok: true, values: { ...fields.values, status: 'rented' } }
+  }
+
+  const rawStatus = form.get('status')
+  if (rawStatus == null || rawStatus === '') {
+    return { ok: true, values: { ...fields.values, status: currentStatus } }
+  }
+  if (!isCreatableStatus(rawStatus)) return fail(STATUS_MESSAGE)
+
+  return { ok: true, values: { ...fields.values, status: rawStatus } }
+}
+
+const STATUS_MESSAGE =
+  'สถานะต้องเป็น ว่าง หรือ จอง — ทรัพย์จะเป็น "มีผู้เช่า" ก็ต่อเมื่อมีสัญญาเช่า'
+
+function parsePropertyFields(form: FormLike): Parsed<PropertyFields> {
   const propertyType = form.get('property_type')
   if (!isPropertyType(propertyType)) return fail('เลือกประเภททรัพย์ — คอนโด บ้าน หรือทาวน์โฮม')
 
@@ -124,19 +184,6 @@ export function parsePropertyForm(form: FormLike): Parsed<NewProperty> {
   })
   if (!floor.ok) return floor
 
-  // Absent means the ordinary case rather than a mistake: a Property nobody said
-  // anything about is empty, which is also the column's default. Present but
-  // unrecognised is refused — including 'rented', which is the one somebody will
-  // try to post by hand.
-  let status: CreatableStatus = 'available'
-  const rawStatus = form.get('status')
-  if (rawStatus != null && rawStatus !== '') {
-    if (!isCreatableStatus(rawStatus)) {
-      return fail('สถานะต้องเป็น ว่าง หรือ จอง — ทรัพย์จะเป็น "มีผู้เช่า" ก็ต่อเมื่อมีสัญญาเช่า')
-    }
-    status = rawStatus
-  }
-
   return {
     ok: true,
     values: {
@@ -151,7 +198,6 @@ export function parsePropertyForm(form: FormLike): Parsed<NewProperty> {
       room_number: blankToNull(form.get('room_number'), MAX_ROOM_NUMBER),
       description: blankToNull(form.get('description'), MAX_DESCRIPTION),
       contact_line: blankToNull(form.get('contact_line'), 100),
-      status,
     },
   }
 }
@@ -245,6 +291,32 @@ export function validateImages(files: ImageLike[]): Parsed<null> {
     return fail(
       `รูปทั้งหมดรวมกันต้องไม่เกิน ${mb(MAX_IMAGES_TOTAL_BYTES)} MB ` +
         `ตอนนี้รวม ${mb(total)} MB — เอาบางรูปออกแล้วลองใหม่`,
+    )
+  }
+
+  return { ok: true, values: null }
+}
+
+/**
+ * The same limits for an edit, where some photos are already stored.
+ *
+ * `validateImages` still judges the arriving files on their own — type, each
+ * file's size, and the total bytes of *this request*. `MAX_IMAGES_TOTAL_BYTES`
+ * deliberately does not count the kept photos: it exists to bound one request
+ * body (ADR 0007, and the `bodySizeLimit` that moves with it), and kept photos
+ * are not re-transferred. `MAX_IMAGES` is about the Property, so it counts both.
+ */
+export function validatePropertyImageEdit(
+  keptCount: number,
+  newFiles: ImageLike[],
+): Parsed<null> {
+  const perFile = validateImages(newFiles)
+  if (!perFile.ok) return perFile
+
+  const total = keptCount + newFiles.length
+  if (total > MAX_IMAGES) {
+    return fail(
+      `ใส่รูปได้ไม่เกิน ${MAX_IMAGES} รูป ตอนนี้จะมี ${total} รูป — เอารูปเดิมออกก่อน`,
     )
   }
 

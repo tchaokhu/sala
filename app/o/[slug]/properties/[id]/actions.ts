@@ -1,5 +1,6 @@
 'use server'
 
+import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { createClient, requireMember } from '@/lib/supabase-server'
 import { cleanText } from '@/lib/validate'
@@ -149,4 +150,59 @@ export async function updateProperty(formData: FormData): Promise<ActionResult> 
   revalidatePath(`/o/${slug}/properties/${id}/edit`)
   revalidatePath(`/o/${slug}`)
   return { ok: true, message: 'บันทึกแล้ว' }
+}
+
+/**
+ * Removing a Property.
+ *
+ * `rentals.property_id` and `payments.property_id` are both ON DELETE RESTRICT,
+ * so a Property that has ever carried a Rental or a Payment cannot be removed —
+ * Postgres refuses it with SQLSTATE 23503 and this says so in Thai. It explains
+ * and stops there: there is no Rental-management flow in the product yet, so an
+ * instruction like "end the Rental first" would name a door that does not exist
+ * (ADR 0009).
+ *
+ * The delete and the read of what to sweep are the same statement, so the image
+ * paths come back only if the row actually went. A blocked delete returns before
+ * Storage is touched at all.
+ */
+export async function deleteProperty(formData: FormData): Promise<ActionResult> {
+  const slug = cleanText(formData.get('slug'), 40)
+  const id = cleanText(formData.get('property_id'), 40)
+  if (!slug || !id) return { ok: false, message: 'คำสั่งไม่ครบ ลองใหม่อีกครั้ง' }
+
+  const org = await requireMember(slug)
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('properties')
+    .delete()
+    .eq('id', id)
+    .eq('org_id', org.id)
+    .select('images')
+    .maybeSingle()
+
+  if (error) {
+    if (error.code === '23503') {
+      return {
+        ok: false,
+        message:
+          'ลบทรัพย์นี้ไม่ได้ เพราะมีสัญญาเช่าหรือรายการเงินผูกอยู่ ' +
+          'ประวัติเหล่านั้นต้องอ้างถึงทรัพย์นี้ต่อไป จึงลบทรัพย์ออกจากระบบไม่ได้',
+      }
+    }
+    return failed('การลบทรัพย์', error)
+  }
+  if (!data) return { ok: false, message: NOT_FOUND }
+
+  // After the delete committed, never before: nothing points at these bytes now,
+  // and a delete Postgres refused never reaches this line (ADR 0009).
+  const images = (data as { images: string[] | null }).images ?? []
+  await discard(supabase, images)
+
+  revalidatePath(`/o/${slug}/properties`)
+  revalidatePath(`/o/${slug}`)
+  // Throws NEXT_REDIRECT, so it stays outside any try — a catch here would
+  // swallow the navigation. The edit page this was posted from is gone.
+  redirect(`/o/${slug}/properties?deleted=1`)
 }

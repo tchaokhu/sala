@@ -8,10 +8,13 @@ import {
   MAX_IMAGE_BYTES,
   MAX_IMAGES_TOTAL_BYTES,
   parseBuildingChoice,
+  parsePropertyEditForm,
   parsePropertyForm,
   validateImages,
+  validatePropertyImageEdit,
   type FormLike,
 } from './property-input'
+import type { PropertyStatus } from './properties'
 
 /** A form as the browser sends one: every value a string, absent fields absent. */
 function form(fields: Record<string, string>): FormLike {
@@ -102,6 +105,137 @@ describe('parsePropertyForm', () => {
     expect(result.ok).toBe(true)
     if (!result.ok) return
     expect(result.values.room_number).toBe('12/34')
+  })
+})
+
+describe('parsePropertyEditForm', () => {
+  function parseEdit(fields: Record<string, string>, currentStatus: PropertyStatus) {
+    return parsePropertyEditForm(form(fields), currentStatus)
+  }
+
+  it('reads the same fields create does', () => {
+    // Both sides go through parsePropertyFields, so this is a check that edit is
+    // built on it rather than a second, drifting copy of the same rules.
+    const result = parseEdit({ ...MINIMUM, room_number: ' 12/34 ', bedrooms: '2' }, 'available')
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.values.room_number).toBe('12/34')
+    expect(result.values.bedrooms).toBe(2)
+  })
+
+  it('rejects a bad field even when the status lock would decide the status', () => {
+    // The `rented` shortcut returns early; it must not return early past the
+    // field parsing, or an edit of a rented row could write a negative price.
+    expect(parseEdit({ ...MINIMUM, price_monthly: '-1' }, 'rented')).toMatchObject({ ok: false })
+  })
+
+  it('moves a Property between available and reserved in both directions', () => {
+    const reserving = parseEdit({ ...MINIMUM, status: 'reserved' }, 'available')
+    expect(reserving.ok).toBe(true)
+    if (reserving.ok) expect(reserving.values.status).toBe('reserved')
+
+    const releasing = parseEdit({ ...MINIMUM, status: 'available' }, 'reserved')
+    expect(releasing.ok).toBe(true)
+    if (releasing.ok) expect(releasing.values.status).toBe('available')
+  })
+
+  it('refuses a posted rented on a Property that is not rented', () => {
+    // The form omits the field entirely in this case, so anything arriving here
+    // is hand-built. No Rental exists behind it, and the list would show
+    // "มีผู้เช่า" beside an empty tenant column (ADR 0009).
+    const result = parseEdit({ ...MINIMUM, status: 'rented' }, 'available')
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.message).toContain('สัญญาเช่า')
+
+    expect(parseEdit({ ...MINIMUM, status: 'rented' }, 'reserved')).toMatchObject({ ok: false })
+  })
+
+  it('keeps a rented Property rented whatever was posted', () => {
+    // The lock, and the reason the UI hiding the <select> is not the lock: there
+    // is no Rental-management flow that could end the tenancy, so nothing this
+    // form receives may claim one has.
+    for (const posted of ['available', 'reserved', 'rented', 'deleted', '']) {
+      const result = parseEdit({ ...MINIMUM, status: posted }, 'rented')
+      expect(result.ok, `posted status ${JSON.stringify(posted)}`).toBe(true)
+      if (result.ok) expect(result.values.status).toBe('rented')
+    }
+    // And with no status field at all, as the real form posts it.
+    const absent = parseEdit(MINIMUM, 'rented')
+    expect(absent.ok).toBe(true)
+    if (absent.ok) expect(absent.values.status).toBe('rented')
+  })
+
+  it('leaves the status alone when the form says nothing about it', () => {
+    // Create defaults a blank to 'available'. On edit that would quietly demote a
+    // reserved Property the moment somebody saved a price correction.
+    for (const currentStatus of ['available', 'reserved'] as const) {
+      const absent = parseEdit(MINIMUM, currentStatus)
+      expect(absent.ok).toBe(true)
+      if (absent.ok) expect(absent.values.status).toBe(currentStatus)
+
+      const blank = parseEdit({ ...MINIMUM, status: '' }, currentStatus)
+      expect(blank.ok).toBe(true)
+      if (blank.ok) expect(blank.values.status).toBe(currentStatus)
+    }
+  })
+
+  it('refuses a status the enum has no value for', () => {
+    expect(parseEdit({ ...MINIMUM, status: 'deleted' }, 'available')).toMatchObject({ ok: false })
+    expect(parseEdit({ ...MINIMUM, status: 'ว่าง' }, 'reserved')).toMatchObject({ ok: false })
+  })
+})
+
+describe('validatePropertyImageEdit', () => {
+  const jpg = (size: number) => ({ size, type: 'image/jpeg' })
+  const files = (n: number, size = 1000) => Array.from({ length: n }, () => jpg(size))
+
+  it('counts kept photos and new files against the same limit', () => {
+    expect(validatePropertyImageEdit(MAX_IMAGES - 3, files(3))).toMatchObject({ ok: true })
+    const over = validatePropertyImageEdit(MAX_IMAGES - 2, files(3))
+    expect(over.ok).toBe(false)
+    // The message has to say how many there would be, not just the limit —
+    // otherwise "8 max" beside a picker showing 3 reads as a bug.
+    if (!over.ok) {
+      expect(over.message).toContain(String(MAX_IMAGES))
+      expect(over.message).toContain(String(MAX_IMAGES + 1))
+    }
+  })
+
+  it('lets a Property already at the limit be saved with no new photos', () => {
+    // Editing a price on a Property with a full gallery must not be blocked by
+    // photos nobody touched.
+    expect(validatePropertyImageEdit(MAX_IMAGES, [])).toMatchObject({ ok: true })
+    expect(validatePropertyImageEdit(MAX_IMAGES, files(1))).toMatchObject({ ok: false })
+  })
+
+  it('counts only what survives the removals', () => {
+    // The action intersects removed_images with the row's own images first, so
+    // keptCount is already net of them: a full gallery with three removed has
+    // room for three more.
+    expect(validatePropertyImageEdit(MAX_IMAGES - 3, files(3))).toMatchObject({ ok: true })
+  })
+
+  it('still applies the per-file rules to the arriving files', () => {
+    expect(validatePropertyImageEdit(0, [{ size: 100, type: 'application/pdf' }])).toMatchObject({
+      ok: false,
+    })
+    expect(validatePropertyImageEdit(0, [jpg(MAX_IMAGE_BYTES + 1)])).toMatchObject({ ok: false })
+    expect(validatePropertyImageEdit(0, files(MAX_IMAGES + 1))).toMatchObject({ ok: false })
+  })
+
+  it('measures the request-body cap against the new bytes only', () => {
+    // MAX_IMAGES_TOTAL_BYTES bounds one request body (ADR 0007). Kept photos are
+    // not re-transferred, so four 5 MB uploads alongside four kept photos is
+    // exactly at both caps and must pass.
+    const four = files(4, MAX_IMAGE_BYTES)
+    expect(4 * MAX_IMAGE_BYTES).toBe(MAX_IMAGES_TOTAL_BYTES)
+    expect(validatePropertyImageEdit(MAX_IMAGES - 4, four)).toMatchObject({ ok: true })
+    expect(validatePropertyImageEdit(0, files(5, MAX_IMAGE_BYTES))).toMatchObject({ ok: false })
+  })
+
+  it('accepts an edit that touches no photos at all', () => {
+    expect(validatePropertyImageEdit(0, [])).toMatchObject({ ok: true })
+    expect(validatePropertyImageEdit(3, [])).toMatchObject({ ok: true })
   })
 })
 

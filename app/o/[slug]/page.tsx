@@ -7,6 +7,7 @@ import { requireMember } from '@/lib/supabase-server'
 import { getOrgDashboard } from '@/lib/dashboard'
 import { formatBaht } from '@/lib/format'
 import { StatTile } from '@/components/StatTile'
+import { PageHeader } from '@/components/PageHeader'
 import { TILE_LABELS } from './tiles'
 
 export default async function OrgHome({
@@ -25,12 +26,9 @@ export default async function OrgHome({
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-xl font-bold">ภาพรวม</h1>
-        <p className="mt-1 text-sm text-muted">สรุปสถานะก่อนลงรายละเอียด</p>
-      </div>
+      <PageHeader title="ภาพรวม" summary="สรุปสถานะก่อนลงรายละเอียด" />
 
-      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatTile label={properties}>{summary.propertiesTotal}</StatTile>
 
         <StatTile label={active}>{summary.rentalsActive}</StatTile>

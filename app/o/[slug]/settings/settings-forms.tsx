@@ -1,30 +1,7 @@
 'use client'
 
-import { useActionState } from 'react'
-import type { ActionResult } from '@/lib/action-result'
+import { BUTTON, INPUT, Notice, useFormAction } from '@/components/form'
 import { changeOwnEmail, renameSelf } from './actions'
-
-const INPUT =
-  'rounded-lg border border-border bg-bg px-3 py-2 text-sm text-ink outline-none focus:border-accent focus:ring-1 focus:ring-accent disabled:opacity-60'
-
-const BUTTON =
-  'rounded-lg border border-border px-3 py-2 text-sm transition-colors hover:text-ink disabled:opacity-60'
-
-function useFormAction(action: (formData: FormData) => Promise<ActionResult>) {
-  return useActionState(
-    async (_previous: ActionResult | null, formData: FormData) => action(formData),
-    null,
-  )
-}
-
-function Notice({ result }: { result: ActionResult | null }) {
-  if (!result) return null
-  return (
-    <p role="status" className={`text-sm ${result.ok ? 'text-ok' : 'text-warn'}`}>
-      {result.message}
-    </p>
-  )
-}
 
 export function SettingsForms({
   slug,

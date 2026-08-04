@@ -9,15 +9,7 @@ alternatives — do not re-argue them from scratch.
 ## Commands
 
 ```bash
-npm run dev            # Next dev server
-npm run build          # production build (also type-checks)
-npm run lint           # eslint
 npm test               # every test — needs the database for tests/rls
-npx vitest run lib/payments.test.ts        # one file
-npx vitest run -t "clamps Jan 31 to Feb 28"  # one test by name
-
-docker compose up -d   # local Postgres on 54329, for the schema tests
-npm run db:reset       # drop public, re-apply shims + supabase/migrations/*
 npm run test:rls       # the ADR 0001 guard, on its own
 
 npm run db:apply-remote                        # first run only: every migration
@@ -112,6 +104,10 @@ ADR 0002 are the shape of that; these are the rules that keep it true.
 - **Uploads are org-prefixed and verified.** Files live under `{org_id}/…` and
   `storage.objects` policies compare the first path segment against Membership.
   A failed upload fails — there is no fallback that stashes the bytes elsewhere.
+  The bytes go up inside the Server Action, on the caller's session, never from
+  the browser client, and the row that references them is written last so it can
+  never point at bytes that did not arrive (ADR 0007). Storage keys never reuse
+  the uploaded filename.
 - **Tenants carry identity documents.** `id_card` and its neighbours never appear
   in logs, error messages, analytics, or an LLM prompt. When an error needs to
   identify a Tenant, use the id.
@@ -159,3 +155,21 @@ Sala is operated, not read. People scan it for the thing that needs attention.
   upload says the file was too large and what the limit is.
 - **Both themes get built.** Light and dark are designed together, not inverted.
   Palette is in README.md.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues (tchaokhu/sala), managed via the `gh` CLI. See
+`docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five canonical roles, used as-is (`needs-triage`, `needs-info`,
+`ready-for-agent`, `ready-for-human`, `wontfix`). See
+`docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` + `docs/adr/` at the repo root. See
+`docs/agents/domain.md`.

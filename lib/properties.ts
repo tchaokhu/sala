@@ -12,6 +12,10 @@
 
 import { createClient } from './supabase-server'
 import { decodeCursor, encodeCursor, type PageKey } from './cursor'
+// Type-only, so nothing server-side follows it back the other way: the runtime
+// list of Property types lives in property-input.ts, which a client form can
+// import without dragging next/headers into the browser bundle.
+import type { PropertyType } from './property-input'
 
 export const PAGE_SIZE = 25
 
@@ -26,7 +30,7 @@ export interface PropertyListRow {
   id: string
   title: string
   roomNumber: string | null
-  propertyType: 'condo' | 'house' | 'townhome'
+  propertyType: PropertyType
   bedrooms: number
   bathrooms: number
   areaSqm: number
@@ -48,7 +52,7 @@ interface PropertyRecord {
   id: string
   title: string
   room_number: string | null
-  property_type: 'condo' | 'house' | 'townhome'
+  property_type: PropertyType
   bedrooms: number
   bathrooms: number
   area_sqm: number

@@ -9,7 +9,7 @@
 // button works, and none of it needs client-side state.
 
 import Link from 'next/link'
-import { Check, ChevronRight, ChevronsLeft, Plus } from 'lucide-react'
+import { Check, ChevronRight, ChevronsLeft, Plus, Trash2 } from 'lucide-react'
 import { requireMember } from '@/lib/supabase-server'
 import {
   getPropertyCounts,
@@ -28,10 +28,16 @@ export default async function PropertiesPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{ status?: string; cursor?: string; created?: string; photos?: string }>
+  searchParams: Promise<{
+    status?: string
+    cursor?: string
+    created?: string
+    photos?: string
+    deleted?: string
+  }>
 }) {
   const { slug } = await params
-  const { status: rawStatus, cursor, created, photos } = await searchParams
+  const { status: rawStatus, cursor, created, photos, deleted } = await searchParams
 
   // Anything unrecognised in the query string is dropped rather than sent to
   // the database — the same reflex as never taking the Org from a request.
@@ -90,6 +96,18 @@ export default async function PropertiesPage({
           <Check size={16} aria-hidden />
           เพิ่มทรัพย์เรียบร้อยแล้ว
           {photoCount !== null && photoCount > 0 && ` พร้อมรูป ${photoCount} รูป`}
+        </p>
+      )}
+
+      {/* Same reason: the edit page the delete ran on no longer exists, so this
+          is the only screen left to say it happened. */}
+      {deleted && (
+        <p
+          role="status"
+          className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-muted"
+        >
+          <Trash2 size={16} aria-hidden />
+          ลบทรัพย์เรียบร้อยแล้ว
         </p>
       )}
 

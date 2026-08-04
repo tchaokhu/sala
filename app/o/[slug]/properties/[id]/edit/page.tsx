@@ -15,6 +15,7 @@ import { getPropertyForEdit } from '@/lib/properties'
 import { signedPropertyImageUrls } from '@/lib/property-storage'
 import { PageHeader } from '@/components/PageHeader'
 import { EditPropertyForm } from './edit-property-form'
+import { PropertyDeleteForm } from './property-delete-form'
 
 export default async function EditPropertyPage({
   params,
@@ -55,6 +56,15 @@ export default async function EditPropertyPage({
         photos={photos}
         buildings={buildings.options}
         buildingsCapped={buildings.capped}
+      />
+
+      {/* Its own form below the edit one rather than a button inside it: the two
+          post to different actions, and a nested <form> is not a thing. */}
+      <PropertyDeleteForm
+        slug={slug}
+        propertyId={property.id}
+        title={property.title}
+        photoCount={property.images.length}
       />
     </div>
   )

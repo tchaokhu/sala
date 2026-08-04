@@ -1,11 +1,13 @@
 'use client'
 
-// The three things every form in Sala repeats: the field styling, the pending
-// button, and the one line of copy a Server Action answers with.
+// The things every form in Sala repeats: the field styling, the pending button,
+// the one line of copy a Server Action answers with, and the Card/Field pair a
+// long form is grouped into.
 //
 // They started in app/o/[slug]/settings/settings-forms.tsx. The Property form is
 // the second caller, which is the point at which a copy becomes two things to
-// keep in step — so they live here instead.
+// keep in step — so they live here instead. Card and Field arrived the same way,
+// from the add-a-Property form, once editing one needed the same sections.
 
 import { useActionState } from 'react'
 import type { ActionResult } from '@/lib/action-result'
@@ -38,5 +40,53 @@ export function Notice({ result }: { result: ActionResult | null }) {
     <p role="status" className={`text-sm ${result.ok ? 'text-ok' : 'text-warn'}`}>
       {result.message}
     </p>
+  )
+}
+
+/** One titled section of a long form. A form of twenty inputs reads as three
+ *  groups rather than one wall. */
+export function Card({
+  title,
+  note,
+  children,
+}: {
+  title: string
+  note?: string
+  children: React.ReactNode
+}) {
+  return (
+    <section className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-4">
+      <div>
+        <h2 className="font-semibold">{title}</h2>
+        {note && <p className="mt-1 text-sm text-muted">{note}</p>}
+      </div>
+      {children}
+    </section>
+  )
+}
+
+export function Field({
+  label,
+  hint,
+  required,
+  wide,
+  children,
+}: {
+  label: string
+  hint?: string
+  required?: boolean
+  /** Spans the whole grid — for the fields nobody wants a narrow box for. */
+  wide?: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <label className={`flex flex-col gap-1.5 ${wide ? 'sm:col-span-2 lg:col-span-3' : ''}`}>
+      <span className="text-sm font-medium">
+        {label}
+        {required && <span className="ml-1 text-warn">*</span>}
+      </span>
+      {children}
+      {hint && <span className="text-xs text-muted">{hint}</span>}
+    </label>
   )
 }

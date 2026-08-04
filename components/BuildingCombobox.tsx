@@ -20,6 +20,7 @@ export function BuildingCombobox({
   options,
   capped,
   disabled,
+  initial,
   onChoose,
 }: {
   options: BuildingOption[]
@@ -28,12 +29,16 @@ export function BuildingCombobox({
    *  "it is gone". */
   capped: boolean
   disabled?: boolean
+  /** The Building this already points at, on edit. Null on create, and null on
+   *  an ETL-imported Property that has no โครงการ yet — which then reads as an
+   *  empty required box, because saving one means picking a โครงการ first. */
+  initial?: BuildingOption | null
   /** The chosen Building, or null while a new name is being typed — the form
    *  uses it to preview that Building's map. */
   onChoose?: (option: BuildingOption | null) => void
 }) {
-  const [query, setQuery] = useState('')
-  const [chosen, setChosen] = useState<BuildingOption | null>(null)
+  const [query, setQuery] = useState(initial?.name ?? '')
+  const [chosen, setChosen] = useState<BuildingOption | null>(initial ?? null)
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)

@@ -16,7 +16,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { ImagePlus, MapPin, X } from 'lucide-react'
-import { BUTTON, INPUT, Notice, PRIMARY_BUTTON, useFormAction } from '@/components/form'
+import {
+  BUTTON,
+  Card,
+  Field,
+  INPUT,
+  Notice,
+  PRIMARY_BUTTON,
+  useFormAction,
+} from '@/components/form'
 import { BuildingCombobox } from '@/components/BuildingCombobox'
 import { MapPreview } from '@/components/MapPreview'
 import type { BuildingOption } from '@/lib/buildings'
@@ -291,51 +299,5 @@ export function NewPropertyForm({
         <Notice result={result} />
       </div>
     </form>
-  )
-}
-
-function Card({
-  title,
-  note,
-  children,
-}: {
-  title: string
-  note?: string
-  children: React.ReactNode
-}) {
-  return (
-    <section className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-4">
-      <div>
-        <h2 className="font-semibold">{title}</h2>
-        {note && <p className="mt-1 text-sm text-muted">{note}</p>}
-      </div>
-      {children}
-    </section>
-  )
-}
-
-function Field({
-  label,
-  hint,
-  required,
-  wide,
-  children,
-}: {
-  label: string
-  hint?: string
-  required?: boolean
-  /** Spans the whole grid — for the two fields nobody wants a narrow box for. */
-  wide?: boolean
-  children: React.ReactNode
-}) {
-  return (
-    <label className={`flex flex-col gap-1.5 ${wide ? 'sm:col-span-2 lg:col-span-3' : ''}`}>
-      <span className="text-sm font-medium">
-        {label}
-        {required && <span className="ml-1 text-warn">*</span>}
-      </span>
-      {children}
-      {hint && <span className="text-xs text-muted">{hint}</span>}
-    </label>
   )
 }

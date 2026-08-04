@@ -10,7 +10,7 @@
 // row's anchor for the eye scanning down the column, and it is drawn from data
 // the row already has rather than from an image the list query does not fetch.
 
-import { Building, Building2, Home, type LucideIcon } from 'lucide-react'
+import { Building, Building2, Home, Pencil, type LucideIcon } from 'lucide-react'
 import Link from 'next/link'
 import { getRentalStatus } from '@/lib/rentals'
 import { formatBaht, formatDateThai } from '@/lib/format'
@@ -46,7 +46,17 @@ function RentalEnd({ endDate }: { endDate: string }) {
 
 const HEAD_CELL = 'px-4 py-3 font-semibold'
 
-export function PropertyTable({ rows, newHref }: { rows: PropertyListRow[]; newHref?: string }) {
+export function PropertyTable({
+  rows,
+  slug,
+  newHref,
+}: {
+  rows: PropertyListRow[]
+  /** The Org this list belongs to — the edit link's other half. It comes from
+   *  the route, not from a row. */
+  slug: string
+  newHref?: string
+}) {
   if (rows.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-border bg-surface p-8 text-center">
@@ -78,6 +88,7 @@ export function PropertyTable({ rows, newHref }: { rows: PropertyListRow[]; newH
             <th scope="col" className={`${HEAD_CELL} text-right`}>ค่าเช่า/เดือน</th>
             <th scope="col" className={HEAD_CELL}>สถานะ</th>
             <th scope="col" className={HEAD_CELL}>ผู้เช่าปัจจุบัน</th>
+            <th scope="col" className={`${HEAD_CELL} text-right`}>จัดการ</th>
           </tr>
         </thead>
         <tbody>
@@ -124,6 +135,18 @@ export function PropertyTable({ rows, newHref }: { rows: PropertyListRow[]; newH
                     <span className="text-muted">—</span>
                   )}
                 </td>
+                <td className="px-4 py-3 text-right">
+                  {/* Named for a screen reader, which hears a column of
+                      identical "แก้ไข" links otherwise. */}
+                  <Link
+                    href={`/o/${slug}/properties/${row.id}/edit`}
+                    aria-label={`แก้ไข ${row.title}`}
+                    className="inline-flex items-center gap-1.5 whitespace-nowrap text-muted transition-colors hover:text-ink"
+                  >
+                    <Pencil size={14} aria-hidden />
+                    แก้ไข
+                  </Link>
+                </td>
               </tr>
             )
           })}
@@ -152,6 +175,7 @@ export function PropertyTableSkeleton({ rows = 8 }: { rows?: number }) {
             <span className="block h-4 w-16 animate-pulse rounded bg-border" />
             <span className="block h-4 w-20 animate-pulse rounded bg-border" />
             <span className="block h-5 w-16 animate-pulse rounded-full bg-border" />
+            <span className="block h-4 w-12 animate-pulse rounded bg-border" />
           </div>
         ))}
       </div>

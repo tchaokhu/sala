@@ -107,7 +107,7 @@ export default async function PropertiesPage({
         ))}
       </nav>
 
-      <PropertyTable rows={page.rows} newHref={`${base}/new`} />
+      <PropertyTable rows={page.rows} slug={slug} newHref={`${base}/new`} />
 
       {/* Both controls are always drawn, disabled when there is nowhere to go:
           a pager that grows and shrinks moves the row above it. Keyset paging

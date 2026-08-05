@@ -7,7 +7,7 @@ export default function BuildingsLoading() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="โครงการ"
+        title="Buildings"
         summary={<span className="block h-4 w-72 animate-pulse rounded bg-border" aria-hidden />}
       />
 
@@ -23,7 +23,7 @@ export default function BuildingsLoading() {
         ))}
       </div>
 
-      <span className="sr-only">กำลังโหลดรายการโครงการ</span>
+      <span className="sr-only">Loading the Buildings list</span>
     </div>
   )
 }

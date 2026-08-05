@@ -8,7 +8,7 @@ export default function PropertiesLoading() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="ทรัพย์"
+        title="Properties"
         summary={<span className="block h-4 w-40 animate-pulse rounded bg-border" aria-hidden />}
       />
 

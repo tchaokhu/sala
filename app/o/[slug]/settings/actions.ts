@@ -17,7 +17,7 @@ import type { ActionResult } from '@/lib/action-result'
 export async function renameSelf(formData: FormData): Promise<ActionResult> {
   const slug = cleanText(formData.get('slug'), 40)
   const name = cleanText(formData.get('display_name'), 80)
-  if (!slug) return { ok: false, message: 'ไม่พบเอเจนซี่' }
+  if (!slug) return { ok: false, message: 'Org not found' }
 
   const org = await requireMember(slug)
   const supabase = await createClient()
@@ -28,13 +28,13 @@ export async function renameSelf(formData: FormData): Promise<ActionResult> {
   })
   if (error) {
     console.error('[settings] renameSelf:', error)
-    return { ok: false, message: 'บันทึกชื่อไม่สำเร็จ ลองใหม่อีกครั้ง' }
+    return { ok: false, message: 'Saving your name failed. Try again.' }
   }
 
   revalidatePath(`/o/${slug}/settings`)
   return {
     ok: true,
-    message: name ? `เปลี่ยนชื่อเป็น ${name} แล้ว` : 'ล้างชื่อแล้ว จะแสดงเป็นอีเมลแทน',
+    message: name ? `Your name is now ${name}` : 'Name cleared — your email is shown instead',
   }
 }
 
@@ -45,8 +45,8 @@ export async function renameSelf(formData: FormData): Promise<ActionResult> {
 export async function changeOwnEmail(formData: FormData): Promise<ActionResult> {
   const slug = cleanText(formData.get('slug'), 40)
   const email = cleanText(formData.get('email'), 254).toLowerCase()
-  if (!slug) return { ok: false, message: 'ไม่พบเอเจนซี่' }
-  if (!isEmail(email)) return { ok: false, message: 'อีเมลไม่ถูกต้อง ตรวจสอบแล้วกรอกใหม่' }
+  if (!slug) return { ok: false, message: 'Org not found' }
+  if (!isEmail(email)) return { ok: false, message: 'That email is not valid. Check it and enter it again.' }
 
   // Establishes that the caller is who the session says, in an Org they belong
   // to, before touching their account.
@@ -67,16 +67,16 @@ export async function changeOwnEmail(formData: FormData): Promise<ActionResult> 
   if (error) {
     console.error('[settings] changeOwnEmail:', error)
     if (error.status === 422) {
-      return { ok: false, message: 'อีเมลนี้มีบัญชีอยู่แล้ว ใช้อีเมลอื่น' }
+      return { ok: false, message: 'An account already uses that email. Use a different one.' }
     }
     if (error.status === 429) {
-      return { ok: false, message: 'ขอเปลี่ยนถี่เกินไป รอสักครู่แล้วลองใหม่' }
+      return { ok: false, message: 'Too many change requests. Wait a moment and try again.' }
     }
-    return { ok: false, message: 'เปลี่ยนอีเมลไม่สำเร็จ ลองใหม่อีกครั้ง' }
+    return { ok: false, message: 'Changing your email failed. Try again.' }
   }
 
   return {
     ok: true,
-    message: `ส่งลิงก์ยืนยันไปที่ ${email} แล้ว อีเมลจะยังไม่เปลี่ยนจนกว่าจะกดยืนยัน — Supabase ส่งไปทั้งที่อยู่เดิมและที่อยู่ใหม่`,
+    message: `A confirmation link has been sent to ${email}. Your email will not change until you confirm — Supabase sends the link to both the old address and the new one.`,
   }
 }

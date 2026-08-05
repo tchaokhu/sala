@@ -46,7 +46,7 @@ export function StatTileSkeleton({ label }: { label: string }) {
         className="block h-6 w-16 animate-pulse rounded bg-border"
         aria-hidden
       />
-      <span className="sr-only">กำลังโหลด</span>
+      <span className="sr-only">Loading</span>
     </StatTile>
   )
 }

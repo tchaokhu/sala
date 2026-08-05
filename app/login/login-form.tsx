@@ -53,10 +53,10 @@ export function LoginForm({ next, linkError }: { next?: string; linkError?: Link
   if (state.kind === 'sent') {
     return (
       <div className="rounded-lg border border-border bg-surface p-4 text-sm">
-        <p className="font-semibold text-ok">ส่งลิงก์แล้ว</p>
+        <p className="font-semibold text-ok">Link sent</p>
         <p className="mt-1 text-muted">
-          เปิดอีเมล <span className="font-medium text-ink">{email.trim()}</span>{' '}
-          แล้วกดลิงก์เพื่อเข้าสู่ระบบ ลิงก์ใช้ได้ครั้งเดียวและหมดอายุใน 1 ชั่วโมง
+          Open the email at <span className="font-medium text-ink">{email.trim()}</span>{' '}
+          and follow the link to log in. It works once and expires in an hour.
         </p>
       </div>
     )
@@ -71,7 +71,7 @@ export function LoginForm({ next, linkError }: { next?: string; linkError?: Link
       {linkError && state.kind === 'idle' && <LinkErrorNotice reason={linkError} />}
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium">อีเมล</span>
+        <span className="text-sm font-medium">Email</span>
         <input
           type="email"
           name="email"
@@ -94,7 +94,7 @@ export function LoginForm({ next, linkError }: { next?: string; linkError?: Link
         disabled={sending}
         className="rounded-lg bg-accent px-3 py-2 font-semibold text-on-accent transition-opacity hover:opacity-90 disabled:opacity-60"
       >
-        {sending ? 'กำลังส่ง…' : 'ส่งลิงก์เข้าสู่ระบบ'}
+        {sending ? 'Sending…' : 'Send the login link'}
       </button>
     </form>
   )
@@ -107,13 +107,13 @@ function LinkErrorNotice({ reason }: { reason: LinkError }) {
   const copy =
     reason === 'device'
       ? {
-          title: 'ลิงก์นี้ต้องเปิดบนเครื่องเดิม',
+          title: 'Open this link on the device that asked for it',
           body:
-            'ลิงก์เข้าสู่ระบบใช้ได้เฉพาะในเบราว์เซอร์ที่กดขอ ถ้าขอจากคอมพิวเตอร์ ให้เปิดอีเมลบนคอมพิวเตอร์เครื่องนั้น หรือขอลิงก์ใหม่จากเครื่องที่กำลังใช้อยู่นี้',
+            'A login link only works in the browser that requested it. If you asked from a computer, open the email on that computer — or ask for a new link from the device you are using now.',
         }
       : {
-          title: 'ลิงก์นี้ใช้ไม่ได้แล้ว',
-          body: 'ลิงก์หมดอายุหรือถูกใช้ไปแล้ว กรอกอีเมลด้านล่างเพื่อขอลิงก์ใหม่',
+          title: 'This link no longer works',
+          body: 'It has expired or has already been used. Enter your email below to get a new one.',
         }
 
   return (
@@ -134,10 +134,10 @@ function isUnknownAddress(error: AuthError): boolean {
 
 function describe(error: AuthError): string {
   if (isAuthRetryableFetchError(error)) {
-    return 'เชื่อมต่อไม่ได้ ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่'
+    return 'Could not connect. Check your internet and try again.'
   }
   if (error.status === 429) {
-    return 'ขอลิงก์ถี่เกินไป รอสักครู่แล้วลองใหม่'
+    return 'Too many link requests. Wait a moment and try again.'
   }
-  return 'ส่งลิงก์ไม่สำเร็จ ลองใหม่อีกครั้งในอีกสักครู่'
+  return 'Sending the link failed. Try again in a moment.'
 }

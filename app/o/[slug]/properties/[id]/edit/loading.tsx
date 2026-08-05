@@ -1,5 +1,5 @@
 // The edit form's own geometry with bars in it: the back link, the heading and
-// its summary line, three Cards the height of โครงการและห้อง, ขนาด and รูปภาพ,
+// its summary line, three Cards the height of Building and Room, Size and Photos,
 // and the delete section under them — so nothing moves when the row lands.
 
 import { PageHeader } from '@/components/PageHeader'
@@ -10,7 +10,7 @@ export default function EditPropertyLoading() {
       <div className="flex flex-col gap-3">
         <span className="block h-5 w-36 animate-pulse rounded bg-border" aria-hidden />
         <PageHeader
-          title="แก้ไขทรัพย์"
+          title="Edit Property"
           summary={<span className="block h-4 w-56 animate-pulse rounded bg-border" aria-hidden />}
         />
       </div>
@@ -32,7 +32,7 @@ export default function EditPropertyLoading() {
         </div>
       </div>
 
-      <span className="sr-only">กำลังโหลดทรัพย์</span>
+      <span className="sr-only">Loading the Property</span>
     </div>
   )
 }

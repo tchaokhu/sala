@@ -69,14 +69,14 @@ export function NewPropertyForm({
       <input type="hidden" name="slug" value={slug} />
 
       <Card
-        title="โครงการและห้อง"
-        note="ชื่อทรัพย์คือชื่อโครงการต่อด้วยเลขห้อง จึงไม่ต้องพิมพ์ชื่อทรัพย์เอง"
+        title="Building and Room"
+        note="A Property's name is its Building name followed by the room number, so there is no name to type"
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <Field
-            label="โครงการ"
+            label="Building"
             required
-            hint="ไม่มีในรายการก็พิมพ์ชื่อใหม่ได้ ระบบจะสร้างโครงการให้"
+            hint="Not in the list? Type a new name and it will be created for you"
             wide
           >
             <BuildingCombobox
@@ -87,7 +87,7 @@ export function NewPropertyForm({
             />
           </Field>
 
-          <Field label="เลขห้อง" hint="เว้นว่างได้ ถ้าเป็นบ้านทั้งหลัง">
+          <Field label="Room number" hint="Leave it blank for a whole house">
             <input
               type="text"
               name="room_number"
@@ -98,7 +98,7 @@ export function NewPropertyForm({
             />
           </Field>
 
-          <Field label="ประเภท" required>
+          <Field label="Type" required>
             <select name="property_type" required disabled={pending} defaultValue="condo" className={INPUT}>
               {PROPERTY_TYPES.map((type) => (
                 <option key={type} value={type}>
@@ -108,7 +108,7 @@ export function NewPropertyForm({
             </select>
           </Field>
 
-          <Field label="ค่าเช่าต่อเดือน (บาท)" required>
+          <Field label="Rent per month (THB)" required>
             <input
               type="text"
               inputMode="decimal"
@@ -120,7 +120,7 @@ export function NewPropertyForm({
             />
           </Field>
 
-          <Field label="สถานะเริ่มต้น" hint='ทรัพย์จะเป็น "มีผู้เช่า" เมื่อสร้างสัญญาเช่าเท่านั้น'>
+          <Field label="Starting status" hint='A Property is only "Rented" once a Rental is created'>
             <select name="status" disabled={pending} defaultValue="available" className={INPUT}>
               {CREATABLE_STATUSES.map((status) => (
                 <option key={status} value={status}>
@@ -132,31 +132,31 @@ export function NewPropertyForm({
 
         </div>
 
-        {/* The map belongs to the โครงการ, so it appears as soon as one is
-            chosen and is read-only here — จัดการโครงการ is where it changes. */}
+        {/* The map belongs to the Building, so it appears as soon as one is
+            chosen and is read-only here — the Buildings page is where it changes. */}
         {building &&
           (building.googleMapUrl ? (
             <div className="flex flex-col gap-2">
-              <p className="text-sm font-medium">แผนที่ของโครงการนี้</p>
-              <MapPreview url={building.googleMapUrl} title={`แผนที่ ${building.name}`} />
+              <p className="text-sm font-medium">Map of this Building</p>
+              <MapPreview url={building.googleMapUrl} title={`Map of ${building.name}`} />
             </div>
           ) : (
             <p className="flex flex-wrap items-center gap-2 text-sm text-muted">
               <MapPin size={16} aria-hidden />
-              โครงการนี้ยังไม่มีลิงก์แผนที่ —
+              This Building has no map link yet —
               <Link
                 href={`/o/${slug}/buildings`}
                 className="text-accent underline-offset-4 hover:underline"
               >
-                เพิ่มได้ในหน้าจัดการโครงการ
+                add one on the Buildings page
               </Link>
             </p>
           ))}
       </Card>
 
-      <Card title="ขนาด">
+      <Card title="Size">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Field label="ห้องนอน">
+          <Field label="Bedrooms">
             <input
               type="number"
               name="bedrooms"
@@ -169,7 +169,7 @@ export function NewPropertyForm({
             />
           </Field>
 
-          <Field label="ห้องน้ำ">
+          <Field label="Bathrooms">
             <input
               type="number"
               name="bathrooms"
@@ -182,7 +182,7 @@ export function NewPropertyForm({
             />
           </Field>
 
-          <Field label="ขนาด (ตร.ม.)">
+          <Field label="Area (sq m)">
             <input
               type="text"
               inputMode="decimal"
@@ -193,7 +193,7 @@ export function NewPropertyForm({
             />
           </Field>
 
-          <Field label="ชั้น">
+          <Field label="Floor">
             <input
               type="number"
               name="floor"
@@ -205,19 +205,19 @@ export function NewPropertyForm({
             />
           </Field>
 
-          {/* No ที่ตั้ง, เขต or จังหวัด here: those describe the โครงการ, and
-              they are entered once on it rather than on every unit inside. */}
-          <Field label="ไลน์ติดต่อ">
+          {/* No address, district or province here: those describe the Building,
+              and they are entered once on it rather than on every unit inside. */}
+          <Field label="LINE contact">
             <input type="text" name="contact_line" maxLength={100} disabled={pending} className={INPUT} />
           </Field>
 
-          <Field label="รายละเอียด" wide>
+          <Field label="Description" wide>
             <textarea
               name="description"
               rows={4}
               maxLength={4000}
               disabled={pending}
-              placeholder="เฟอร์นิเจอร์ วิว เงื่อนไขการเช่า"
+              placeholder="Furniture, view, rental terms"
               className={INPUT}
             />
           </Field>
@@ -225,15 +225,15 @@ export function NewPropertyForm({
       </Card>
 
       <Card
-        title="รูปภาพ"
-        note={`ไม่เกิน ${MAX_IMAGES} รูป รูปละไม่เกิน ${mb(MAX_IMAGE_BYTES)} MB รวมกันไม่เกิน ${mb(
+        title="Photos"
+        note={`Up to ${MAX_IMAGES} photos, ${mb(MAX_IMAGE_BYTES)} MB each, ${mb(
           MAX_IMAGES_TOTAL_BYTES,
-        )} MB`}
+        )} MB in total`}
       >
         <div className="flex flex-col gap-3">
           <label className={`${BUTTON} inline-flex w-fit cursor-pointer items-center gap-2`}>
             <ImagePlus size={16} aria-hidden />
-            เลือกรูป
+            Choose photos
             <input
               type="file"
               name="images"
@@ -255,7 +255,7 @@ export function NewPropertyForm({
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={src}
-                      alt={`รูปที่ ${index + 1}`}
+                      alt={`Photo ${index + 1}`}
                       className="h-24 w-24 rounded-lg border border-border object-cover"
                     />
                   </li>
@@ -263,7 +263,7 @@ export function NewPropertyForm({
               </ul>
               <p className="flex items-center gap-3 text-sm text-muted">
                 <span className="tabular">
-                  {files.length} รูป · รวม {mb(totalBytes)} MB
+                  {files.length} {files.length === 1 ? 'photo' : 'photos'} · {mb(totalBytes)} MB total
                 </span>
                 <button
                   type="button"
@@ -278,7 +278,7 @@ export function NewPropertyForm({
                   className="inline-flex items-center gap-1 text-muted transition-colors hover:text-ink"
                 >
                   <X size={14} aria-hidden />
-                  เอารูปออกทั้งหมด
+                  Remove all photos
                 </button>
               </p>
             </>
@@ -294,7 +294,7 @@ export function NewPropertyForm({
 
       <div className="flex flex-wrap items-center gap-3">
         <button type="submit" disabled={pending || !imageCheck.ok} className={PRIMARY_BUTTON}>
-          {pending ? 'กำลังบันทึก…' : 'บันทึกทรัพย์'}
+          {pending ? 'Saving…' : 'Save Property'}
         </button>
         <Notice result={result} />
       </div>

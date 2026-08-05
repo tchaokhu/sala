@@ -1,8 +1,8 @@
-// Reading Buildings — โครงการ, the named development a Property sits in.
+// Reading Buildings — the named development a Property sits in.
 //
 // Two readers with different jobs:
 //   * `listBuildingOptions` fills the combobox on the Property form. Four small
-//     columns, bounded, and the map link comes with it so choosing a โครงการ can
+//     columns, bounded, and the map link comes with it so choosing a Building can
 //     draw its map without a second round trip.
 //   * `listBuildings` is the management page: the same rows plus how many
 //     Properties each one holds, counted in Postgres (CLAUDE.md) rather than by
@@ -11,7 +11,7 @@
 // Both are org-scoped through `requireMember`'s Org id, with RLS behind that.
 //
 // `resolveBuilding` at the bottom is the one thing here that writes: the
-// Property form's combobox may name a โครงการ that does not exist yet, and both
+// Property form's combobox may name a Building that does not exist yet, and both
 // creating and editing a Property need that resolved the same way.
 
 import { createClient } from './supabase-server'
@@ -20,7 +20,7 @@ import { keysetFilter } from './properties'
 
 /** Enough Buildings for any agency this product is for, and a bound rather than
  *  no bound. `capped` is what the form says out loud when it is reached, so a
- *  missing โครงการ reads as "there are more than this" instead of "it is gone". */
+ *  missing Building reads as "there are more than this" instead of "it is gone". */
 export const OPTIONS_LIMIT = 500
 export const BUILDINGS_PAGE_SIZE = 25
 
@@ -165,7 +165,7 @@ export class UnknownBuildingError extends Error {}
  * building.
  *
  * The created Building gets a name and nothing else. Its district and its map
- * link belong to จัดการโครงการ, which is a page rather than a field on this form.
+ * link belong to the Buildings page rather than to a field on this form.
  *
  * Lives here rather than beside `createProperty` because editing a Property may
  * reassign its Building, and both paths have to refuse a foreign id the same way.

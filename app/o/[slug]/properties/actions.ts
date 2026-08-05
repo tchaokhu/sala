@@ -36,12 +36,12 @@ import type { ActionResult } from '@/lib/action-result'
  *  Tenant's id_card. */
 function failed(what: string, err: unknown): ActionResult {
   console.error(`[properties] ${what}:`, err)
-  return { ok: false, message: `${what}ไม่สำเร็จ ลองใหม่อีกครั้ง หากยังไม่ได้ให้แจ้งผู้ดูแลระบบ` }
+  return { ok: false, message: `${what} failed. Try again, and tell your administrator if it keeps failing.` }
 }
 
 export async function createProperty(formData: FormData): Promise<ActionResult> {
   const slug = cleanText(formData.get('slug'), 40)
-  if (!slug) return { ok: false, message: 'ไม่พบเอเจนซี่' }
+  if (!slug) return { ok: false, message: 'Org not found' }
 
   // Before anything else, and before any file moves.
   const org = await requireMember(slug)
@@ -70,9 +70,9 @@ export async function createProperty(formData: FormData): Promise<ActionResult> 
     building = await resolveBuilding(org.id, choice.values)
   } catch (err) {
     if (err instanceof UnknownBuildingError) {
-      return { ok: false, message: 'ไม่พบโครงการที่เลือก เลือกใหม่อีกครั้ง' }
+      return { ok: false, message: 'The Building you chose was not found. Choose it again.' }
     }
-    return failed('การเพิ่มโครงการ', err)
+    return failed('Adding the Building', err)
   }
 
   let paths: string[]
@@ -95,7 +95,7 @@ export async function createProperty(formData: FormData): Promise<ActionResult> 
     // Promise.all rejects on the first failure while the others may still land,
     // so the sweep names the whole intended prefix rather than what resolved.
     await discard(supabase, files.map((f, i) => `${org.id}/${id}/${i}.${imageExtension(f.type)}`))
-    return failed('การอัปโหลดรูป', err)
+    return failed('Uploading the photos', err)
   }
 
   const row: NewProperty & {
@@ -117,7 +117,7 @@ export async function createProperty(formData: FormData): Promise<ActionResult> 
   const { error } = await supabase.from('properties').insert(row)
   if (error) {
     await discard(supabase, paths)
-    return failed('การเพิ่มทรัพย์', error)
+    return failed('Adding the Property', error)
   }
 
   revalidatePath(`/o/${slug}/properties`)

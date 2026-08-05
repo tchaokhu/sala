@@ -3,8 +3,8 @@
 // A module of its own because Next validates the exports of page.tsx.
 
 export const TILE_LABELS = [
-  'ทรัพย์ทั้งหมด',
-  'สัญญาที่ใช้งาน',
-  'ครบกำหนดเดือนนี้',
-  'ค้างชำระ',
+  'All Properties',
+  'Active Rentals',
+  'Ending this month',
+  'Overdue',
 ] as const

@@ -3,7 +3,7 @@
 //
 // Money is tabular and right-aligned, so a column of rents can be compared at a
 // glance. The Rental behind an occupied Property is shown where it matters —
-// who is in it and when that ends — because "มีผู้เช่า" on its own does not tell
+// who is in it and when that ends — because "Rented" on its own does not tell
 // an agent whether this row needs work this month.
 //
 // The leading cell carries a tile with the Property's type in it. It is the
@@ -31,14 +31,14 @@ function RentalEnd({ endDate }: { endDate: string }) {
     state === 'expired' ? 'text-warn' : state === 'expiring' ? 'text-hold' : 'text-muted'
   const note =
     state === 'expired'
-      ? `เกินกำหนด ${Math.abs(daysLeft ?? 0)} วัน`
+      ? `${Math.abs(daysLeft ?? 0)} days overdue`
       : state === 'expiring'
-        ? `เหลือ ${daysLeft} วัน`
+        ? `${daysLeft} days left`
         : null
 
   return (
     <span className={`whitespace-nowrap text-xs ${tone}`}>
-      ถึง {formatDateThai(endDate)}
+      to {formatDateThai(endDate)}
       {note ? ` · ${note}` : ''}
     </span>
   )
@@ -60,17 +60,17 @@ export function PropertyTable({
   if (rows.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-border bg-surface p-8 text-center">
-        <p className="font-semibold">ไม่พบทรัพย์</p>
+        <p className="font-semibold">No Properties found</p>
         {/* The advice was already here. Its second half is now a door rather
             than a suggestion. */}
         <p className="mt-1 text-sm text-muted">
-          ลองเปลี่ยนตัวกรองสถานะ หรือ
+          Try a different status filter, or
           {newHref ? (
             <Link href={newHref} className="ml-1 text-accent underline-offset-4 hover:underline">
-              เพิ่มทรัพย์เข้าระบบ
+              add a Property
             </Link>
           ) : (
-            'เพิ่มทรัพย์เข้าระบบ'
+            ' add a Property'
           )}
         </p>
       </div>
@@ -82,13 +82,13 @@ export function PropertyTable({
       <table className="w-full min-w-[52rem] text-sm">
         <thead>
           <tr className="border-b border-border bg-bg/60 text-left text-[11px] tracking-wide text-muted">
-            <th scope="col" className={HEAD_CELL}>ทรัพย์</th>
-            <th scope="col" className={HEAD_CELL}>ประเภท</th>
-            <th scope="col" className={HEAD_CELL}>ขนาด</th>
-            <th scope="col" className={`${HEAD_CELL} text-right`}>ค่าเช่า/เดือน</th>
-            <th scope="col" className={HEAD_CELL}>สถานะ</th>
-            <th scope="col" className={HEAD_CELL}>ผู้เช่าปัจจุบัน</th>
-            <th scope="col" className={`${HEAD_CELL} text-right`}>จัดการ</th>
+            <th scope="col" className={HEAD_CELL}>Property</th>
+            <th scope="col" className={HEAD_CELL}>Type</th>
+            <th scope="col" className={HEAD_CELL}>Size</th>
+            <th scope="col" className={`${HEAD_CELL} text-right`}>Rent/month</th>
+            <th scope="col" className={HEAD_CELL}>Status</th>
+            <th scope="col" className={HEAD_CELL}>Current Tenant</th>
+            <th scope="col" className={`${HEAD_CELL} text-right`}>Manage</th>
           </tr>
         </thead>
         <tbody>
@@ -110,14 +110,14 @@ export function PropertyTable({
                     <span className="flex min-w-0 flex-col leading-tight">
                       <span className="truncate font-medium">{row.title}</span>
                       <span className="h-4 truncate text-xs text-muted">
-                        {row.roomNumber ? `ห้อง ${row.roomNumber}` : ''}
+                        {row.roomNumber ? `Room ${row.roomNumber}` : ''}
                       </span>
                     </span>
                   </div>
                 </td>
                 <td className="px-4 py-3 text-muted">{TYPE_LABELS[row.propertyType]}</td>
                 <td className="tabular whitespace-nowrap px-4 py-3 text-muted">
-                  {row.bedrooms} นอน · {row.bathrooms} น้ำ · {row.areaSqm} ตร.ม.
+                  {row.bedrooms} bed · {row.bathrooms} bath · {row.areaSqm} sq m
                 </td>
                 <td className="tabular whitespace-nowrap px-4 py-3 text-right font-medium">
                   {formatBaht(row.priceMonthly)}
@@ -137,14 +137,14 @@ export function PropertyTable({
                 </td>
                 <td className="px-4 py-3 text-right">
                   {/* Named for a screen reader, which hears a column of
-                      identical "แก้ไข" links otherwise. */}
+                      identical "Edit" links otherwise. */}
                   <Link
                     href={`/o/${slug}/properties/${row.id}/edit`}
-                    aria-label={`แก้ไข ${row.title}`}
+                    aria-label={`Edit ${row.title}`}
                     className="inline-flex items-center gap-1.5 whitespace-nowrap text-muted transition-colors hover:text-ink"
                   >
                     <Pencil size={14} aria-hidden />
-                    แก้ไข
+                    Edit
                   </Link>
                 </td>
               </tr>
@@ -179,7 +179,7 @@ export function PropertyTableSkeleton({ rows = 8 }: { rows?: number }) {
           </div>
         ))}
       </div>
-      <span className="sr-only">กำลังโหลดรายการทรัพย์</span>
+      <span className="sr-only">Loading the Properties list</span>
     </div>
   )
 }

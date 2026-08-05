@@ -19,7 +19,10 @@ import type { ActionResult } from '@/lib/action-result'
  *  The detail still reaches the server log, where an operator can read it. */
 function failed(what: string, err: unknown): ActionResult {
   console.error(`[admin] ${what}:`, err)
-  return { ok: false, message: `${what}ไม่สำเร็จ ลองใหม่อีกครั้ง หากยังไม่ได้ให้ดูบันทึกของเซิร์ฟเวอร์` }
+  return {
+    ok: false,
+    message: `${what} failed. Try again — if it keeps failing, read the server log.`,
+  }
 }
 
 const ROLES = new Set(['owner', 'member'])
@@ -44,9 +47,11 @@ export async function addMember(formData: FormData): Promise<ActionResult> {
   const displayName = cleanText(formData.get('display_name'), 80)
   const role = readRole(formData.get('role'))
 
-  if (!orgId || !slug) return { ok: false, message: 'ไม่พบเอเจนซี่ที่จะเพิ่มคนเข้า' }
-  if (!isEmail(email)) return { ok: false, message: 'อีเมลไม่ถูกต้อง ตรวจสอบแล้วกรอกใหม่' }
-  if (!role) return { ok: false, message: 'เลือกสิทธิ์เป็นเจ้าของหรือสมาชิก' }
+  if (!orgId || !slug) {
+    return { ok: false, message: 'No Org to add anyone to. Go back to the list and open it again.' }
+  }
+  if (!isEmail(email)) return { ok: false, message: 'That email is not valid. Check it and enter it again.' }
+  if (!role) return { ok: false, message: 'Choose a role — Owner or Member.' }
 
   const supabase = createAdminClient()
 
@@ -74,7 +79,7 @@ export async function addMember(formData: FormData): Promise<ActionResult> {
       invited = true
     }
   } catch (err) {
-    return failed('การสร้างบัญชี', err)
+    return failed('Creating the account', err)
   }
 
   try {
@@ -87,12 +92,12 @@ export async function addMember(formData: FormData): Promise<ActionResult> {
     if (error) {
       // The composite primary key is (org_id, user_id).
       if (error.code === '23505') {
-        return { ok: false, message: 'คนนี้อยู่ในเอเจนซี่นี้อยู่แล้ว' }
+        return { ok: false, message: 'This person is already in this Org.' }
       }
       throw error
     }
   } catch (err) {
-    return failed('การเพิ่มสมาชิก', err)
+    return failed('Adding the Member', err)
   }
 
   revalidatePath(`/admin/orgs/${slug}`)
@@ -100,8 +105,8 @@ export async function addMember(formData: FormData): Promise<ActionResult> {
   return {
     ok: true,
     message: invited
-      ? `เพิ่ม ${email} แล้ว ส่งอีเมลเชิญไปให้ หากเขาไม่ได้รับ ให้ไปที่หน้าเข้าสู่ระบบแล้วขอลิงก์เอง`
-      : `เพิ่ม ${email} แล้ว บัญชีนี้มีอยู่ก่อนแล้ว เข้าสู่ระบบได้ทันที`,
+      ? `Added ${email} and sent an invitation email. If it does not arrive, they can ask for a link themselves from the login page.`
+      : `Added ${email}. This account already existed, so they can log in straight away.`,
   }
 }
 
@@ -113,7 +118,7 @@ export async function setMemberRole(formData: FormData): Promise<ActionResult> {
   const userId = cleanText(formData.get('user_id'), 40)
   const role = readRole(formData.get('role'))
 
-  if (!orgId || !userId || !role) return { ok: false, message: 'คำสั่งไม่ครบ ลองใหม่อีกครั้ง' }
+  if (!orgId || !userId || !role) return { ok: false, message: 'That request was incomplete. Try again.' }
 
   const supabase = createAdminClient()
   try {
@@ -129,11 +134,11 @@ export async function setMemberRole(formData: FormData): Promise<ActionResult> {
       .eq('user_id', userId)
     if (error) throw error
   } catch (err) {
-    return failed('การเปลี่ยนสิทธิ์', err)
+    return failed('Changing the role', err)
   }
 
   revalidatePath(`/admin/orgs/${slug}`)
-  return { ok: true, message: role === 'owner' ? 'ตั้งเป็นเจ้าของแล้ว' : 'ตั้งเป็นสมาชิกแล้ว' }
+  return { ok: true, message: role === 'owner' ? 'Now an Owner.' : 'Now a Member.' }
 }
 
 export async function setMemberDisplayName(formData: FormData): Promise<ActionResult> {
@@ -144,7 +149,7 @@ export async function setMemberDisplayName(formData: FormData): Promise<ActionRe
   const userId = cleanText(formData.get('user_id'), 40)
   const name = cleanText(formData.get('display_name'), 80)
 
-  if (!orgId || !userId) return { ok: false, message: 'คำสั่งไม่ครบ ลองใหม่อีกครั้ง' }
+  if (!orgId || !userId) return { ok: false, message: 'That request was incomplete. Try again.' }
 
   const supabase = createAdminClient()
   try {
@@ -157,11 +162,14 @@ export async function setMemberDisplayName(formData: FormData): Promise<ActionRe
       .eq('user_id', userId)
     if (error) throw error
   } catch (err) {
-    return failed('การเปลี่ยนชื่อ', err)
+    return failed('Changing the name', err)
   }
 
   revalidatePath(`/admin/orgs/${slug}`)
-  return { ok: true, message: name ? `เปลี่ยนชื่อเป็น ${name} แล้ว` : 'ล้างชื่อแล้ว จะแสดงเป็นอีเมลแทน' }
+  return {
+    ok: true,
+    message: name ? `Renamed to ${name}.` : 'Name cleared — the email shows instead.',
+  }
 }
 
 /** Removes the Membership and leaves the account alone — the only removal that
@@ -174,7 +182,7 @@ export async function removeMember(formData: FormData): Promise<ActionResult> {
   const slug = cleanText(formData.get('slug'), 40)
   const userId = cleanText(formData.get('user_id'), 40)
 
-  if (!orgId || !userId) return { ok: false, message: 'คำสั่งไม่ครบ ลองใหม่อีกครั้ง' }
+  if (!orgId || !userId) return { ok: false, message: 'That request was incomplete. Try again.' }
 
   const supabase = createAdminClient()
   try {
@@ -188,12 +196,12 @@ export async function removeMember(formData: FormData): Promise<ActionResult> {
       .eq('user_id', userId)
     if (error) throw error
   } catch (err) {
-    return failed('การเอาสมาชิกออก', err)
+    return failed('Removing the Member', err)
   }
 
   revalidatePath(`/admin/orgs/${slug}`)
   revalidatePath('/admin')
-  return { ok: true, message: 'เอาออกจากเอเจนซี่แล้ว บัญชียังอยู่' }
+  return { ok: true, message: 'Removed from the Org. The account itself still exists.' }
 }
 
 /** Refuses the change that would leave an Org with no owner. Such an Org still
@@ -218,7 +226,7 @@ async function wouldStrandOrg(orgId: string, userId: string): Promise<ActionResu
 
   return {
     ok: false,
-    message: 'คนนี้เป็นเจ้าของคนสุดท้ายของเอเจนซี่ ตั้งคนอื่นเป็นเจ้าของก่อนแล้วค่อยทำรายการนี้',
+    message: 'This is the last Owner of the Org. Make somebody else an Owner first, then do this.',
   }
 }
 

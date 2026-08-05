@@ -7,7 +7,7 @@ import { parseBuildingForm } from '@/lib/building-input'
 import { resolveMapUrl } from '@/lib/google-map-resolve'
 import type { ActionResult } from '@/lib/action-result'
 
-// Managing โครงการ. Ordinary Member writes: each one establishes Membership
+// Managing Buildings. Ordinary Member writes: each one establishes Membership
 // first and the Org comes from that gate, never from the form (ADR 0002). The
 // service role is nowhere near this.
 //
@@ -16,12 +16,12 @@ import type { ActionResult } from '@/lib/action-result'
 
 function failed(what: string, err: unknown): ActionResult {
   console.error(`[buildings] ${what}:`, err)
-  return { ok: false, message: `${what}ไม่สำเร็จ ลองใหม่อีกครั้ง หากยังไม่ได้ให้แจ้งผู้ดูแลระบบ` }
+  return { ok: false, message: `${what} failed. Try again, and tell your administrator if it keeps failing.` }
 }
 
 export async function createBuilding(formData: FormData): Promise<ActionResult> {
   const slug = cleanText(formData.get('slug'), 40)
-  if (!slug) return { ok: false, message: 'ไม่พบเอเจนซี่' }
+  if (!slug) return { ok: false, message: 'Org not found' }
 
   const org = await requireMember(slug)
   const parsed = parseBuildingForm(formData)
@@ -33,18 +33,18 @@ export async function createBuilding(formData: FormData): Promise<ActionResult> 
   const { error } = await supabase
     .from('buildings')
     .insert({ ...parsed.values, google_map_url, org_id: org.id })
-  if (error) return failed('การเพิ่มโครงการ', error)
+  if (error) return failed('Adding the Building', error)
 
   revalidatePath(`/o/${slug}/buildings`)
   // The Property form reads the same list.
   revalidatePath(`/o/${slug}/properties/new`)
-  return { ok: true, message: `เพิ่มโครงการ ${parsed.values.name} แล้ว` }
+  return { ok: true, message: `Added Building ${parsed.values.name}` }
 }
 
 export async function updateBuilding(formData: FormData): Promise<ActionResult> {
   const slug = cleanText(formData.get('slug'), 40)
   const id = cleanText(formData.get('building_id'), 40)
-  if (!slug || !id) return { ok: false, message: 'คำสั่งไม่ครบ ลองใหม่อีกครั้ง' }
+  if (!slug || !id) return { ok: false, message: 'The request was incomplete. Try again.' }
 
   const org = await requireMember(slug)
   const parsed = parseBuildingForm(formData)
@@ -61,15 +61,15 @@ export async function updateBuilding(formData: FormData): Promise<ActionResult> 
     .update({ ...parsed.values, google_map_url })
     .eq('id', id)
     .eq('org_id', org.id)
-  if (error) return failed('การแก้ไขโครงการ', error)
+  if (error) return failed('Saving the Building', error)
 
   revalidatePath(`/o/${slug}/buildings`)
   revalidatePath(`/o/${slug}/properties/new`)
-  return { ok: true, message: 'บันทึกแล้ว' }
+  return { ok: true, message: 'Saved' }
 }
 
 /**
- * Removing a โครงการ.
+ * Removing a Building.
  *
  * `properties.building_id` is ON DELETE SET NULL, so the Properties inside it
  * survive — they keep the title they were given and lose the link to the
@@ -79,15 +79,15 @@ export async function updateBuilding(formData: FormData): Promise<ActionResult> 
 export async function deleteBuilding(formData: FormData): Promise<ActionResult> {
   const slug = cleanText(formData.get('slug'), 40)
   const id = cleanText(formData.get('building_id'), 40)
-  if (!slug || !id) return { ok: false, message: 'คำสั่งไม่ครบ ลองใหม่อีกครั้ง' }
+  if (!slug || !id) return { ok: false, message: 'The request was incomplete. Try again.' }
 
   const org = await requireMember(slug)
   const supabase = await createClient()
 
   const { error } = await supabase.from('buildings').delete().eq('id', id).eq('org_id', org.id)
-  if (error) return failed('การลบโครงการ', error)
+  if (error) return failed('Deleting the Building', error)
 
   revalidatePath(`/o/${slug}/buildings`)
   revalidatePath(`/o/${slug}/properties/new`)
-  return { ok: true, message: 'ลบโครงการแล้ว ทรัพย์ที่เคยอยู่ในโครงการนี้ยังอยู่' }
+  return { ok: true, message: 'Building deleted. The Properties that were in it are still here.' }
 }

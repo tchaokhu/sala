@@ -18,7 +18,7 @@ describe('parseBuildingForm', () => {
     expect(result.values.province).toBe('')
   })
 
-  it('refuses a nameless โครงการ', () => {
+  it('refuses a nameless Building', () => {
     expect(parseBuildingForm(form({}))).toMatchObject({ ok: false })
     expect(parseBuildingForm(form({ name: '   ' }))).toMatchObject({ ok: false })
   })

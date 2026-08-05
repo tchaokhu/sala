@@ -27,7 +27,7 @@ export default async function AdminOrgPage({
     <div className="flex flex-col gap-6">
       <div>
         <Link href="/admin" className="text-sm text-muted transition-colors hover:text-ink">
-          ← เอเจนซี่ทั้งหมด
+          ← All Orgs
         </Link>
         <h1 className="mt-2 text-xl font-bold">{org.name}</h1>
         <p className="mt-1 font-mono text-xs text-muted">{org.slug}</p>
@@ -35,15 +35,15 @@ export default async function AdminOrgPage({
 
       <div>
         <h2 className="text-sm font-semibold text-muted">
-          สมาชิก <span className="tabular">{members.length}</span> คน · เจ้าของ{' '}
-          <span className="tabular">{owners}</span> คน
+          <span className="tabular">{members.length}</span> Members ·{' '}
+          <span className="tabular">{owners}</span> Owners
         </h2>
 
         {owners === 0 && members.length > 0 && (
           <p className="mt-2 rounded-lg border border-warn bg-surface p-3 text-sm">
-            <span className="font-semibold text-warn">เอเจนซี่นี้ไม่มีเจ้าของ</span>
+            <span className="font-semibold text-warn">This Org has no Owner</span>
             <span className="mt-1 block text-muted">
-              ไม่มีใครในเอเจนซี่เพิ่มหรือเอาสมาชิกออกได้ ตั้งสักคนเป็นเจ้าของ
+              Nobody inside it can add or remove Members. Make one of them an Owner.
             </span>
           </p>
         )}
@@ -63,7 +63,7 @@ export default async function AdminOrgPage({
 
         {members.length === 0 && (
           <p className="mt-3 rounded-lg border border-border bg-surface p-4 text-sm text-muted">
-            ยังไม่มีสมาชิก เพิ่มคนแรกเป็นเจ้าของด้านล่าง
+            No Members yet. Add the first one as an Owner below.
           </p>
         )}
       </div>

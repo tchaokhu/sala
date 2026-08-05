@@ -1,7 +1,7 @@
-// จัดการโครงการ — the Buildings an Org keeps.
+// The Buildings page — the Buildings an Org keeps.
 //
 // This is where the name in the Property form's combobox comes from, and where
-// the map link lives: one pin per โครงการ rather than one per unit inside it
+// the map link lives: one pin per Building rather than one per unit inside it
 // (ADR 0008). The count beside each row is what a delete would strand, counted
 // in Postgres.
 //
@@ -36,8 +36,8 @@ export default async function BuildingsPage({
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="โครงการ"
-        summary="ชื่อที่ใช้ตั้งชื่อทรัพย์ และแผนที่ที่ทรัพย์ในโครงการนี้ใช้ร่วมกัน"
+        title="Buildings"
+        summary="The names Properties are named after, and the map every Property in a Building shares"
       />
 
       <CreateBuildingForm slug={slug} />
@@ -54,8 +54,8 @@ export default async function BuildingsPage({
             type="search"
             name="q"
             defaultValue={search}
-            placeholder="ค้นหาชื่อโครงการ"
-            aria-label="ค้นหาชื่อโครงการ"
+            placeholder="Search Building names"
+            aria-label="Search Building names"
             className={`${INPUT} w-full pl-9`}
           />
         </div>
@@ -63,20 +63,20 @@ export default async function BuildingsPage({
           type="submit"
           className="rounded-lg border border-border px-3 py-2 text-sm transition-colors hover:text-ink"
         >
-          ค้นหา
+          Search
         </button>
         {search && (
           <Link href={base} className="text-sm text-muted transition-colors hover:text-ink">
-            ล้างคำค้น
+            Clear search
           </Link>
         )}
       </form>
 
       {page.rows.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border bg-surface p-8 text-center">
-          <p className="font-semibold">{search ? 'ไม่พบโครงการที่ค้นหา' : 'ยังไม่มีโครงการ'}</p>
+          <p className="font-semibold">{search ? 'No Buildings found' : 'No Buildings yet'}</p>
           <p className="mt-1 text-sm text-muted">
-            {search ? 'ลองคำอื่น หรือล้างคำค้น' : 'เพิ่มโครงการแรกจากช่องด้านบน'}
+            {search ? 'Try another word, or clear the search' : 'Add the first Building in the form above'}
           </p>
         </div>
       ) : (
@@ -91,20 +91,21 @@ export default async function BuildingsPage({
                   <p className="font-semibold">{building.name}</p>
                   <p className="mt-0.5 text-sm text-muted">
                     {building.nameEn && <span className="mr-2">{building.nameEn}</span>}
-                    {[building.district, building.province].filter(Boolean).join(' · ') || 'ยังไม่ได้ระบุพื้นที่'}
+                    {[building.district, building.province].filter(Boolean).join(' · ') || 'No area set yet'}
                   </p>
                 </div>
                 <p className="tabular shrink-0 text-sm text-muted">
-                  ทรัพย์ <span className="font-semibold text-ink">{building.propertyCount}</span> รายการ
+                  <span className="font-semibold text-ink">{building.propertyCount}</span>{' '}
+                  {building.propertyCount === 1 ? 'Property' : 'Properties'}
                 </p>
               </div>
 
               {building.googleMapUrl ? (
-                <MapPreview url={building.googleMapUrl} title={`แผนที่ ${building.name}`} />
+                <MapPreview url={building.googleMapUrl} title={`Map of ${building.name}`} />
               ) : (
                 <p className="flex items-center gap-2 text-sm text-muted">
                   <MapPin size={16} aria-hidden />
-                  ยังไม่มีลิงก์แผนที่
+                  No map link yet
                 </p>
               )}
 
@@ -118,7 +119,7 @@ export default async function BuildingsPage({
         <span>
           {page.rows.length > 0 && (
             <>
-              แสดง <span className="tabular font-semibold text-ink">{page.rows.length}</span> รายการ
+              Showing <span className="tabular font-semibold text-ink">{page.rows.length}</span>
             </>
           )}
         </span>
@@ -127,7 +128,7 @@ export default async function BuildingsPage({
             href={search ? `${base}?q=${encodeURIComponent(search)}` : base}
             disabled={!cursor}
             icon={ChevronsLeft}
-            label="หน้าแรก"
+            label="First page"
           />
           <PagerLink
             href={`${base}?${new URLSearchParams({
@@ -137,7 +138,7 @@ export default async function BuildingsPage({
             disabled={!page.nextCursor}
             icon={ChevronRight}
             iconSide="right"
-            label={`ถัดไป ${BUILDINGS_PAGE_SIZE} รายการ`}
+            label={`Next ${BUILDINGS_PAGE_SIZE}`}
           />
         </div>
       </div>

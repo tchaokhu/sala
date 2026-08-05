@@ -1,4 +1,4 @@
-// What the โครงการ form decides. Pure, like ./property-input, and for the same
+// What the Building form decides. Pure, like ./property-input, and for the same
 // reason: this is the judgement, and it should be testable without a database.
 //
 // A Building is the named development a Property sits in (CONTEXT.md). In Sala
@@ -23,7 +23,7 @@ export interface BuildingValues {
 
 export function parseBuildingForm(form: { get(name: string): unknown }): Parsed<BuildingValues> {
   const name = cleanText(form.get('name'), MAX_BUILDING_NAME)
-  if (!name) return { ok: false, message: 'ใส่ชื่อโครงการก่อน' }
+  if (!name) return { ok: false, message: 'Enter the Building name first' }
 
   // The column is NOT NULL with no default, so blank is '' rather than null —
   // and an empty district is an ordinary state, not a mistake.
@@ -35,7 +35,7 @@ export function parseBuildingForm(form: { get(name: string): unknown }): Parsed<
   if (rawMap && !google_map_url) {
     return {
       ok: false,
-      message: 'ลิงก์แผนที่ต้องเป็นลิงก์ Google Maps — คัดลอกจากปุ่มแชร์ในแอป Google Maps',
+      message: 'The map link must be a Google Maps link — copy it from Share in the Google Maps app',
     }
   }
 

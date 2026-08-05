@@ -1,11 +1,11 @@
 'use client'
 
-// Picking a โครงการ: type to search, or type a name that does not exist yet.
+// Picking a Building: type to search, or type a name that does not exist yet.
 //
 // It posts two fields. `building_id` is set only when something was chosen off
 // the list; `building_name` is whatever is in the box. The action prefers the
 // id, and reads that Building's name from the database rather than trusting the
-// text — so the title a Property ends up with always matches the โครงการ it
+// text — so the title a Property ends up with always matches the Building it
 // actually points at (ADR 0008).
 //
 // Typing again clears the id, which is the whole trick: it is how "I meant a
@@ -25,13 +25,13 @@ export function BuildingCombobox({
 }: {
   options: BuildingOption[]
   /** True when the Org has more Buildings than one read returns. Said out loud,
-   *  so a โครงการ missing from the list reads as "there are more" rather than
+   *  so a Building missing from the list reads as "there are more" rather than
    *  "it is gone". */
   capped: boolean
   disabled?: boolean
   /** The Building this already points at, on edit. Null on create, and null on
-   *  an ETL-imported Property that has no โครงการ yet — which then reads as an
-   *  empty required box, because saving one means picking a โครงการ first. */
+   *  an ETL-imported Property that has no Building yet — which then reads as an
+   *  empty required box, because saving one means picking a Building first. */
   initial?: BuildingOption | null
   /** The chosen Building, or null while a new name is being typed — the form
    *  uses it to preview that Building's map. */
@@ -90,7 +90,7 @@ export function BuildingCombobox({
           maxLength={200}
           disabled={disabled}
           value={query}
-          placeholder="พิมพ์เพื่อค้นหา หรือพิมพ์ชื่อโครงการใหม่"
+          placeholder="Type to search, or type a new Building name"
           className={`${INPUT} w-full pr-9`}
           onChange={(event) => retype(event.target.value)}
           onFocus={() => setOpen(true)}
@@ -117,7 +117,7 @@ export function BuildingCombobox({
         <button
           type="button"
           tabIndex={-1}
-          aria-label="แสดงรายการโครงการ"
+          aria-label="Show the Building list"
           disabled={disabled}
           onClick={() => {
             setOpen((was) => !was)
@@ -163,7 +163,7 @@ export function BuildingCombobox({
             <li className="border-t border-border px-3 py-2 text-sm text-muted">
               <span className="flex items-center gap-1.5">
                 <Plus size={14} aria-hidden />
-                จะสร้างโครงการใหม่ “<span className="text-ink">{query.trim()}</span>”
+                Will create a new Building “<span className="text-ink">{query.trim()}</span>”
               </span>
             </li>
           )}
@@ -172,7 +172,8 @@ export function BuildingCombobox({
 
       {capped && (
         <span className="text-xs text-muted">
-          แสดงโครงการ {options.length} รายการแรก — ถ้าไม่เจอ ให้ค้นหาในหน้าจัดการโครงการ
+          Showing the first {options.length} Buildings — if yours is not here, search for it on the
+          Buildings page
         </span>
       )}
     </div>

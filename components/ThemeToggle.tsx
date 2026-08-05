@@ -37,7 +37,7 @@ function setTheme(theme: Theme) {
 export function ThemeToggle() {
   const theme = useSyncExternalStore<Theme | null>(subscribe, readTheme, () => null)
 
-  const label = theme === 'dark' ? 'สลับเป็นธีมสว่าง' : 'สลับเป็นธีมมืด'
+  const label = theme === 'dark' ? 'Switch to the light theme' : 'Switch to the dark theme'
 
   return (
     <button

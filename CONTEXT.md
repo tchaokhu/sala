@@ -42,16 +42,16 @@ _Avoid_: Platform admin, root, god mode
 
 **Property**:
 One rentable thing an Org has on its books — a condo unit, a house or a
-townhome. Called "ทรัพย์" in the Thai UI. Its name is its Building's name and its
-room number, put together rather than typed (ADR 0008).
+townhome. Its name is its Building's name and its room number, put together
+rather than typed (ADR 0008).
 _Avoid_: Room, unit, listing, asset
 
 **Building**:
 The named development a Property sits in, carrying the map pin, the facilities
 and the nearby landmarks shared by every Property inside it. Each Org keeps its
 own Building records even when two Orgs describe the same real-world building.
-Called "โครงการ" in the Thai UI. A Property with no Building is one the ETL
-brought in; everything created in Sala has one.
+A Property with no Building is one the ETL brought in; everything created in
+Sala has one.
 _Avoid_: Project, condo, development
 
 **Owner**:

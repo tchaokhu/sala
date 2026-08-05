@@ -36,9 +36,9 @@ function RenameForm({
   return (
     <form action={action} className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4">
       <div>
-        <h2 className="font-semibold">ชื่อที่แสดง</h2>
+        <h2 className="font-semibold">Display name</h2>
         <p className="mt-1 text-sm text-muted">
-          ชื่อนี้ใช้เฉพาะใน {orgName} เพื่อนร่วมงานที่นี่จะเห็นชื่อนี้แทนอีเมล
+          This name is used only in {orgName}. Colleagues here see it instead of your email.
         </p>
       </div>
 
@@ -51,11 +51,11 @@ function RenameForm({
           maxLength={80}
           defaultValue={displayName ?? ''}
           disabled={pending}
-          placeholder="เว้นว่างเพื่อแสดงเป็นอีเมล"
+          placeholder="Leave blank to show your email"
           className={INPUT + ' flex-1'}
         />
         <button type="submit" disabled={pending} className={BUTTON}>
-          {pending ? 'กำลังบันทึก…' : 'บันทึก'}
+          {pending ? 'Saving…' : 'Save'}
         </button>
       </div>
       <Notice result={result} />
@@ -69,10 +69,10 @@ function EmailForm({ slug, email }: { slug: string; email: string }) {
   return (
     <form action={action} className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4">
       <div>
-        <h2 className="font-semibold">อีเมลที่ใช้เข้าสู่ระบบ</h2>
+        <h2 className="font-semibold">Sign-in email</h2>
         <p className="mt-1 text-sm text-muted">
-          ตอนนี้คือ <span className="font-medium text-ink">{email}</span> —
-          เปลี่ยนแล้วต้องกดยืนยันในอีเมลก่อน จึงจะใช้ที่อยู่ใหม่เข้าระบบได้
+          Currently <span className="font-medium text-ink">{email}</span> — after a change you have
+          to confirm it by email before the new address can sign in.
         </p>
       </div>
 
@@ -88,7 +88,7 @@ function EmailForm({ slug, email }: { slug: string; email: string }) {
           className={INPUT + ' flex-1'}
         />
         <button type="submit" disabled={pending} className={BUTTON}>
-          {pending ? 'กำลังส่ง…' : 'เปลี่ยนอีเมล'}
+          {pending ? 'Sending…' : 'Change email'}
         </button>
       </div>
       <Notice result={result} />

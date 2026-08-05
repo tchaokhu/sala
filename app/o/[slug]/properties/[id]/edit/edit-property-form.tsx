@@ -105,14 +105,14 @@ export function EditPropertyForm({
       <input type="hidden" name="property_id" value={property.id} />
 
       <Card
-        title="โครงการและห้อง"
-        note="ชื่อทรัพย์คือชื่อโครงการต่อด้วยเลขห้อง เปลี่ยนอย่างใดอย่างหนึ่งแล้วชื่อจะตามไปเอง"
+        title="Building and Room"
+        note="A Property's name is its Building name followed by the room number — change either one and the name follows"
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <Field
-            label="โครงการ"
+            label="Building"
             required
-            hint="ย้ายไปโครงการอื่นได้ หรือพิมพ์ชื่อใหม่เพื่อสร้างโครงการ"
+            hint="Move it to another Building, or type a new name to create one"
             wide
           >
             <BuildingCombobox
@@ -124,7 +124,7 @@ export function EditPropertyForm({
             />
           </Field>
 
-          <Field label="เลขห้อง" hint="เว้นว่างได้ ถ้าเป็นบ้านทั้งหลัง">
+          <Field label="Room number" hint="Leave it blank for a whole house">
             <input
               type="text"
               name="room_number"
@@ -136,7 +136,7 @@ export function EditPropertyForm({
             />
           </Field>
 
-          <Field label="ประเภท" required>
+          <Field label="Type" required>
             <select
               name="property_type"
               required
@@ -152,7 +152,7 @@ export function EditPropertyForm({
             </select>
           </Field>
 
-          <Field label="ค่าเช่าต่อเดือน (บาท)" required>
+          <Field label="Rent per month (THB)" required>
             <input
               type="text"
               inputMode="decimal"
@@ -165,23 +165,23 @@ export function EditPropertyForm({
             />
           </Field>
 
-          {/* A Property at มีผู้เช่า has no field here at all — not a disabled
+          {/* A Property at "Rented" has no field here at all — not a disabled
               one. There is no Rental-management flow that could end the tenancy
               (ADR 0009), and a field that is only hidden is still a field a
               hand-built POST can fill. The action locks it too; this is the half
               a person sees. */}
           {property.status === 'rented' ? (
             <div className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium">สถานะ</span>
+              <span className="text-sm font-medium">Status</span>
               <span className="flex h-[38px] items-center">
                 <StatusPill status="rented" />
               </span>
               <span className="text-xs text-muted">
-                สถานะนี้เปลี่ยนได้เมื่อสัญญาเช่าสิ้นสุดเท่านั้น
+                This status can only change when the Rental ends
               </span>
             </div>
           ) : (
-            <Field label="สถานะ" hint='ทรัพย์จะเป็น "มีผู้เช่า" เมื่อมีสัญญาเช่าเท่านั้น'>
+            <Field label="Status" hint='A Property is only "Rented" when it has a Rental'>
               <select
                 name="status"
                 disabled={pending}
@@ -198,31 +198,31 @@ export function EditPropertyForm({
           )}
         </div>
 
-        {/* The map belongs to the โครงการ, so it follows whichever one is
-            chosen and is read-only here — จัดการโครงการ is where it changes. */}
+        {/* The map belongs to the Building, so it follows whichever one is
+            chosen and is read-only here — the Buildings page is where it changes. */}
         {building &&
           (building.googleMapUrl ? (
             <div className="flex flex-col gap-2">
-              <p className="text-sm font-medium">แผนที่ของโครงการนี้</p>
-              <MapPreview url={building.googleMapUrl} title={`แผนที่ ${building.name}`} />
+              <p className="text-sm font-medium">Map of this Building</p>
+              <MapPreview url={building.googleMapUrl} title={`Map of ${building.name}`} />
             </div>
           ) : (
             <p className="flex flex-wrap items-center gap-2 text-sm text-muted">
               <MapPin size={16} aria-hidden />
-              โครงการนี้ยังไม่มีลิงก์แผนที่ —
+              This Building has no map link yet —
               <Link
                 href={`/o/${slug}/buildings`}
                 className="text-accent underline-offset-4 hover:underline"
               >
-                เพิ่มได้ในหน้าจัดการโครงการ
+                add one on the Buildings page
               </Link>
             </p>
           ))}
       </Card>
 
-      <Card title="ขนาด">
+      <Card title="Size">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Field label="ห้องนอน">
+          <Field label="Bedrooms">
             <input
               type="number"
               name="bedrooms"
@@ -235,7 +235,7 @@ export function EditPropertyForm({
             />
           </Field>
 
-          <Field label="ห้องน้ำ">
+          <Field label="Bathrooms">
             <input
               type="number"
               name="bathrooms"
@@ -248,7 +248,7 @@ export function EditPropertyForm({
             />
           </Field>
 
-          <Field label="ขนาด (ตร.ม.)">
+          <Field label="Area (sq m)">
             <input
               type="text"
               inputMode="decimal"
@@ -259,7 +259,7 @@ export function EditPropertyForm({
             />
           </Field>
 
-          <Field label="ชั้น">
+          <Field label="Floor">
             <input
               type="number"
               name="floor"
@@ -272,7 +272,7 @@ export function EditPropertyForm({
             />
           </Field>
 
-          <Field label="ไลน์ติดต่อ">
+          <Field label="LINE contact">
             <input
               type="text"
               name="contact_line"
@@ -283,14 +283,14 @@ export function EditPropertyForm({
             />
           </Field>
 
-          <Field label="รายละเอียด" wide>
+          <Field label="Description" wide>
             <textarea
               name="description"
               rows={4}
               maxLength={4000}
               disabled={pending}
               defaultValue={property.description ?? ''}
-              placeholder="เฟอร์นิเจอร์ วิว เงื่อนไขการเช่า"
+              placeholder="Furniture, view, rental terms"
               className={INPUT}
             />
           </Field>
@@ -298,16 +298,16 @@ export function EditPropertyForm({
       </Card>
 
       <Card
-        title="รูปภาพ"
-        note={`ไม่เกิน ${MAX_IMAGES} รูป รูปละไม่เกิน ${mb(MAX_IMAGE_BYTES)} MB เพิ่มครั้งละไม่เกิน ${mb(
+        title="Photos"
+        note={`Up to ${MAX_IMAGES} photos, ${mb(MAX_IMAGE_BYTES)} MB each, ${mb(
           MAX_IMAGES_TOTAL_BYTES,
-        )} MB`}
+        )} MB per upload`}
       >
         <div className="flex flex-col gap-3">
           {photos.length > 0 && (
             <div className="flex flex-col gap-2">
               <p className="text-sm font-medium">
-                รูปเดิม <span className="tabular text-muted">{keptCount} รูป</span>
+                Existing photos <span className="tabular text-muted">{keptCount} kept</span>
               </p>
               <ul className="flex flex-wrap gap-2">
                 {photos.map((photo, index) => {
@@ -321,7 +321,7 @@ export function EditPropertyForm({
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={photo.url}
-                          alt={`รูปที่ ${index + 1}`}
+                          alt={`Photo ${index + 1}`}
                           className={
                             'h-24 w-24 rounded-lg border object-cover transition-opacity ' +
                             (marked ? 'border-warn/60 opacity-30' : 'border-border')
@@ -340,14 +340,14 @@ export function EditPropertyForm({
 
                       {marked && (
                         <span className="absolute inset-x-0 bottom-0 rounded-b-lg bg-warn/90 py-0.5 text-center text-[11px] text-bg">
-                          จะถูกลบ
+                          Will be deleted
                         </span>
                       )}
 
                       <button
                         type="button"
                         disabled={pending}
-                        aria-label={marked ? `เอารูปที่ ${index + 1} กลับมา` : `เอารูปที่ ${index + 1} ออก`}
+                        aria-label={marked ? `Keep photo ${index + 1}` : `Remove photo ${index + 1}`}
                         onClick={() => toggleRemoved(photo.path)}
                         className={
                           'absolute -top-1.5 -right-1.5 grid h-6 w-6 place-items-center rounded-full border bg-surface transition-colors disabled:opacity-60 ' +
@@ -372,7 +372,7 @@ export function EditPropertyForm({
 
               {removed.size > 0 && (
                 <p className="text-sm text-muted">
-                  รูปที่เลือกไว้จะถูกลบเมื่อกดบันทึก — กดปุ่มย้อนกลับบนรูปเพื่อเก็บไว้เหมือนเดิม
+                  The marked photos are deleted when you save — press the undo button on a photo to keep it.
                 </p>
               )}
             </div>
@@ -380,7 +380,7 @@ export function EditPropertyForm({
 
           <label className={`${BUTTON} inline-flex w-fit cursor-pointer items-center gap-2`}>
             <ImagePlus size={16} aria-hidden />
-            เพิ่มรูป
+            Add photos
             <input
               key={storedKey}
               type="file"
@@ -401,7 +401,7 @@ export function EditPropertyForm({
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={src}
-                      alt={`รูปใหม่ที่ ${index + 1}`}
+                      alt={`New photo ${index + 1}`}
                       className="h-24 w-24 rounded-lg border border-border object-cover"
                     />
                   </li>
@@ -409,7 +409,7 @@ export function EditPropertyForm({
               </ul>
               <p className="flex items-center gap-3 text-sm text-muted">
                 <span className="tabular">
-                  รูปใหม่ {files.length} รูป · รวม {mb(totalBytes)} MB
+                  {files.length} new {files.length === 1 ? 'photo' : 'photos'} · {mb(totalBytes)} MB total
                 </span>
                 <button
                   type="button"
@@ -424,7 +424,7 @@ export function EditPropertyForm({
                   className="inline-flex items-center gap-1 text-muted transition-colors hover:text-ink"
                 >
                   <X size={14} aria-hidden />
-                  เอารูปใหม่ออกทั้งหมด
+                  Remove all new photos
                 </button>
               </p>
             </>
@@ -440,13 +440,13 @@ export function EditPropertyForm({
 
       <div className="flex flex-wrap items-center gap-3">
         <button type="submit" disabled={pending || !imageCheck.ok} className={PRIMARY_BUTTON}>
-          {pending ? 'กำลังบันทึก…' : 'บันทึกการแก้ไข'}
+          {pending ? 'Saving…' : 'Save changes'}
         </button>
         <Link
           href={`/o/${slug}/properties`}
           className={`${BUTTON} inline-flex items-center text-muted`}
         >
-          ยกเลิก
+          Cancel
         </Link>
         <Notice result={result} />
       </div>

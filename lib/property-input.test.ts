@@ -60,7 +60,7 @@ describe('parsePropertyForm', () => {
   it('refuses a price that is missing, negative or not a number', () => {
     expect(parse({ ...MINIMUM, price_monthly: '' })).toMatchObject({ ok: false })
     expect(parse({ ...MINIMUM, price_monthly: '-1' })).toMatchObject({ ok: false })
-    expect(parse({ ...MINIMUM, price_monthly: 'ฟรี' })).toMatchObject({ ok: false })
+    expect(parse({ ...MINIMUM, price_monthly: 'free' })).toMatchObject({ ok: false })
     // numeric(12,2) cannot hold it, and Postgres' complaint about that is not
     // something the person filling in the form can act on.
     expect(parse({ ...MINIMUM, price_monthly: '99999999999999' })).toMatchObject({ ok: false })
@@ -91,7 +91,7 @@ describe('parsePropertyForm', () => {
   it('will not start a Property as rented — that is a Rentals job', () => {
     const rented = parse({ ...MINIMUM, status: 'rented' })
     expect(rented.ok).toBe(false)
-    if (!rented.ok) expect(rented.message).toContain('สัญญาเช่า')
+    if (!rented.ok) expect(rented.message).toContain('Rental')
 
     expect(parse({ ...MINIMUM, status: 'deleted' })).toMatchObject({ ok: false })
 
@@ -142,10 +142,10 @@ describe('parsePropertyEditForm', () => {
   it('refuses a posted rented on a Property that is not rented', () => {
     // The form omits the field entirely in this case, so anything arriving here
     // is hand-built. No Rental exists behind it, and the list would show
-    // "มีผู้เช่า" beside an empty tenant column (ADR 0009).
+    // "Rented" beside an empty tenant column (ADR 0009).
     const result = parseEdit({ ...MINIMUM, status: 'rented' }, 'available')
     expect(result.ok).toBe(false)
-    if (!result.ok) expect(result.message).toContain('สัญญาเช่า')
+    if (!result.ok) expect(result.message).toContain('Rental')
 
     expect(parseEdit({ ...MINIMUM, status: 'rented' }, 'reserved')).toMatchObject({ ok: false })
   })
@@ -181,7 +181,8 @@ describe('parsePropertyEditForm', () => {
 
   it('refuses a status the enum has no value for', () => {
     expect(parseEdit({ ...MINIMUM, status: 'deleted' }, 'available')).toMatchObject({ ok: false })
-    expect(parseEdit({ ...MINIMUM, status: 'ว่าง' }, 'reserved')).toMatchObject({ ok: false })
+    // The label the UI shows, rather than the enum value behind it.
+    expect(parseEdit({ ...MINIMUM, status: 'Available' }, 'reserved')).toMatchObject({ ok: false })
   })
 })
 
@@ -252,7 +253,7 @@ describe('parseBuildingChoice', () => {
     expect(result).toMatchObject({ ok: true, values: { buildingId: null, newName: 'ศุภาลัย ปาร์ค' } })
   })
 
-  it('refuses a Property with no โครงการ at all', () => {
+  it('refuses a Property with no Building at all', () => {
     // title is NOT NULL and is composed from the Building's name, so there is
     // nothing to compose from without one.
     expect(parseBuildingChoice(form({}))).toMatchObject({ ok: false })

@@ -10,13 +10,13 @@ export default function NotFound() {
       <div className="flex w-full max-w-sm flex-col gap-4">
         <SalaMark className="h-9 w-9 text-muted" />
         <div>
-          <h1 className="text-lg font-semibold">ไม่พบหน้านี้</h1>
+          <h1 className="text-lg font-semibold">Page not found</h1>
           <p className="mt-1 text-sm text-muted">
-            หน้าที่คุณเปิดไม่มีอยู่ หรือคุณไม่มีสิทธิ์เข้าถึง
+            This page does not exist, or you do not have access to it.
           </p>
         </div>
         <Link href="/" className="text-sm font-semibold text-accent hover:underline">
-          กลับหน้าแรก
+          Back to the start
         </Link>
       </div>
     </main>

@@ -25,16 +25,16 @@ import { ThemeToggle } from './ThemeToggle'
 // whole thing is one card floating on the stone ground, which is what keeps the
 // eye inside the working area on a wide monitor.
 //
-// Thai labels are the user's vocabulary; `ทรัพย์` is Property, kept consistent
-// with CONTEXT.md and never given a second Thai word. Nothing here fetches —
-// the Org is resolved once in the layout and handed down.
+// The labels are CONTEXT.md's own vocabulary — one word per term, never a second
+// word for something that already has one. Nothing here fetches — the Org is
+// resolved once in the layout and handed down.
 const NAV: { label: string; sub: string; icon: LucideIcon }[] = [
-  { label: 'ภาพรวม', sub: '', icon: LayoutGrid },
-  { label: 'ทรัพย์', sub: '/properties', icon: Building2 },
-  { label: 'โครงการ', sub: '/buildings', icon: Landmark },
-  { label: 'สัญญาเช่า', sub: '/rentals', icon: ScrollText },
-  { label: 'การเงิน', sub: '/payments', icon: Wallet },
-  { label: 'คำถามเข้า', sub: '/inquiries', icon: Inbox },
+  { label: 'Overview', sub: '', icon: LayoutGrid },
+  { label: 'Properties', sub: '/properties', icon: Building2 },
+  { label: 'Buildings', sub: '/buildings', icon: Landmark },
+  { label: 'Rentals', sub: '/rentals', icon: ScrollText },
+  { label: 'Payments', sub: '/payments', icon: Wallet },
+  { label: 'Inquiries', sub: '/inquiries', icon: Inbox },
 ]
 
 export function Shell({
@@ -94,7 +94,7 @@ export function Shell({
               <button
                 type="button"
                 onClick={() => setDrawerOpen(true)}
-                aria-label="เปิดเมนู"
+                aria-label="Open menu"
                 aria-expanded={drawerOpen}
                 className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border text-muted transition-colors hover:text-ink lg:hidden"
               >
@@ -121,7 +121,7 @@ export function Shell({
                   {initialOf(email)}
                 </span>
                 <span className="hidden max-w-56 truncate text-xs text-muted sm:block">
-                  {email ?? 'บัญชีของฉัน'}
+                  {email ?? 'My account'}
                 </span>
               </Link>
             </div>
@@ -135,14 +135,14 @@ export function Shell({
         <div className="fixed inset-0 z-40 lg:hidden">
           <button
             type="button"
-            aria-label="ปิดเมนู"
+            aria-label="Close menu"
             onClick={() => setDrawerOpen(false)}
             className="absolute inset-0 bg-ink/40"
           />
           <div
             role="dialog"
             aria-modal="true"
-            aria-label="เมนู"
+            aria-label="Menu"
             className="absolute inset-y-0 left-0 flex w-64 flex-col border-r border-border bg-surface"
           >
             <Sidebar
@@ -192,7 +192,7 @@ function Sidebar({
           <button
             type="button"
             onClick={onClose}
-            aria-label="ปิดเมนู"
+            aria-label="Close menu"
             className="ml-auto grid h-8 w-8 shrink-0 place-items-center rounded-lg text-muted transition-colors hover:bg-bg hover:text-ink"
           >
             <X size={18} aria-hidden />
@@ -201,7 +201,7 @@ function Sidebar({
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 pb-4">
-        <SectionLabel>เมนูหลัก</SectionLabel>
+        <SectionLabel>Main menu</SectionLabel>
         <ul className="mt-1 flex flex-col gap-0.5">
           {NAV.map(({ label, sub, icon }) => {
             const href = base + sub
@@ -220,13 +220,13 @@ function Sidebar({
 
         {isSuperadmin && (
           <>
-            <SectionLabel className="mt-6">ระบบ</SectionLabel>
+            <SectionLabel className="mt-6">System</SectionLabel>
             <ul className="mt-1">
               <li>
                 <NavRow
                   href="/admin"
                   icon={ShieldCheck}
-                  label="ผู้ดูแลระบบ"
+                  label="Admin"
                   active={pathname.startsWith('/admin')}
                 />
               </li>
@@ -242,7 +242,7 @@ function Sidebar({
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-bg hover:text-ink"
           >
             <LogOut size={18} className="shrink-0" aria-hidden />
-            ออกจากระบบ
+            Log out
           </button>
         </form>
       </div>

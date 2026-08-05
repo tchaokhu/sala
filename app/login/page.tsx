@@ -25,9 +25,9 @@ export default async function LoginPage({
         </div>
 
         <div>
-          <h1 className="text-lg font-semibold">เข้าสู่ระบบ</h1>
+          <h1 className="text-lg font-semibold">Log in</h1>
           <p className="mt-1 text-sm text-muted">
-            กรอกอีเมลของคุณ เราจะส่งลิงก์สำหรับเข้าสู่ระบบไปให้
+            Enter your email and we will send you a link to log in.
           </p>
         </div>
 

@@ -67,11 +67,10 @@ export default async function PropertiesPage({
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="ทรัพย์"
+        title="Properties"
         summary={
           <>
-            ทั้งหมด <span className="tabular mx-1 font-semibold text-ink">{counts.total}</span>{' '}
-            รายการ
+            <span className="tabular mx-1 font-semibold text-ink">{counts.total}</span> in total
           </>
         }
         actions={
@@ -80,7 +79,7 @@ export default async function PropertiesPage({
             className="inline-flex items-center gap-1.5 rounded-lg border border-accent bg-accent px-3 py-2 text-sm font-medium text-on-accent transition-opacity hover:opacity-90"
           >
             <Plus size={16} aria-hidden />
-            เพิ่มทรัพย์
+            Add Property
           </Link>
         }
       />
@@ -94,8 +93,8 @@ export default async function PropertiesPage({
           className="flex items-center gap-2 rounded-lg border border-ok/40 bg-ok/10 px-3 py-2 text-sm text-ok"
         >
           <Check size={16} aria-hidden />
-          เพิ่มทรัพย์เรียบร้อยแล้ว
-          {photoCount !== null && photoCount > 0 && ` พร้อมรูป ${photoCount} รูป`}
+          Property added
+          {photoCount !== null && photoCount > 0 && `, with ${photoCount} ${photoCount === 1 ? 'photo' : 'photos'}`}
         </p>
       )}
 
@@ -107,13 +106,13 @@ export default async function PropertiesPage({
           className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-muted"
         >
           <Trash2 size={16} aria-hidden />
-          ลบทรัพย์เรียบร้อยแล้ว
+          Property deleted
         </p>
       )}
 
       {/* Links, not buttons: the filter is a location. */}
-      <nav aria-label="กรองตามสถานะ" className="flex flex-wrap gap-2">
-        <FilterChip href={href(null)} active={status === null} label="ทั้งหมด" count={counts.total} />
+      <nav aria-label="Filter by status" className="flex flex-wrap gap-2">
+        <FilterChip href={href(null)} active={status === null} label="All" count={counts.total} />
         {PROPERTY_STATUSES.map((s) => (
           <FilterChip
             key={s}
@@ -135,21 +134,21 @@ export default async function PropertiesPage({
         <span>
           {showing > 0 ? (
             <>
-              แสดง <span className="tabular font-semibold text-ink">{showing}</span> จาก{' '}
-              <span className="tabular font-semibold text-ink">{matching}</span> รายการ
+              Showing <span className="tabular font-semibold text-ink">{showing}</span> of{' '}
+              <span className="tabular font-semibold text-ink">{matching}</span>
             </>
           ) : (
-            'ไม่มีรายการ'
+            'Nothing to show'
           )}
         </span>
         <div className="flex items-center gap-2">
-          <PagerLink href={href(status)} disabled={!cursor} icon={ChevronsLeft} label="หน้าแรก" />
+          <PagerLink href={href(status)} disabled={!cursor} icon={ChevronsLeft} label="First page" />
           <PagerLink
             href={`${href(status)}${status ? '&' : '?'}cursor=${page.nextCursor}`}
             disabled={!page.nextCursor}
             icon={ChevronRight}
             iconSide="right"
-            label={`ถัดไป ${PAGE_SIZE} รายการ`}
+            label={`Next ${PAGE_SIZE}`}
           />
         </div>
       </div>

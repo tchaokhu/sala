@@ -19,7 +19,7 @@ export function safeHttpUrl(input: string | null | undefined): string | null {
 // Throwing variant for save paths where we want a clear error message.
 export function requireHttpUrl(input: string | null | undefined, fieldLabel = 'URL'): string {
   const ok = safeHttpUrl(input)
-  if (!ok) throw new Error(`${fieldLabel} ต้องเป็น http:// หรือ https:// เท่านั้น`)
+  if (!ok) throw new Error(`${fieldLabel} must start with http:// or https://`)
   return ok
 }
 

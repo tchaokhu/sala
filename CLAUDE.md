@@ -132,9 +132,11 @@ ADR 0002 are the shape of that; these are the rules that keep it true.
 
 Sala is operated, not read. People scan it for the thing that needs attention.
 
-- **Thai UI, `ทรัพย์` for Property.** The glossary in CONTEXT.md is the code's
-  vocabulary; the Thai copy is the user's. Keep the mapping consistent — do not
-  invent a second Thai word for a term that already has one.
+- **English UI.** The glossary in CONTEXT.md is the code's vocabulary and the
+  user's — Property, Building, Rental, Tenant, and the rest read the same in
+  the interface as they do in the schema. The product ran a Thai UI before
+  this; it does not anymore. Keep the mapping consistent — do not invent a
+  second English word for a term that already has one.
 - **State reads as form, not just colour.** A pill, a chip, a stripe — so
   overdue money is findable without comparing shades. Semantic colours (ok /
   waiting / warning) stay separate from the teak accent, which means the accent

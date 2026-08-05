@@ -2,9 +2,11 @@ import type { Metadata } from 'next'
 import { Sarabun, Geist_Mono } from 'next/font/google'
 import './globals.css'
 
-// Sarabun carries the Thai UI; Geist Mono is the utility face for ids and
-// column labels. Money uses Sarabun with tabular-nums rather than the mono —
-// see the `.tabular` class in globals.css.
+// Sarabun carries the UI; Geist Mono is the utility face for ids and column
+// labels. The Thai subset stays loaded even though the interface is English —
+// Buildings, Tenants and Owners are named in Thai in the data. Money uses
+// Sarabun with tabular-nums rather than the mono — see the `.tabular` class in
+// globals.css.
 const sarabun = Sarabun({
   variable: '--font-sarabun',
   subsets: ['latin', 'thai'],
@@ -20,7 +22,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'Sala',
-  description: 'หลังบ้านสำหรับเอเจนซี่เช่าอสังหาฯ',
+  description: 'The back office for a rental property agency',
 }
 
 export default function RootLayout({
@@ -28,7 +30,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html
-      lang="th"
+      lang="en"
       className={`${sarabun.variable} ${geistMono.variable} h-full antialiased`}
       // The script below stamps data-theme on this element before React
       // hydrates, so the served HTML and the live DOM disagree here by design.

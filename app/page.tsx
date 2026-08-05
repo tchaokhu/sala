@@ -45,7 +45,7 @@ export default async function Home() {
 
         {orgs.length > 0 && (
           <div className="flex flex-col gap-2">
-            <p className="text-sm text-muted">เลือกเอเจนซี่</p>
+            <p className="text-sm text-muted">Choose an Org</p>
             {orgs.map((o) => (
               <Link
                 key={o.slug}
@@ -61,9 +61,9 @@ export default async function Home() {
 
         {orgs.length === 0 && !operator && (
           <div className="rounded-lg border border-border bg-surface p-4 text-sm">
-            <p className="font-semibold">ยังไม่มีเอเจนซี่</p>
+            <p className="font-semibold">No Org yet</p>
             <p className="mt-1 text-muted">
-              บัญชีนี้ยังไม่ได้ถูกเพิ่มเข้าเอเจนซี่ใด ติดต่อผู้ดูแลเพื่อขอสิทธิ์เข้าใช้งาน
+              This account has not been added to an Org. Ask a Superadmin for access.
             </p>
           </div>
         )}
@@ -73,8 +73,8 @@ export default async function Home() {
             href="/admin"
             className="flex items-center justify-between rounded-lg border border-border bg-surface px-4 py-3 transition-colors hover:border-accent"
           >
-            <span className="font-semibold">ผู้ดูแลระบบ</span>
-            <span className="text-xs text-muted">จัดการเอเจนซี่และสมาชิก</span>
+            <span className="font-semibold">Admin</span>
+            <span className="text-xs text-muted">Manage Orgs and Members</span>
           </Link>
         )}
       </div>

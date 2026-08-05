@@ -26,7 +26,7 @@ export default async function OrgHome({
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="ภาพรวม" summary="สรุปสถานะก่อนลงรายละเอียด" />
+      <PageHeader title="Overview" summary="The summary before the detail" />
 
       <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatTile label={properties}>{summary.propertiesTotal}</StatTile>
@@ -36,7 +36,7 @@ export default async function OrgHome({
         <StatTile
           label={ending}
           tone={summary.rentalsEndingThisMonth > 0 ? 'ok' : 'plain'}
-          hint={summary.rentalsEndingThisMonth > 0 ? 'ต่อสัญญาหรือหาผู้เช่าใหม่' : null}
+          hint={summary.rentalsEndingThisMonth > 0 ? 'Renew, or find a new Tenant' : null}
         >
           {summary.rentalsEndingThisMonth}
         </StatTile>
@@ -49,8 +49,8 @@ export default async function OrgHome({
           tone={summary.overdueAmount > 0 ? 'warn' : 'plain'}
           hint={
             summary.overdueCount > 0
-              ? `เกินกำหนด ${summary.overdueCount} รายการ`
-              : 'ไม่มีรายการค้าง'
+              ? `${summary.overdueCount} overdue`
+              : 'Nothing outstanding'
           }
         >
           {formatBaht(summary.overdueAmount)}

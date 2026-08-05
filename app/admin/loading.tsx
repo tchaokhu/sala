@@ -5,7 +5,7 @@ export default function AdminLoading() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-bold">เอเจนซี่</h1>
+        <h1 className="text-xl font-bold">Orgs</h1>
         <p className="mt-1 flex h-5 items-center text-sm">
           <span className="block h-4 w-64 animate-pulse rounded bg-border" aria-hidden />
         </p>

@@ -16,7 +16,7 @@ export default async function NewPropertyPage({ params }: { params: Promise<{ sl
   const { slug } = await params
   const org = await requireMember(slug)
 
-  // The โครงการ list is small and bounded, so it is fetched once here and
+  // The Building list is small and bounded, so it is fetched once here and
   // filtered in the browser rather than costing a round trip per keystroke.
   const { options, capped } = await listBuildingOptions(org.id)
 
@@ -28,11 +28,11 @@ export default async function NewPropertyPage({ params }: { params: Promise<{ sl
           className="inline-flex w-fit items-center gap-1.5 text-sm text-muted transition-colors hover:text-ink"
         >
           <ChevronLeft size={16} aria-hidden />
-          กลับไปรายการทรัพย์
+          Back to the Properties list
         </Link>
         <PageHeader
-          title="เพิ่มทรัพย์"
-          summary="เลือกโครงการ ใส่ประเภทและค่าเช่าก็พอ ที่เหลือเติมทีหลังได้"
+          title="Add Property"
+          summary="Pick a Building, set the type and the rent — the rest can be filled in later"
         />
       </div>
 

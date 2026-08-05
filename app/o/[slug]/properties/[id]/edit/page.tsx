@@ -25,7 +25,7 @@ export default async function EditPropertyPage({
   const { slug, id } = await params
   const org = await requireMember(slug)
 
-  // Neither depends on the other, so they go together. The โครงการ list is
+  // Neither depends on the other, so they go together. The Building list is
   // small and bounded and gets filtered in the browser, as on the add form.
   const [property, buildings] = await Promise.all([
     getPropertyForEdit(org.id, id),
@@ -45,9 +45,9 @@ export default async function EditPropertyPage({
           className="inline-flex w-fit items-center gap-1.5 text-sm text-muted transition-colors hover:text-ink"
         >
           <ChevronLeft size={16} aria-hidden />
-          กลับไปรายการทรัพย์
+          Back to the Properties list
         </Link>
-        <PageHeader title="แก้ไขทรัพย์" summary={property.title} />
+        <PageHeader title="Edit Property" summary={property.title} />
       </div>
 
       <EditPropertyForm

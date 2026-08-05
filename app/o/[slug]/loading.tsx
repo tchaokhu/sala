@@ -9,7 +9,7 @@ import { TILE_LABELS } from './tiles'
 export default function OrgHomeLoading() {
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="ภาพรวม" summary="สรุปสถานะก่อนลงรายละเอียด" />
+      <PageHeader title="Overview" summary="The summary before the detail" />
 
       <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {TILE_LABELS.map((label) => (

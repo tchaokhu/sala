@@ -14,7 +14,7 @@ export function formatBaht(amount: number | null | undefined): string {
   // than tripping the integer check on the way in and printing ฿10.
   const satang = Math.round(amount * 100) % 100
   const digits = satang === 0 ? 0 : 2
-  return new Intl.NumberFormat('th-TH', {
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'THB',
     currencyDisplay: 'narrowSymbol',
@@ -23,7 +23,8 @@ export function formatBaht(amount: number | null | undefined): string {
   }).format(amount)
 }
 
-/** A `date` column as Thai readers write it: `31 ส.ค. 2569`, Buddhist era.
+/** A `date` column written out for the English UI: `31 Aug 2026` — day, short
+ *  month name, Gregorian year.
  *
  *  Built from the date parts and formatted in UTC, never from
  *  `new Date('2026-12-31')` interpreted in the host zone — that is the ported
@@ -32,7 +33,7 @@ export function formatBaht(amount: number | null | undefined): string {
 export function formatDateThai(iso: string | null | undefined): string {
   if (!iso) return '—'
   const { year, month, day } = parseIsoDate(iso)
-  return new Intl.DateTimeFormat('th-TH', {
+  return new Intl.DateTimeFormat('en-GB', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',

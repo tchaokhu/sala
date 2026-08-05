@@ -1,8 +1,8 @@
 'use client'
 
-// The write halves of จัดการโครงการ.
+// The write halves of the Buildings page.
 //
-// Editing is behind a <details>, so a page of twenty โครงการ reads as a list
+// Editing is behind a <details>, so a page of twenty Buildings reads as a list
 // rather than twenty open forms — and the summary line stays the thing you scan.
 //
 // Deleting takes two clicks and the second one says what it destroys, with the
@@ -15,7 +15,7 @@ import { BUTTON, INPUT, Notice, PRIMARY_BUTTON, useFormAction } from '@/componen
 import type { BuildingRow } from '@/lib/buildings'
 import { createBuilding, deleteBuilding, updateBuilding } from './actions'
 
-const MAP_HINT = 'วางลิงก์จากปุ่มแชร์ในแอป Google Maps ได้เลย ลิงก์สั้น (maps.app.goo.gl) ก็ได้'
+const MAP_HINT = 'Paste the link from the share button in the Google Maps app. Short links (maps.app.goo.gl) work too.'
 
 export function CreateBuildingForm({ slug }: { slug: string }) {
   const [result, action, pending] = useFormAction(createBuilding)
@@ -23,9 +23,9 @@ export function CreateBuildingForm({ slug }: { slug: string }) {
   return (
     <form action={action} className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-4">
       <div>
-        <h2 className="font-semibold">เพิ่มโครงการ</h2>
+        <h2 className="font-semibold">Add a Building</h2>
         <p className="mt-1 text-sm text-muted">
-          ชื่อโครงการจะกลายเป็นชื่อทรัพย์ เช่น “ลุมพินี พาร์ค พระราม 9 12/34”
+          The Building name becomes the Property name — “Lumpini Park Rama 9 12/34”, for example.
         </p>
       </div>
 
@@ -34,7 +34,7 @@ export function CreateBuildingForm({ slug }: { slug: string }) {
 
       <div className="flex flex-wrap items-center gap-3">
         <button type="submit" disabled={pending} className={PRIMARY_BUTTON}>
-          {pending ? 'กำลังบันทึก…' : 'เพิ่มโครงการ'}
+          {pending ? 'Saving…' : 'Add Building'}
         </button>
         <Notice result={result} />
       </div>
@@ -48,7 +48,7 @@ export function BuildingRowForms({ slug, building }: { slug: string; building: B
       <details className="group">
         <summary className="inline-flex w-fit cursor-pointer list-none items-center gap-1.5 text-sm text-muted transition-colors hover:text-ink">
           <Pencil size={14} aria-hidden />
-          แก้ไขโครงการ
+          Edit Building
         </summary>
         <EditForm slug={slug} building={building} />
       </details>
@@ -69,7 +69,7 @@ function EditForm({ slug, building }: { slug: string; building: BuildingRow }) {
 
       <div className="flex flex-wrap items-center gap-3">
         <button type="submit" disabled={pending} className={BUTTON}>
-          {pending ? 'กำลังบันทึก…' : 'บันทึก'}
+          {pending ? 'Saving…' : 'Save'}
         </button>
         <Notice result={result} />
       </div>
@@ -90,7 +90,7 @@ function DeleteForm({ slug, building }: { slug: string; building: BuildingRow })
           className="inline-flex w-fit items-center gap-1.5 text-sm text-muted transition-colors hover:text-warn"
         >
           <Trash2 size={14} aria-hidden />
-          ลบโครงการ
+          Delete Building
         </button>
         <Notice result={result} />
       </div>
@@ -100,15 +100,15 @@ function DeleteForm({ slug, building }: { slug: string; building: BuildingRow })
   return (
     <form action={action} className="flex flex-col gap-2 rounded-lg border border-warn/40 bg-warn/5 p-3">
       <p className="text-sm">
-        ลบ <span className="font-semibold">{building.name}</span> ใช่ไหม?{' '}
+        Delete <span className="font-semibold">{building.name}</span>?{' '}
         {building.propertyCount > 0 ? (
           <>
-            ทรัพย์{' '}
-            <span className="tabular font-semibold">{building.propertyCount}</span> รายการในโครงการนี้จะยังอยู่
-            แต่จะไม่มีโครงการและไม่มีแผนที่
+            The <span className="tabular font-semibold">{building.propertyCount}</span>{' '}
+            {building.propertyCount === 1 ? 'Property' : 'Properties'} in this Building will stay,
+            but they will no longer have a Building or a map.
           </>
         ) : (
-          'ยังไม่มีทรัพย์อยู่ในโครงการนี้'
+          'No Properties are in this Building.'
         )}
       </p>
 
@@ -121,10 +121,10 @@ function DeleteForm({ slug, building }: { slug: string; building: BuildingRow })
           disabled={pending}
           className="rounded-lg border border-warn px-3 py-2 text-sm font-medium text-warn transition-colors hover:bg-warn/10 disabled:opacity-60"
         >
-          {pending ? 'กำลังลบ…' : 'ยืนยันลบโครงการ'}
+          {pending ? 'Deleting…' : 'Confirm delete'}
         </button>
         <button type="button" onClick={() => setArmed(false)} className={BUTTON}>
-          ยกเลิก
+          Cancel
         </button>
         <Notice result={result} />
       </div>
@@ -138,7 +138,7 @@ function Fields({ pending, building }: { pending: boolean; building?: BuildingRo
     <div className="grid gap-4 sm:grid-cols-2">
       <label className="flex flex-col gap-1.5 sm:col-span-2">
         <span className="text-sm font-medium">
-          ชื่อโครงการ<span className="ml-1 text-warn">*</span>
+          Building name<span className="ml-1 text-warn">*</span>
         </span>
         <input
           type="text"
@@ -147,13 +147,13 @@ function Fields({ pending, building }: { pending: boolean; building?: BuildingRo
           maxLength={200}
           disabled={pending}
           defaultValue={building?.name ?? ''}
-          placeholder="เช่น ลุมพินี พาร์ค พระราม 9"
+          placeholder="e.g. Lumpini Park Rama 9"
           className={INPUT}
         />
       </label>
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium">ชื่อภาษาอังกฤษ</span>
+        <span className="text-sm font-medium">English name</span>
         <input
           type="text"
           name="name_en"
@@ -165,7 +165,7 @@ function Fields({ pending, building }: { pending: boolean; building?: BuildingRo
       </label>
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium">เขต / อำเภอ</span>
+        <span className="text-sm font-medium">District</span>
         <input
           type="text"
           name="district"
@@ -177,7 +177,7 @@ function Fields({ pending, building }: { pending: boolean; building?: BuildingRo
       </label>
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium">จังหวัด</span>
+        <span className="text-sm font-medium">Province</span>
         <input
           type="text"
           name="province"
@@ -189,7 +189,7 @@ function Fields({ pending, building }: { pending: boolean; building?: BuildingRo
       </label>
 
       <label className="flex flex-col gap-1.5 sm:col-span-2">
-        <span className="text-sm font-medium">ลิงก์แผนที่ Google Maps</span>
+        <span className="text-sm font-medium">Google Maps link</span>
         <input
           type="url"
           name="google_map_url"

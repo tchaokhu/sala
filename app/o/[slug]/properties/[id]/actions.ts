@@ -31,15 +31,15 @@ import type { ActionResult } from '@/lib/action-result'
 
 function failed(what: string, err: unknown): ActionResult {
   console.error(`[properties] ${what}:`, err)
-  return { ok: false, message: `${what}ไม่สำเร็จ ลองใหม่อีกครั้ง หากยังไม่ได้ให้แจ้งผู้ดูแลระบบ` }
+  return { ok: false, message: `${what} failed. Try again, and tell your administrator if it keeps failing.` }
 }
 
-const NOT_FOUND = 'ไม่พบทรัพย์นี้ อาจถูกลบไปแล้ว กลับไปที่รายการทรัพย์แล้วลองใหม่'
+const NOT_FOUND = 'This Property was not found — it may already have been deleted. Go back to the Properties list and try again.'
 
 export async function updateProperty(formData: FormData): Promise<ActionResult> {
   const slug = cleanText(formData.get('slug'), 40)
   const id = cleanText(formData.get('property_id'), 40)
-  if (!slug || !id) return { ok: false, message: 'คำสั่งไม่ครบ ลองใหม่อีกครั้ง' }
+  if (!slug || !id) return { ok: false, message: 'The request was incomplete. Try again.' }
 
   const org = await requireMember(slug)
   const supabase = await createClient()
@@ -77,9 +77,9 @@ export async function updateProperty(formData: FormData): Promise<ActionResult> 
     building = await resolveBuilding(org.id, choice.values)
   } catch (err) {
     if (err instanceof UnknownBuildingError) {
-      return { ok: false, message: 'ไม่พบโครงการที่เลือก เลือกใหม่อีกครั้ง' }
+      return { ok: false, message: 'The Building you chose was not found. Choose it again.' }
     }
-    return failed('การเพิ่มโครงการ', err)
+    return failed('Adding the Building', err)
   }
 
   // Keys are minted before anything is uploaded so the sweep on failure can name
@@ -105,7 +105,7 @@ export async function updateProperty(formData: FormData): Promise<ActionResult> 
       supabase,
       targets.map((t) => t.path),
     )
-    return failed('การอัปโหลดรูป', err)
+    return failed('Uploading the photos', err)
   }
 
   const { data, error } = await supabase
@@ -114,7 +114,7 @@ export async function updateProperty(formData: FormData): Promise<ActionResult> 
       ...parsed.values,
       building_id: building.id,
       // Recomposed, because either half may have just changed — a new room
-      // number or a different โครงการ. The name still comes from the Building
+      // number or a different Building. The name still comes from the Building
       // row, never from the form (ADR 0008).
       title: composePropertyTitle(building.name, parsed.values.room_number),
       images: [...kept, ...targets.map((t) => t.path)],
@@ -129,7 +129,7 @@ export async function updateProperty(formData: FormData): Promise<ActionResult> 
       supabase,
       targets.map((t) => t.path),
     )
-    return failed('การแก้ไขทรัพย์', error)
+    return failed('Saving the Property', error)
   }
   if (!data) {
     // Read a moment ago, gone now: somebody deleted it between the two. The new
@@ -149,7 +149,7 @@ export async function updateProperty(formData: FormData): Promise<ActionResult> 
   revalidatePath(`/o/${slug}/properties`)
   revalidatePath(`/o/${slug}/properties/${id}/edit`)
   revalidatePath(`/o/${slug}`)
-  return { ok: true, message: 'บันทึกแล้ว' }
+  return { ok: true, message: 'Saved' }
 }
 
 /**
@@ -157,7 +157,7 @@ export async function updateProperty(formData: FormData): Promise<ActionResult> 
  *
  * `rentals.property_id` and `payments.property_id` are both ON DELETE RESTRICT,
  * so a Property that has ever carried a Rental or a Payment cannot be removed —
- * Postgres refuses it with SQLSTATE 23503 and this says so in Thai. It explains
+ * Postgres refuses it with SQLSTATE 23503 and this says so plainly. It explains
  * and stops there: there is no Rental-management flow in the product yet, so an
  * instruction like "end the Rental first" would name a door that does not exist
  * (ADR 0009).
@@ -169,7 +169,7 @@ export async function updateProperty(formData: FormData): Promise<ActionResult> 
 export async function deleteProperty(formData: FormData): Promise<ActionResult> {
   const slug = cleanText(formData.get('slug'), 40)
   const id = cleanText(formData.get('property_id'), 40)
-  if (!slug || !id) return { ok: false, message: 'คำสั่งไม่ครบ ลองใหม่อีกครั้ง' }
+  if (!slug || !id) return { ok: false, message: 'The request was incomplete. Try again.' }
 
   const org = await requireMember(slug)
   const supabase = await createClient()
@@ -187,11 +187,11 @@ export async function deleteProperty(formData: FormData): Promise<ActionResult> 
       return {
         ok: false,
         message:
-          'ลบทรัพย์นี้ไม่ได้ เพราะมีสัญญาเช่าหรือรายการเงินผูกอยู่ ' +
-          'ประวัติเหล่านั้นต้องอ้างถึงทรัพย์นี้ต่อไป จึงลบทรัพย์ออกจากระบบไม่ได้',
+          'This Property cannot be deleted: a Rental or a Payment is attached to it. ' +
+          'That history has to keep referring to this Property, so the Property cannot leave the system.',
       }
     }
-    return failed('การลบทรัพย์', error)
+    return failed('Deleting the Property', error)
   }
   if (!data) return { ok: false, message: NOT_FOUND }
 

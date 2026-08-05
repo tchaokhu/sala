@@ -19,7 +19,7 @@ export function MapPreview({
   className = 'h-48',
 }: {
   url: string | null | undefined
-  /** Named for a screen reader: "แผนที่ ลุมพินี พาร์ค", not "map". */
+  /** Named for a screen reader: "Map of Lumpini Park", not "map". */
   title: string
   className?: string
 }) {
@@ -32,7 +32,7 @@ export function MapPreview({
       <div className="flex flex-col items-start gap-2 rounded-lg border border-dashed border-border p-3 text-sm text-muted">
         <span className="flex items-center gap-2">
           <MapPinOff size={16} aria-hidden />
-          ลิงก์นี้ยังไม่มีพิกัด จึงยังแสดงแผนที่ไม่ได้
+          This link has no coordinates in it, so there is no map to draw
         </span>
         <OpenLink url={url} />
       </div>
@@ -62,7 +62,7 @@ function OpenLink({ url }: { url: string }) {
       className="inline-flex items-center gap-1.5 text-sm text-accent underline-offset-4 hover:underline"
     >
       <ExternalLink size={14} aria-hidden />
-      เปิดใน Google Maps
+      Open in Google Maps
     </a>
   )
 }

@@ -20,17 +20,17 @@ export function isPropertyType(value: unknown): value is PropertyType {
   return typeof value === 'string' && (PROPERTY_TYPES as readonly string[]).includes(value)
 }
 
-/** The user's word for each of them. One Thai word per term, here and only here
- *  (CLAUDE.md) — the table and the form must not drift apart. */
+/** The user's word for each of them. One word per term, here and only here — the
+ *  table and the form must not drift apart. */
 export const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
-  condo: 'คอนโด',
-  house: 'บ้าน',
-  townhome: 'ทาวน์โฮม',
+  condo: 'Condo',
+  house: 'House',
+  townhome: 'Townhome',
 }
 
 /** `rented` is not one of them. A Property becomes occupied by having an active
  *  Rental (CONTEXT.md), and a row that claims a tenant without one renders as
- *  "มีผู้เช่า" beside an empty tenant column — a lie the list cannot correct. */
+ *  "Rented" beside an empty tenant column — a lie the list cannot correct. */
 export const CREATABLE_STATUSES = ['available', 'reserved'] as const satisfies readonly PropertyStatus[]
 export type CreatableStatus = (typeof CREATABLE_STATUSES)[number]
 
@@ -143,14 +143,16 @@ export function parsePropertyEditForm(
 }
 
 const STATUS_MESSAGE =
-  'สถานะต้องเป็น ว่าง หรือ จอง — ทรัพย์จะเป็น "มีผู้เช่า" ก็ต่อเมื่อมีสัญญาเช่า'
+  'Status must be Available or Reserved — a Property only becomes Rented once it has a Rental'
 
 function parsePropertyFields(form: FormLike): Parsed<PropertyFields> {
   const propertyType = form.get('property_type')
-  if (!isPropertyType(propertyType)) return fail('เลือกประเภททรัพย์ — คอนโด บ้าน หรือทาวน์โฮม')
+  if (!isPropertyType(propertyType)) {
+    return fail('Choose a property type — Condo, House or Townhome')
+  }
 
   const price = number(form.get('price_monthly'), {
-    label: 'ค่าเช่าต่อเดือน',
+    label: 'Rent per month',
     min: 0,
     max: MAX_PRICE,
     required: true,
@@ -158,7 +160,7 @@ function parsePropertyFields(form: FormLike): Parsed<PropertyFields> {
   if (!price.ok) return price
 
   const bedrooms = number(form.get('bedrooms'), {
-    label: 'จำนวนห้องนอน',
+    label: 'Bedrooms',
     min: 0,
     max: MAX_ROOMS,
     integer: true,
@@ -166,18 +168,18 @@ function parsePropertyFields(form: FormLike): Parsed<PropertyFields> {
   if (!bedrooms.ok) return bedrooms
 
   const bathrooms = number(form.get('bathrooms'), {
-    label: 'จำนวนห้องน้ำ',
+    label: 'Bathrooms',
     min: 0,
     max: MAX_ROOMS,
     integer: true,
   })
   if (!bathrooms.ok) return bathrooms
 
-  const area = number(form.get('area_sqm'), { label: 'ขนาดพื้นที่', min: 0, max: MAX_AREA })
+  const area = number(form.get('area_sqm'), { label: 'Area', min: 0, max: MAX_AREA })
   if (!area.ok) return area
 
   const floor = number(form.get('floor'), {
-    label: 'ชั้น',
+    label: 'Floor',
     min: MIN_FLOOR,
     max: MAX_FLOOR,
     integer: true,
@@ -204,7 +206,7 @@ function parsePropertyFields(form: FormLike): Parsed<PropertyFields> {
 
 // ─── The Building a Property belongs to ──────────────────────────────────────
 
-/** What the โครงการ combobox posts: an existing Building, or a name for one
+/** What the Building combobox posts: an existing Building, or a name for one
  *  that does not exist yet. Never both — an id wins, because it is the one the
  *  person actually picked off the list. */
 export interface BuildingChoice {
@@ -218,7 +220,7 @@ export function parseBuildingChoice(form: FormLike): Parsed<BuildingChoice> {
   if (buildingId) return { ok: true, values: { buildingId, newName: null } }
 
   const typed = cleanText(form.get('building_name'), MAX_TITLE)
-  if (!typed) return fail('เลือกโครงการ หรือพิมพ์ชื่อโครงการใหม่')
+  if (!typed) return fail('Choose a Building, or type the name of a new one')
 
   return { ok: true, values: { buildingId: null, newName: typed } }
 }
@@ -244,8 +246,8 @@ export function composePropertyTitle(
 // ─── Images ──────────────────────────────────────────────────────────────────
 // The bucket enforces its own limits (0002_storage.sql: 5 MB, four image types)
 // and would reject a bad file on its own — with a message from Supabase, after
-// the bytes have crossed the network. These are the same limits said early, in
-// Thai, naming the number (CLAUDE.md: errors say what to do next).
+// the bytes have crossed the network. These are the same limits said early,
+// naming the number (CLAUDE.md: errors say what to do next).
 
 export const MAX_IMAGES = 8
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024
@@ -274,23 +276,23 @@ export interface ImageLike {
 
 export function validateImages(files: ImageLike[]): Parsed<null> {
   if (files.length > MAX_IMAGES) {
-    return fail(`ใส่รูปได้ไม่เกิน ${MAX_IMAGES} รูป ตอนนี้เลือกมา ${files.length} รูป`)
+    return fail(`Add at most ${MAX_IMAGES} photos — you chose ${files.length}`)
   }
 
   for (const file of files) {
     if (!imageExtension(file.type)) {
-      return fail('รูปต้องเป็นไฟล์ JPG, PNG, WEBP หรือ GIF เท่านั้น')
+      return fail('Photos must be JPG, PNG, WEBP or GIF files')
     }
     if (file.size > MAX_IMAGE_BYTES) {
-      return fail(`รูปแต่ละรูปต้องไม่เกิน ${mb(MAX_IMAGE_BYTES)} MB`)
+      return fail(`Each photo must be under ${mb(MAX_IMAGE_BYTES)} MB`)
     }
   }
 
   const total = files.reduce((sum, f) => sum + f.size, 0)
   if (total > MAX_IMAGES_TOTAL_BYTES) {
     return fail(
-      `รูปทั้งหมดรวมกันต้องไม่เกิน ${mb(MAX_IMAGES_TOTAL_BYTES)} MB ` +
-        `ตอนนี้รวม ${mb(total)} MB — เอาบางรูปออกแล้วลองใหม่`,
+      `The photos must come to under ${mb(MAX_IMAGES_TOTAL_BYTES)} MB in total ` +
+        `— these come to ${mb(total)} MB. Remove some and try again.`,
     )
   }
 
@@ -316,7 +318,8 @@ export function validatePropertyImageEdit(
   const total = keptCount + newFiles.length
   if (total > MAX_IMAGES) {
     return fail(
-      `ใส่รูปได้ไม่เกิน ${MAX_IMAGES} รูป ตอนนี้จะมี ${total} รูป — เอารูปเดิมออกก่อน`,
+      `A Property holds at most ${MAX_IMAGES} photos — this would make ${total}. ` +
+        `Remove some of the photos already there first.`,
     )
   }
 
@@ -348,15 +351,15 @@ function number(
 ): Parsed<number | null> {
   const raw = cleanText(input, 24).replace(/,/g, '')
   if (!raw) {
-    if (opts.required) return fail(`ใส่${opts.label}ก่อน`)
+    if (opts.required) return fail(`${opts.label} is required`)
     return { ok: true, values: null }
   }
 
   const parsed = Number(raw)
-  if (!Number.isFinite(parsed)) return fail(`${opts.label}ต้องเป็นตัวเลข`)
-  if (opts.integer && !Number.isInteger(parsed)) return fail(`${opts.label}ต้องเป็นจำนวนเต็ม`)
+  if (!Number.isFinite(parsed)) return fail(`${opts.label} must be a number`)
+  if (opts.integer && !Number.isInteger(parsed)) return fail(`${opts.label} must be a whole number`)
   if (parsed < opts.min || parsed > opts.max) {
-    return fail(`${opts.label}ต้องอยู่ระหว่าง ${opts.min} ถึง ${opts.max}`)
+    return fail(`${opts.label} must be between ${opts.min} and ${opts.max}`)
   }
 
   return { ok: true, values: Math.round(parsed * 100) / 100 }

@@ -54,9 +54,9 @@ export function AddMemberForm({
   return (
     <form action={action} className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4">
       <div>
-        <h2 className="font-semibold">เพิ่มสมาชิกเข้า {orgName}</h2>
+        <h2 className="font-semibold">Add a Member to {orgName}</h2>
         <p className="mt-1 text-sm text-muted">
-          ถ้าอีเมลนี้ยังไม่มีบัญชี ระบบจะสร้างให้และส่งอีเมลเชิญไป
+          If this email has no account yet, Sala creates one and sends an invitation.
         </p>
       </div>
 
@@ -65,7 +65,7 @@ export function AddMemberForm({
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <label className="flex flex-1 flex-col gap-1.5">
-          <span className="text-sm font-medium">อีเมล</span>
+          <span className="text-sm font-medium">Email</span>
           <input
             type="email"
             name="email"
@@ -77,22 +77,22 @@ export function AddMemberForm({
         </label>
 
         <label className="flex flex-1 flex-col gap-1.5">
-          <span className="text-sm font-medium">ชื่อที่แสดง</span>
+          <span className="text-sm font-medium">Display name</span>
           <input
             type="text"
             name="display_name"
             maxLength={80}
             disabled={pending}
-            placeholder="ไม่ใส่ก็ได้ จะแสดงเป็นอีเมล"
+            placeholder="Optional — the email shows instead"
             className={INPUT}
           />
         </label>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium">สิทธิ์</span>
+          <span className="text-sm font-medium">Role</span>
           <select name="role" defaultValue="member" disabled={pending} className={INPUT}>
-            <option value="member">สมาชิก</option>
-            <option value="owner">เจ้าของ</option>
+            <option value="member">Member</option>
+            <option value="owner">Owner</option>
           </select>
         </label>
       </div>
@@ -103,7 +103,7 @@ export function AddMemberForm({
           disabled={pending}
           className="rounded-lg bg-accent px-3 py-2 font-semibold text-on-accent transition-opacity hover:opacity-90 disabled:opacity-60"
         >
-          {pending ? 'กำลังเพิ่ม…' : 'เพิ่มสมาชิก'}
+          {pending ? 'Adding…' : 'Add Member'}
         </button>
         <Notice result={result} />
       </div>
@@ -146,7 +146,7 @@ export function MemberRow({
             aria-expanded={open}
             className={BUTTON + ' text-muted'}
           >
-            {open ? 'ปิด' : 'จัดการ'}
+            {open ? 'Close' : 'Manage'}
           </button>
         </div>
       </div>
@@ -181,7 +181,7 @@ function RolePill({ role }: { role: AdminMember['role'] }) {
       }
     >
       <span aria-hidden>{owner ? '●' : '○'}</span>
-      {owner ? 'เจ้าของ' : 'สมาชิก'}
+      {owner ? 'Owner' : 'Member'}
     </span>
   )
 }
@@ -204,7 +204,7 @@ function RenameForm({
       <input type="hidden" name="user_id" value={member.user_id} />
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium">ชื่อที่แสดง</span>
+        <span className="text-sm font-medium">Display name</span>
         <div className="flex gap-2">
           <input
             type="text"
@@ -212,11 +212,11 @@ function RenameForm({
             maxLength={80}
             defaultValue={member.display_name ?? ''}
             disabled={pending}
-            placeholder="เว้นว่างเพื่อแสดงเป็นอีเมล"
+            placeholder="Leave blank to show the email"
             className={INPUT + ' flex-1'}
           />
           <button type="submit" disabled={pending} className={BUTTON}>
-            {pending ? 'กำลังบันทึก…' : 'บันทึก'}
+            {pending ? 'Saving…' : 'Save'}
           </button>
         </div>
       </label>
@@ -249,18 +249,18 @@ function RoleForm({
 
       <div className="flex flex-wrap items-center gap-3">
         <button type="submit" disabled={pending || blocked} className={BUTTON}>
-          {next === 'owner' ? 'ตั้งเป็นเจ้าของ' : 'ลดเป็นสมาชิก'}
+          {next === 'owner' ? 'Make an Owner' : 'Demote to Member'}
         </button>
         <span className="text-sm text-muted">
           {next === 'owner'
-            ? 'เจ้าของเพิ่มและเอาสมาชิกออกจากเอเจนซี่นี้ได้'
-            : 'สมาชิกเห็นข้อมูลทั้งหมด แต่จัดการคนไม่ได้'}
+            ? 'An Owner can add and remove Members of this Org.'
+            : 'A Member sees all of the data, but cannot manage people.'}
         </span>
       </div>
 
       {blocked && (
         <p className="text-sm text-muted">
-          เป็นเจ้าของคนสุดท้าย ตั้งคนอื่นเป็นเจ้าของก่อน
+          The last Owner. Make somebody else an Owner first.
         </p>
       )}
       <Notice result={result} />
@@ -269,8 +269,8 @@ function RoleForm({
 }
 
 /** Two steps, and the first one says what the second destroys — including what
- *  it does *not* destroy, because "ลบ" next to a person reads as deleting them
- *  (CLAUDE.md: destructive actions say what they destroy). */
+ *  it does *not* destroy, because "Delete" next to a person reads as deleting
+ *  them (CLAUDE.md: destructive actions say what they destroy). */
 function RemoveForm({
   member,
   orgId,
@@ -291,7 +291,8 @@ function RemoveForm({
   if (isLastOwner) {
     return (
       <p className="text-sm text-muted">
-        เอาเจ้าของคนสุดท้ายออกไม่ได้ — เอเจนซี่จะไม่เหลือใครจัดการสมาชิก
+        The last Owner cannot be removed — the Org would be left with nobody to manage its
+        Members.
       </p>
     )
   }
@@ -304,7 +305,7 @@ function RemoveForm({
           onClick={() => setConfirming(true)}
           className={BUTTON + ' self-start border-warn text-warn'}
         >
-          เอาออกจากเอเจนซี่
+          Remove from the Org
         </button>
         <Notice result={result} />
       </div>
@@ -318,10 +319,10 @@ function RemoveForm({
       <input type="hidden" name="user_id" value={member.user_id} />
 
       <div className="text-sm">
-        <p className="font-semibold text-warn">เอา {who} ออกจาก {orgName}?</p>
+        <p className="font-semibold text-warn">Remove {who} from {orgName}?</p>
         <p className="mt-1 text-muted">
-          เขาจะเข้าถึงข้อมูลของเอเจนซี่นี้ไม่ได้อีก บัญชีและอีเมลยังอยู่
-          และสิทธิ์ในเอเจนซี่อื่นไม่เปลี่ยน เพิ่มกลับเข้ามาใหม่ได้ทุกเมื่อ
+          They lose access to this Org&apos;s data. Their account and email stay, their roles in
+          other Orgs do not change, and you can add them back at any time.
         </p>
       </div>
 
@@ -331,10 +332,10 @@ function RemoveForm({
           disabled={pending}
           className="rounded-lg border border-warn px-3 py-2 text-sm text-warn transition-opacity hover:opacity-90 disabled:opacity-60"
         >
-          {pending ? 'กำลังเอาออก…' : 'ยืนยัน เอาออก'}
+          {pending ? 'Removing…' : 'Confirm, remove'}
         </button>
         <button type="button" onClick={() => setConfirming(false)} className={BUTTON}>
-          ยกเลิก
+          Cancel
         </button>
       </div>
       <Notice result={result} />

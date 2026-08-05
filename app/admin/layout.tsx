@@ -28,7 +28,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <Link href="/admin" className="flex items-center gap-2.5">
             <SalaMark className="h-7 w-7 text-ink" />
             <div className="flex flex-col leading-tight">
-              <span className="text-sm font-bold">ผู้ดูแลระบบ</span>
+              <span className="text-sm font-bold">Superadmin</span>
               <span className="font-mono text-[11px] text-muted">Sala</span>
             </div>
           </Link>
@@ -41,7 +41,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 type="submit"
                 className="rounded-lg border border-border px-3 py-1.5 text-sm text-muted transition-colors hover:text-ink"
               >
-                ออกจากระบบ
+                Log out
               </button>
             </form>
           </div>

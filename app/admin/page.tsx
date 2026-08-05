@@ -13,17 +13,17 @@ export default async function AdminHome() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-bold">เอเจนซี่</h1>
+        <h1 className="text-xl font-bold">Orgs</h1>
         <p className="mt-1 text-sm text-muted">
-          ทั้งหมด {total} เอเจนซี่ · จัดการสมาชิกและสิทธิ์ได้จากที่นี่
+          {total} in total · manage Members and their roles from here
         </p>
       </div>
 
       {orgs.length === 0 ? (
         <div className="rounded-lg border border-border bg-surface p-4 text-sm">
-          <p className="font-semibold">ยังไม่มีเอเจนซี่</p>
+          <p className="font-semibold">No Orgs yet</p>
           <p className="mt-1 text-muted">
-            สร้างเอเจนซี่แรกใน Supabase SQL editor แล้วกลับมาเพิ่มสมาชิกที่นี่
+            Create the first Org in the Supabase SQL editor, then come back here to add Members.
           </p>
         </div>
       ) : (
@@ -39,12 +39,12 @@ export default async function AdminHome() {
                   <span className="font-mono text-xs text-muted">{org.slug}</span>
                 </div>
                 <div className="text-right text-sm text-muted">
-                  <span className="tabular">{org.member_count}</span> สมาชิก
+                  <span className="tabular">{org.member_count}</span> Members
                   {/* An Org with no owner cannot manage itself — nobody inside
                       it can add or remove anyone. Worth seeing from the list. */}
                   {org.owner_count === 0 && (
                     <span className="ml-2 rounded-full border border-warn px-2 py-0.5 text-xs text-warn">
-                      ไม่มีเจ้าของ
+                      No Owner
                     </span>
                   )}
                 </div>
@@ -56,7 +56,7 @@ export default async function AdminHome() {
 
       {total > orgs.length && (
         <p className="text-sm text-muted">
-          แสดง {orgs.length} จาก {total} — เพิ่มการแบ่งหน้าเมื่อรายการยาวกว่านี้
+          Showing {orgs.length} of {total} — add pagination when the list grows longer than this
         </p>
       )}
     </div>

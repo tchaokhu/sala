@@ -31,9 +31,9 @@ export default async function SettingsPage({
   return (
     <div className="flex max-w-lg flex-col gap-6">
       <div>
-        <h1 className="text-xl font-bold">บัญชีของฉัน</h1>
+        <h1 className="text-xl font-bold">My account</h1>
         <p className="mt-1 text-sm text-muted">
-          ใน {org.name} · {data?.role === 'owner' ? 'เจ้าของ' : 'สมาชิก'}
+          In {org.name} · {data?.role === 'owner' ? 'Owner' : 'Member'}
         </p>
       </div>
 

@@ -36,9 +36,9 @@ describe('formatBaht', () => {
 })
 
 describe('formatDateThai', () => {
-  it('writes a date the way a Thai reader expects, in the Buddhist era', () => {
-    expect(formatDateThai('2026-08-31')).toBe('31 ส.ค. 2569')
-    expect(formatDateThai('2026-01-01')).toBe('1 ม.ค. 2569')
+  it('writes a date day-month-year, with a Gregorian year', () => {
+    expect(formatDateThai('2026-08-31')).toBe('31 Aug 2026')
+    expect(formatDateThai('2026-01-01')).toBe('1 Jan 2026')
   })
 
   // The bug this guards: a `date` column is a calendar day with no time in it,
@@ -48,7 +48,7 @@ describe('formatDateThai', () => {
     const original = process.env.TZ
     for (const tz of ['UTC', 'America/Los_Angeles', 'Asia/Bangkok', 'Pacific/Kiritimati']) {
       process.env.TZ = tz
-      expect(formatDateThai('2026-12-31')).toBe('31 ธ.ค. 2569')
+      expect(formatDateThai('2026-12-31')).toBe('31 Dec 2026')
     }
     process.env.TZ = original
   })

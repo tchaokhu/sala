@@ -22,14 +22,18 @@ export async function listOrgs(limit = 50): Promise<AdminOrg[]> {
 }
 
 /** The Org a slug names, without any Membership check — that is the point of
- *  this file. Columns are named, never '*'. */
+ *  this file. Columns are named, never '*'.
+ *
+ *  `deleted_at` comes back too: a soft-deleted Org is visible to nobody but the
+ *  service role (ADR 0010), so this read is the only place the console can
+ *  learn that the Org it is about to render is one waiting to be purged. */
 export async function adminOrgBySlug(
   slug: string,
-): Promise<{ id: string; slug: string; name: string } | null> {
+): Promise<{ id: string; slug: string; name: string; deleted_at: string | null } | null> {
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('orgs')
-    .select('id, slug, name')
+    .select('id, slug, name, deleted_at')
     .eq('slug', slug)
     .maybeSingle()
   if (error) throw error

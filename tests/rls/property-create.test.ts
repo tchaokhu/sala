@@ -86,7 +86,7 @@ describe('creating a Property', () => {
     expect(await insertAs(MEMBER_A, ORG_A, 'ลุมพินี 12/34')).toBe(1)
   })
 
-  it.runIf(reachable)('does not need the owner Role — every Member may', async () => {
+  it.runIf(reachable)('does not need the admin Role — every Member may', async () => {
     // CONTEXT.md: Roles never restrict which Properties a person can see, and
     // `member` is what MEMBER_A holds.
     const { rows } = await client.query(

@@ -4,7 +4,7 @@ import { SettingsForms } from './settings-forms'
 // A person's own account, inside one Org.
 //
 // Two things live here and nothing else: what this Org calls you, and the email
-// you sign in with. Managing *other* people is an owner's business (RLS) or the
+// you sign in with. Managing *other* people is an Admin's business (RLS) or the
 // operator's (ADR 0006) — neither belongs on the page somebody opens to fix the
 // spelling of their own name.
 export default async function SettingsPage({
@@ -33,7 +33,7 @@ export default async function SettingsPage({
       <div>
         <h1 className="text-xl font-bold">My account</h1>
         <p className="mt-1 text-sm text-muted">
-          In {org.name} · {data?.role === 'owner' ? 'Owner' : 'Member'}
+          In {org.name} · {data?.role === 'admin' ? 'Admin' : 'Member'}
         </p>
       </div>
 

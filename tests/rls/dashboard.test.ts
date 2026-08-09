@@ -178,7 +178,7 @@ beforeAll(async () => {
 
   // USER_A belongs to Org A and nothing else. USER_B belongs to nothing.
   await client.query(
-    `INSERT INTO memberships (org_id, user_id, role) VALUES ($1, $2, 'owner')`,
+    `INSERT INTO memberships (org_id, user_id, role) VALUES ($1, $2, 'admin')`,
     [ORG_A, USER_A],
   )
 })

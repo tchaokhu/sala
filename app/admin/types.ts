@@ -6,7 +6,7 @@
 
 export type { ActionResult } from '@/lib/action-result'
 
-export type OrgRole = 'owner' | 'member'
+export type OrgRole = 'admin' | 'member'
 
 export interface AdminMember {
   user_id: string
@@ -21,8 +21,12 @@ export interface AdminOrg {
   slug: string
   name: string
   member_count: number
-  owner_count: number
+  admin_count: number
   created_at: string
+  /** Set means the Org is closed to its Members and waiting to be purged
+   *  (ADR 0010). Carried on the list row so the console can split active from
+   *  pending-deletion without a second query. */
+  deleted_at: string | null
   /** Orgs in total, regardless of the limit — so a page can say how many it is
    *  not showing instead of silently ending the list. */
   total: number

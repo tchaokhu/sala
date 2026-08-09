@@ -9,9 +9,13 @@ export interface Org {
   slug: string
   name: string
   created_at: string
+  /** Set means soft-deleted: closed to its Members now, purged after the
+   *  recovery window (ADR 0010). Only the service role ever sees a row with
+   *  this set — is_member() refuses everyone else. */
+  deleted_at?: string | null
 }
 
-export type Role = 'owner' | 'member'
+export type Role = 'admin' | 'member'
 
 export interface Membership {
   org_id: string

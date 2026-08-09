@@ -222,7 +222,7 @@ describe('schema shape', () => {
     // no Membership, so there is nothing for the function to check. The grant is
     // the whole of the access control, which is why it is asserted rather than
     // assumed. See ADR 0006.
-    const SERVICE_ROLE_ONLY = ['admin_orgs', 'admin_org_members', 'admin_user_id_by_email', 'admin_owner_count']
+    const SERVICE_ROLE_ONLY = ['admin_orgs', 'admin_org_members', 'admin_user_id_by_email', 'admin_admin_count']
 
     const rows = await q<{ proname: string; role: string }>(
       `SELECT p.proname, r.rolname AS role
@@ -261,7 +261,7 @@ describe('schema shape', () => {
     for (const r of rows) {
       for (const expr of [r.qual, r.with_check]) {
         if (!expr) continue
-        if (/is_member|is_org_owner/.test(expr) && !/SELECT/i.test(expr)) {
+        if (/is_member|is_org_admin/.test(expr) && !/SELECT/i.test(expr)) {
           offenders.push(`${r.tablename}.${r.policyname}`)
         }
       }

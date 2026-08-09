@@ -14,7 +14,7 @@
 // and the action removes the bytes only after the row has stopped naming them
 // (ADR 0009).
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { ImageOff, ImagePlus, MapPin, Undo2, X } from 'lucide-react'
 import {
@@ -27,9 +27,12 @@ import {
   useFormAction,
 } from '@/components/form'
 import { BuildingCombobox } from '@/components/BuildingCombobox'
+import { OwnerCombobox } from '@/components/OwnerCombobox'
 import { MapPreview } from '@/components/MapPreview'
+import { PhotoLightbox, type PhotoPreview } from '@/components/PhotoLightbox'
 import { STATUS_LABELS, StatusPill } from '@/components/StatusPill'
 import type { BuildingOption } from '@/lib/buildings'
+import type { OwnerOption } from '@/lib/owners'
 import type { PropertyEditRow } from '@/lib/properties'
 import type { PropertyImage } from '@/lib/property-storage'
 import {
@@ -51,6 +54,8 @@ export function EditPropertyForm({
   photos,
   buildings,
   buildingsCapped,
+  owners,
+  ownersCapped,
 }: {
   slug: string
   property: PropertyEditRow
@@ -58,14 +63,30 @@ export function EditPropertyForm({
   photos: PropertyImage[]
   buildings: BuildingOption[]
   buildingsCapped: boolean
+  owners: OwnerOption[]
+  ownersCapped: boolean
 }) {
   const [result, action, pending] = useFormAction(updateProperty)
   const [files, setFiles] = useState<File[]>([])
   const [removed, setRemoved] = useState<ReadonlySet<string>>(new Set())
   const [building, setBuilding] = useState<BuildingOption | null>(property.building)
+  const [preview, setPreview] = useState<PhotoPreview | null>(null)
+  const imagesInputRef = useRef<HTMLInputElement>(null)
 
   const previews = useMemo(() => files.map((file) => URL.createObjectURL(file)), [files])
   useEffect(() => () => previews.forEach((url) => URL.revokeObjectURL(url)), [previews])
+
+  // The form posts the input's own FileList, not this state, so removing one
+  // new photo means rebuilding that FileList too — a bare `files.filter` here
+  // would drop the preview but still upload the photo.
+  function removeFileAt(index: number) {
+    const transfer = new DataTransfer()
+    files.forEach((file, i) => {
+      if (i !== index) transfer.items.add(file)
+    })
+    if (imagesInputRef.current) imagesInputRef.current.files = transfer.files
+    setFiles(Array.from(transfer.files))
+  }
 
   // A saved edit stays on this page — updateProperty returns rather than
   // redirecting — so the pending photo work has to be dropped once it has
@@ -220,6 +241,22 @@ export function EditPropertyForm({
           ))}
       </Card>
 
+      <Card
+        title="Owner"
+        note="The person who owns this Property. Clear it if the Org has nobody on file for it"
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Owner" hint="Only Owners already on file can be picked — add a new one on the Owners page">
+            <OwnerCombobox
+              options={owners}
+              capped={ownersCapped}
+              disabled={pending}
+              initial={property.owner}
+            />
+          </Field>
+        </div>
+      </Card>
+
       <Card title="Size">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <Field label="Bedrooms">
@@ -318,15 +355,23 @@ export function EditPropertyForm({
                           expire, and optimising them would cache bytes the
                           bucket is private to keep. */}
                       {photo.url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={photo.url}
-                          alt={`Photo ${index + 1}`}
-                          className={
-                            'h-24 w-24 rounded-lg border object-cover transition-opacity ' +
-                            (marked ? 'border-warn/60 opacity-30' : 'border-border')
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setPreview({ src: photo.url as string, alt: `Photo ${index + 1}` })
                           }
-                        />
+                          className="block cursor-zoom-in"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={photo.url}
+                            alt={`Photo ${index + 1}`}
+                            className={
+                              'h-24 w-24 rounded-lg border object-cover transition-opacity ' +
+                              (marked ? 'border-warn/60 opacity-30' : 'border-border')
+                            }
+                          />
+                        </button>
                       ) : (
                         <span
                           className={
@@ -383,6 +428,7 @@ export function EditPropertyForm({
             Add photos
             <input
               key={storedKey}
+              ref={imagesInputRef}
               type="file"
               name="images"
               multiple
@@ -397,13 +443,28 @@ export function EditPropertyForm({
             <>
               <ul className="flex flex-wrap gap-2">
                 {previews.map((src, index) => (
-                  <li key={src}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={src}
-                      alt={`New photo ${index + 1}`}
-                      className="h-24 w-24 rounded-lg border border-border object-cover"
-                    />
+                  <li key={src} className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setPreview({ src, alt: `New photo ${index + 1}` })}
+                      className="block cursor-zoom-in"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={src}
+                        alt={`New photo ${index + 1}`}
+                        className="h-24 w-24 rounded-lg border border-border object-cover"
+                      />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={pending}
+                      aria-label={`Remove new photo ${index + 1}`}
+                      onClick={() => removeFileAt(index)}
+                      className="absolute -top-1.5 -right-1.5 grid h-6 w-6 place-items-center rounded-full border border-border bg-surface text-muted transition-colors hover:border-warn hover:text-warn disabled:opacity-60"
+                    >
+                      <X size={13} aria-hidden />
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -450,6 +511,7 @@ export function EditPropertyForm({
         </Link>
         <Notice result={result} />
       </div>
+      <PhotoLightbox photo={preview} onClose={() => setPreview(null)} />
     </form>
   )
 }

@@ -16,9 +16,11 @@ import { decodeCursor, encodeCursor, type PageKey } from './cursor'
 // list of Property types lives in property-input.ts, which a client form can
 // import without dragging next/headers into the browser bundle.
 import type { PropertyType } from './property-input'
-// Also type-only, and the other way round: buildings.ts imports keysetFilter
-// from here at runtime, so a value import back would close the cycle.
+// Also type-only, and the other way round: buildings.ts and owners.ts import
+// keysetFilter from here at runtime, so a value import back would close the
+// cycle.
 import type { BuildingOption } from './buildings'
+import type { OwnerOption } from './owners'
 
 export const PAGE_SIZE = 25
 
@@ -39,6 +41,10 @@ export interface PropertyListRow {
   areaSqm: number
   priceMonthly: number
   status: PropertyStatus
+  /** Whose room this is. Name only — the phone that disambiguates two Owners
+   *  belongs to the picker and the Owners page, not to a column being scanned.
+   *  null when no Owner is on file, which is an ordinary state. */
+  ownerName: string | null
   /** From the active Rental, when there is one. The snapshot column, so a
    *  Tenant record removed later does not blank out the list. */
   tenantName: string | null
@@ -62,6 +68,20 @@ interface PropertyRecord {
   price_monthly: number
   status: PropertyStatus
   created_at: string
+  // Embedded to-one: an object in the response, typed as either because
+  // PostgREST's inference decides which. `embeddedOwner` normalises it.
+  owners: EmbeddedOwnerName | EmbeddedOwnerName[] | null
+}
+
+interface EmbeddedOwnerName {
+  name: string
+}
+
+/** PostgREST renders an embedded to-one as an object but may type it as an
+ *  array; every embed here is read through this so that detail stays out of the
+ *  pages. */
+function embeddedOne<T>(embed: T | T[] | null | undefined): T | null {
+  return Array.isArray(embed) ? (embed[0] ?? null) : (embed ?? null)
 }
 
 /**
@@ -83,7 +103,10 @@ export async function listProperties(
   let query = supabase
     .from('properties')
     .select(
-      'id, title, room_number, property_type, bedrooms, bathrooms, area_sqm, price_monthly, status, created_at',
+      'id, title, room_number, property_type, bedrooms, bathrooms, area_sqm, price_monthly, status, created_at, ' +
+        // One join in the same round-trip rather than a second query keyed by
+        // owner_id — the Owner column is on every row of the list.
+        'owners(name)',
     )
     .eq('org_id', orgId)
     .order('created_at', { ascending: false })
@@ -98,7 +121,10 @@ export async function listProperties(
   const { data, error } = await query
   if (error) throw error
 
-  const records = (data ?? []) as PropertyRecord[]
+  // Through unknown, like the edit read below: with an embed in the select and
+  // no generated database types, supabase-js infers GenericStringError rather
+  // than the row.
+  const records = (data ?? []) as unknown as PropertyRecord[]
   const page = records.slice(0, limit)
   const last = page.at(-1)
   const nextCursor =
@@ -117,6 +143,7 @@ export async function listProperties(
       areaSqm: Number(p.area_sqm),
       priceMonthly: Number(p.price_monthly),
       status: p.status,
+      ownerName: embeddedOne(p.owners)?.name ?? null,
       tenantName: rentals.get(p.id)?.tenantName ?? null,
       rentalEndDate: rentals.get(p.id)?.endDate ?? null,
     })),
@@ -187,6 +214,11 @@ export interface PropertyEditRow {
   images: string[]
   /** null for an ETL-imported row, which has no Building yet (CONTEXT.md). */
   building: BuildingOption | null
+  /** In the shape the picker takes, so the edit page can hand it straight over
+   *  and show the Owner already chosen — name and phone, as the option list
+   *  renders them. null is the ordinary "nobody on file", not an import
+   *  artefact. */
+  owner: OwnerOption | null
 }
 
 /**
@@ -211,8 +243,8 @@ export async function getPropertyForEdit(
     .from('properties')
     .select(
       'id, title, room_number, property_type, bedrooms, bathrooms, area_sqm, price_monthly, ' +
-        'floor, description, contact_line, status, images, ' +
-        'buildings(id, name, district, google_map_url)',
+        'floor, description, contact_line, status, images, owner_id, ' +
+        'buildings(id, name, district, google_map_url), owners(id, name, phone)',
     )
     .eq('id', id)
     .eq('org_id', orgId)
@@ -224,7 +256,8 @@ export async function getPropertyForEdit(
   // PostgREST renders an embedded to-one as an object, but types it as either
   // depending on how it inferred the relationship; normalising here keeps that
   // detail out of the page.
-  const b = Array.isArray(row.buildings) ? (row.buildings[0] ?? null) : row.buildings
+  const b = embeddedOne(row.buildings)
+  const o = embeddedOne(row.owners)
 
   return {
     id: row.id,
@@ -243,6 +276,7 @@ export async function getPropertyForEdit(
     building: b
       ? { id: b.id, name: b.name, district: b.district, googleMapUrl: b.google_map_url }
       : null,
+    owner: o ? { id: o.id, name: o.name, phone: o.phone } : null,
   }
 }
 
@@ -260,10 +294,18 @@ interface PropertyEditRecord {
   contact_line: string | null
   status: PropertyStatus
   images: string[] | null
+  owner_id: string | null
   buildings:
     | { id: string; name: string; district: string; google_map_url: string | null }
     | { id: string; name: string; district: string; google_map_url: string | null }[]
     | null
+  owners: EmbeddedOwner | EmbeddedOwner[] | null
+}
+
+interface EmbeddedOwner {
+  id: string
+  name: string
+  phone: string
 }
 
 export interface PropertyCounts {

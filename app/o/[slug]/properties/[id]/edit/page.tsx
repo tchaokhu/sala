@@ -11,6 +11,7 @@ import { notFound } from 'next/navigation'
 import { ChevronLeft } from 'lucide-react'
 import { requireMember } from '@/lib/supabase-server'
 import { listBuildingOptions } from '@/lib/buildings'
+import { listOwnerOptions } from '@/lib/owners'
 import { getPropertyForEdit } from '@/lib/properties'
 import { signedPropertyImageUrls } from '@/lib/property-storage'
 import { PageHeader } from '@/components/PageHeader'
@@ -25,11 +26,13 @@ export default async function EditPropertyPage({
   const { slug, id } = await params
   const org = await requireMember(slug)
 
-  // Neither depends on the other, so they go together. The Building list is
-  // small and bounded and gets filtered in the browser, as on the add form.
-  const [property, buildings] = await Promise.all([
+  // None of the three depends on the others, so they go together. The Building
+  // and Owner lists are small and bounded and get filtered in the browser, as on
+  // the add form.
+  const [property, buildings, owners] = await Promise.all([
     getPropertyForEdit(org.id, id),
     listBuildingOptions(org.id),
+    listOwnerOptions(org.id),
   ])
   if (!property) notFound()
 
@@ -56,6 +59,8 @@ export default async function EditPropertyPage({
         photos={photos}
         buildings={buildings.options}
         buildingsCapped={buildings.capped}
+        owners={owners.options}
+        ownersCapped={owners.capped}
       />
 
       {/* Its own form below the edit one rather than a button inside it: the two

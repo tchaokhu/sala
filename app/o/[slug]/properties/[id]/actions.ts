@@ -12,6 +12,7 @@ import {
   validatePropertyImageEdit,
 } from '@/lib/property-input'
 import { resolveBuilding, UnknownBuildingError } from '@/lib/buildings'
+import { ownerBelongsToOrg } from '@/lib/owners'
 import { BUCKET, discard } from '@/lib/property-storage'
 import { getPropertyForEdit } from '@/lib/properties'
 import type { ActionResult } from '@/lib/action-result'
@@ -80,6 +81,14 @@ export async function updateProperty(formData: FormData): Promise<ActionResult> 
       return { ok: false, message: 'The Building you chose was not found. Choose it again.' }
     }
     return failed('Adding the Building', err)
+  }
+
+  // Re-checked on every edit, not only on create: an edit may reassign the
+  // Owner, and a posted owner_id from another agency's books has to be refused
+  // here exactly as it is there. Null means the Owner was cleared, which is a
+  // real answer and needs no read.
+  if (parsed.values.owner_id && !(await ownerBelongsToOrg(org.id, parsed.values.owner_id))) {
+    return { ok: false, message: 'The Owner you chose was not found. Choose it again.' }
   }
 
   // Keys are minted before anything is uploaded so the sweep on failure can name

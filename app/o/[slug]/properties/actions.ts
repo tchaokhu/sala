@@ -13,6 +13,7 @@ import {
   type NewProperty,
 } from '@/lib/property-input'
 import { resolveBuilding, UnknownBuildingError } from '@/lib/buildings'
+import { ownerBelongsToOrg } from '@/lib/owners'
 import { BUCKET, discard } from '@/lib/property-storage'
 import type { ActionResult } from '@/lib/action-result'
 
@@ -73,6 +74,16 @@ export async function createProperty(formData: FormData): Promise<ActionResult> 
       return { ok: false, message: 'The Building you chose was not found. Choose it again.' }
     }
     return failed('Adding the Building', err)
+  }
+
+  // The other id the form carries, checked the same way and in the same place —
+  // before any byte moves, because it can still refuse. An owner_id naming
+  // another agency's Owner finds no row under RLS (the read runs as the caller,
+  // filtered by the Org `requireMember` returned) and becomes a refusal rather
+  // than a Property pointing at a stranger. Null skips it: no Owner is an
+  // ordinary answer.
+  if (parsed.values.owner_id && !(await ownerBelongsToOrg(org.id, parsed.values.owner_id))) {
+    return { ok: false, message: 'The Owner you chose was not found. Choose it again.' }
   }
 
   let paths: string[]

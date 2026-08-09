@@ -70,7 +70,7 @@ beforeAll(async () => {
     [ORG_A, ORG_B],
   )
   await client.query(
-    `INSERT INTO memberships (org_id, user_id, role) VALUES ($1, $2, 'owner')`,
+    `INSERT INTO memberships (org_id, user_id, role) VALUES ($1, $2, 'admin')`,
     [ORG_A, USER_A],
   )
 })

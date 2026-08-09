@@ -1,44 +1,19 @@
 'use client'
 
-import { useActionState, useState } from 'react'
+import { useState } from 'react'
+import { Circle } from 'lucide-react'
+import { BUTTON, INPUT, Notice, PRIMARY_BUTTON, useFormAction } from '@/components/form'
 import {
   addMember,
   removeMember,
   setMemberDisplayName,
   setMemberRole,
 } from '../../actions'
-import type { ActionResult, AdminMember } from '../../types'
+import type { AdminMember } from '../../types'
 
 // The console's interactive parts. Everything here posts to a Server Action that
 // re-establishes the caller for itself — none of these components is a check,
 // and disabling a button is a courtesy rather than a control.
-
-/** useActionState wants (previousState, formData); the actions take the form
- *  alone, because nothing they do depends on what happened last time. */
-function useFormAction(action: (formData: FormData) => Promise<ActionResult>) {
-  return useActionState(
-    async (_previous: ActionResult | null, formData: FormData) => action(formData),
-    null,
-  )
-}
-
-function Notice({ result }: { result: ActionResult | null }) {
-  if (!result) return null
-  return (
-    <p
-      role="status"
-      className={`text-sm ${result.ok ? 'text-ok' : 'text-warn'}`}
-    >
-      {result.message}
-    </p>
-  )
-}
-
-const INPUT =
-  'rounded-lg border border-border bg-bg px-3 py-2 text-sm text-ink outline-none focus:border-accent focus:ring-1 focus:ring-accent disabled:opacity-60'
-
-const BUTTON =
-  'rounded-lg border border-border px-3 py-2 text-sm transition-colors hover:text-ink disabled:opacity-60'
 
 export function AddMemberForm({
   orgId,
@@ -92,17 +67,13 @@ export function AddMemberForm({
           <span className="text-sm font-medium">Role</span>
           <select name="role" defaultValue="member" disabled={pending} className={INPUT}>
             <option value="member">Member</option>
-            <option value="owner">Owner</option>
+            <option value="admin">Admin</option>
           </select>
         </label>
       </div>
 
       <div className="flex items-center gap-3">
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-lg bg-accent px-3 py-2 font-semibold text-on-accent transition-opacity hover:opacity-90 disabled:opacity-60"
-        >
+        <button type="submit" disabled={pending} className={PRIMARY_BUTTON}>
           {pending ? 'Adding…' : 'Add Member'}
         </button>
         <Notice result={result} />
@@ -116,13 +87,13 @@ export function MemberRow({
   orgId,
   slug,
   orgName,
-  isLastOwner,
+  isLastAdmin,
 }: {
   member: AdminMember
   orgId: string
   slug: string
   orgName: string
-  isLastOwner: boolean
+  isLastAdmin: boolean
 }) {
   const [open, setOpen] = useState(false)
 
@@ -154,13 +125,13 @@ export function MemberRow({
       {open && (
         <div className="flex flex-col gap-4 border-t border-border px-4 py-4">
           <RenameForm member={member} orgId={orgId} slug={slug} />
-          <RoleForm member={member} orgId={orgId} slug={slug} isLastOwner={isLastOwner} />
+          <RoleForm member={member} orgId={orgId} slug={slug} isLastAdmin={isLastAdmin} />
           <RemoveForm
             member={member}
             orgId={orgId}
             slug={slug}
             orgName={orgName}
-            isLastOwner={isLastOwner}
+            isLastAdmin={isLastAdmin}
           />
         </div>
       )}
@@ -168,20 +139,20 @@ export function MemberRow({
   )
 }
 
-/** Role reads as shape as well as colour — a filled key for an owner, an
- *  outline for a member — so the column scans without comparing shades
- *  (CLAUDE.md). The teak accent stays out of it. */
+/** Role reads as shape as well as colour — a filled disc for an admin, a ring
+ *  for a member — so the column scans without comparing shades (CLAUDE.md). The
+ *  teak accent stays out of it. */
 function RolePill({ role }: { role: AdminMember['role'] }) {
-  const owner = role === 'owner'
+  const admin = role === 'admin'
   return (
     <span
       className={
         'inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs ' +
-        (owner ? 'border-ok/40 text-ok' : 'border-border text-muted')
+        (admin ? 'border-ok/40 text-ok' : 'border-border text-muted')
       }
     >
-      <span aria-hidden>{owner ? '●' : '○'}</span>
-      {owner ? 'Owner' : 'Member'}
+      <Circle size={12} aria-hidden fill={admin ? 'currentColor' : 'none'} />
+      {admin ? 'Admin' : 'Member'}
     </span>
   )
 }
@@ -229,16 +200,16 @@ function RoleForm({
   member,
   orgId,
   slug,
-  isLastOwner,
+  isLastAdmin,
 }: {
   member: AdminMember
   orgId: string
   slug: string
-  isLastOwner: boolean
+  isLastAdmin: boolean
 }) {
   const [result, action, pending] = useFormAction(setMemberRole)
-  const next = member.role === 'owner' ? 'member' : 'owner'
-  const blocked = isLastOwner && next === 'member'
+  const next = member.role === 'admin' ? 'member' : 'admin'
+  const blocked = isLastAdmin && next === 'member'
 
   return (
     <form action={action} className="flex flex-col gap-2">
@@ -249,18 +220,18 @@ function RoleForm({
 
       <div className="flex flex-wrap items-center gap-3">
         <button type="submit" disabled={pending || blocked} className={BUTTON}>
-          {next === 'owner' ? 'Make an Owner' : 'Demote to Member'}
+          {next === 'admin' ? 'Make an Admin' : 'Demote to Member'}
         </button>
         <span className="text-sm text-muted">
-          {next === 'owner'
-            ? 'An Owner can add and remove Members of this Org.'
+          {next === 'admin'
+            ? 'An Admin can add and remove Members of this Org.'
             : 'A Member sees all of the data, but cannot manage people.'}
         </span>
       </div>
 
       {blocked && (
         <p className="text-sm text-muted">
-          The last Owner. Make somebody else an Owner first.
+          The last Admin. Make somebody else an Admin first.
         </p>
       )}
       <Notice result={result} />
@@ -276,22 +247,22 @@ function RemoveForm({
   orgId,
   slug,
   orgName,
-  isLastOwner,
+  isLastAdmin,
 }: {
   member: AdminMember
   orgId: string
   slug: string
   orgName: string
-  isLastOwner: boolean
+  isLastAdmin: boolean
 }) {
   const [result, action, pending] = useFormAction(removeMember)
   const [confirming, setConfirming] = useState(false)
   const who = member.display_name ?? member.email
 
-  if (isLastOwner) {
+  if (isLastAdmin) {
     return (
       <p className="text-sm text-muted">
-        The last Owner cannot be removed — the Org would be left with nobody to manage its
+        The last Admin cannot be removed — the Org would be left with nobody to manage its
         Members.
       </p>
     )

@@ -79,7 +79,7 @@ export function PropertyTable({
 
   return (
     <div className="overflow-x-auto rounded-xl border border-border bg-surface">
-      <table className="w-full min-w-[52rem] text-sm">
+      <table className="w-full min-w-[60rem] text-sm">
         <thead>
           <tr className="border-b border-border bg-bg/60 text-left text-[11px] tracking-wide text-muted">
             <th scope="col" className={HEAD_CELL}>Property</th>
@@ -88,6 +88,7 @@ export function PropertyTable({
             <th scope="col" className={`${HEAD_CELL} text-right`}>Rent/month</th>
             <th scope="col" className={HEAD_CELL}>Status</th>
             <th scope="col" className={HEAD_CELL}>Current Tenant</th>
+            <th scope="col" className={HEAD_CELL}>Owner</th>
             <th scope="col" className={`${HEAD_CELL} text-right`}>Manage</th>
           </tr>
         </thead>
@@ -135,6 +136,13 @@ export function PropertyTable({
                     <span className="text-muted">—</span>
                   )}
                 </td>
+                <td className="px-4 py-3">
+                  {row.ownerName ? (
+                    <span className="block max-w-40 truncate">{row.ownerName}</span>
+                  ) : (
+                    <span className="text-muted">—</span>
+                  )}
+                </td>
                 <td className="px-4 py-3 text-right">
                   {/* Named for a screen reader, which hears a column of
                       identical "Edit" links otherwise. */}
@@ -175,6 +183,7 @@ export function PropertyTableSkeleton({ rows = 8 }: { rows?: number }) {
             <span className="block h-4 w-16 animate-pulse rounded bg-border" />
             <span className="block h-4 w-20 animate-pulse rounded bg-border" />
             <span className="block h-5 w-16 animate-pulse rounded-full bg-border" />
+            <span className="block h-4 w-24 animate-pulse rounded bg-border" />
             <span className="block h-4 w-12 animate-pulse rounded bg-border" />
           </div>
         ))}

@@ -13,7 +13,7 @@
 // without a preview, somebody would upload five photos and have no way of seeing
 // that they were the right five.
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { ImagePlus, MapPin, X } from 'lucide-react'
 import {
@@ -26,8 +26,11 @@ import {
   useFormAction,
 } from '@/components/form'
 import { BuildingCombobox } from '@/components/BuildingCombobox'
+import { OwnerCombobox } from '@/components/OwnerCombobox'
 import { MapPreview } from '@/components/MapPreview'
+import { PhotoLightbox, type PhotoPreview } from '@/components/PhotoLightbox'
 import type { BuildingOption } from '@/lib/buildings'
+import type { OwnerOption } from '@/lib/owners'
 import {
   ACCEPTED_IMAGE_TYPES,
   CREATABLE_STATUSES,
@@ -46,17 +49,35 @@ export function NewPropertyForm({
   slug,
   buildings,
   buildingsCapped,
+  owners,
+  ownersCapped,
 }: {
   slug: string
   buildings: BuildingOption[]
   buildingsCapped: boolean
+  owners: OwnerOption[]
+  ownersCapped: boolean
 }) {
   const [result, action, pending] = useFormAction(createProperty)
   const [files, setFiles] = useState<File[]>([])
   const [building, setBuilding] = useState<BuildingOption | null>(null)
+  const [preview, setPreview] = useState<PhotoPreview | null>(null)
+  const imagesInputRef = useRef<HTMLInputElement>(null)
 
   const previews = useMemo(() => files.map((file) => URL.createObjectURL(file)), [files])
   useEffect(() => () => previews.forEach((url) => URL.revokeObjectURL(url)), [previews])
+
+  // The form posts the input's own FileList, not this state, so removing one
+  // photo means rebuilding that FileList too — a bare `files.filter` here
+  // would drop the preview but still upload the photo.
+  function removeFileAt(index: number) {
+    const transfer = new DataTransfer()
+    files.forEach((file, i) => {
+      if (i !== index) transfer.items.add(file)
+    })
+    if (imagesInputRef.current) imagesInputRef.current.files = transfer.files
+    setFiles(Array.from(transfer.files))
+  }
 
   const imageCheck = validateImages(files)
   const totalBytes = files.reduce((sum, f) => sum + f.size, 0)
@@ -154,6 +175,17 @@ export function NewPropertyForm({
           ))}
       </Card>
 
+      <Card
+        title="Owner"
+        note="The person who owns this Property. Leave it blank if the Org has nobody on file for it"
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Owner" hint="Only Owners already on file can be picked — add a new one on the Owners page">
+            <OwnerCombobox options={owners} capped={ownersCapped} disabled={pending} />
+          </Field>
+        </div>
+      </Card>
+
       <Card title="Size">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <Field label="Bedrooms">
@@ -235,6 +267,7 @@ export function NewPropertyForm({
             <ImagePlus size={16} aria-hidden />
             Choose photos
             <input
+              ref={imagesInputRef}
               type="file"
               name="images"
               multiple
@@ -250,14 +283,30 @@ export function NewPropertyForm({
               <ul className="flex flex-wrap gap-2">
                 {previews.map((src, index) => (
                   <li key={src} className="relative">
-                    {/* Local object URLs, never through next/image: there is no
-                        remote host to optimise and no size known in advance. */}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={src}
-                      alt={`Photo ${index + 1}`}
-                      className="h-24 w-24 rounded-lg border border-border object-cover"
-                    />
+                    <button
+                      type="button"
+                      onClick={() => setPreview({ src, alt: `Photo ${index + 1}` })}
+                      className="block cursor-zoom-in"
+                    >
+                      {/* Local object URLs, never through next/image: there is
+                          no remote host to optimise and no size known in
+                          advance. */}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={src}
+                        alt={`Photo ${index + 1}`}
+                        className="h-24 w-24 rounded-lg border border-border object-cover"
+                      />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={pending}
+                      aria-label={`Remove photo ${index + 1}`}
+                      onClick={() => removeFileAt(index)}
+                      className="absolute -top-1.5 -right-1.5 grid h-6 w-6 place-items-center rounded-full border border-border bg-surface text-muted transition-colors hover:border-warn hover:text-warn disabled:opacity-60"
+                    >
+                      <X size={13} aria-hidden />
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -298,6 +347,7 @@ export function NewPropertyForm({
         </button>
         <Notice result={result} />
       </div>
+      <PhotoLightbox photo={preview} onClose={() => setPreview(null)} />
     </form>
   )
 }

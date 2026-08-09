@@ -49,7 +49,15 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      {/* Browser extensions (Grammarly, password managers) stamp attributes
+          onto <body> before React hydrates, which React would otherwise flag
+          as a mismatch every load — same reasoning as the <html> tag above. */}
+      <body
+        className="min-h-full flex flex-col font-sans"
+        suppressHydrationWarning
+      >
+        {children}
+      </body>
     </html>
   )
 }

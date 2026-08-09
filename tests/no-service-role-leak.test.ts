@@ -23,6 +23,16 @@ const CODE = /\.(ts|tsx|js|jsx|mjs|cjs)$/
 const ADMIN_CLIENT = 'lib/supabase-admin.ts'
 const ALLOWED_IMPORTERS = ['app/admin/', ADMIN_CLIENT]
 
+/** The one thing outside a request path that needs the key: the Org purge
+ *  (ADR 0010). CLAUDE.md scopes the key to "the cron job and app/admin/", and
+ *  this is that cron job — Supabase Storage holds no session for it to borrow,
+ *  so sweeping a purged Org's `{org_id}/` prefix cannot be done any other way.
+ *  It runs from a terminal, never from a request, and never reaches a browser.
+ *
+ *  Named by exact path, not by a `scripts/` prefix: the next script to want
+ *  this should have to add itself here and say why. */
+const ALLOWED_SCRIPTS = ['scripts/purge-deleted-orgs.mjs']
+
 async function sourceFiles(dir = ROOT): Promise<string[]> {
   const out: string[] = []
   for (const entry of await readdir(dir, { withFileTypes: true })) {
@@ -49,12 +59,34 @@ describe('the service role key stays where ADR 0006 put it', () => {
     expect(sources.map(s => s.path)).toContain(ADMIN_CLIENT)
   })
 
-  it('is read in exactly one module', () => {
+  it('is read in exactly one module, plus the purge script', () => {
     const readers = sources
       .filter(s => s.text.includes('SUPABASE_SERVICE_ROLE_KEY'))
       .map(s => s.path)
       .filter(p => p !== ADMIN_CLIENT && p !== 'tests/no-service-role-leak.test.ts')
+      .filter(p => !ALLOWED_SCRIPTS.includes(p))
     expect(readers).toEqual([])
+  })
+
+  it('keeps the purge script out of anything a request can reach', () => {
+    // The exception above is only safe while it stays a script. If something
+    // under app/, lib/ or components/ ever imports it, the key is back in a
+    // request path and ADR 0006's bound is gone.
+    //
+    // An import, not a mention: app/admin/actions.ts names the script in a
+    // comment, because softDeleteOrg is the thing that schedules the work the
+    // script finishes, and that cross-reference is worth keeping.
+    const imported = ALLOWED_SCRIPTS.map(script =>
+      new RegExp(`(?:from|require\\s*\\(|import\\s*\\()\\s*['"][^'"]*${
+        script.replace(/^scripts\//, '').replace(/[.]/g, '\\.')
+      }['"]`),
+    )
+
+    const importers = sources
+      .filter(s => imported.some(re => re.test(s.text)))
+      .map(s => s.path)
+      .filter(p => p.startsWith('app/') || p.startsWith('lib/') || p.startsWith('components/'))
+    expect(importers).toEqual([])
   })
 
   it('is never given a NEXT_PUBLIC_ prefix, which would inline it into the browser bundle', () => {

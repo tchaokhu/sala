@@ -76,7 +76,7 @@ beforeAll(async () => {
   // Org B is shaped to inflate every bucket if isolation ever slips.
   await seed(ORG_B, 'count-b', ['available', 'reserved', 'rented', 'rented'])
   await client.query(
-    `INSERT INTO memberships (org_id, user_id, role) VALUES ($1, $2, 'owner')`,
+    `INSERT INTO memberships (org_id, user_id, role) VALUES ($1, $2, 'admin')`,
     [ORG_A, USER_A],
   )
 })

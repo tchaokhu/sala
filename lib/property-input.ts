@@ -56,6 +56,14 @@ export interface NewProperty {
   room_number: string | null
   description: string | null
   contact_line: string | null
+  /** The Owner picker, or null for a Property with nobody on file. Optional
+   *  always — a Property without a separate Owner is an ordinary Property, not
+   *  an import artefact the way a Building-less one is.
+   *
+   *  Whether the id names a real Owner *of this Org* is not decided here: that
+   *  is a read, and this function does no I/O. The action asks
+   *  `ownerBelongsToOrg` before it writes. */
+  owner_id: string | null
   status: CreatableStatus
 }
 
@@ -200,6 +208,10 @@ function parsePropertyFields(form: FormLike): Parsed<PropertyFields> {
       room_number: blankToNull(form.get('room_number'), MAX_ROOM_NUMBER),
       description: blankToNull(form.get('description'), MAX_DESCRIPTION),
       contact_line: blankToNull(form.get('contact_line'), 100),
+      // Blank means "no Owner", which is also the column's default — the picker
+      // can be cleared back to nothing and that is a real answer, not a
+      // half-filled form.
+      owner_id: blankToNull(form.get('owner_id'), 40),
     },
   }
 }

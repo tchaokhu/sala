@@ -1,5 +1,7 @@
 // Skeletons, not spinners — and the shape is the real list's, so nothing shifts
-// when the Orgs land.
+// when the Orgs land. The create-an-Org form below the list is static markup, so
+// it gets a block of its own height rather than being left out and shoving the
+// page around on arrival.
 
 export default function AdminLoading() {
   return (
@@ -25,6 +27,25 @@ export default function AdminLoading() {
           </li>
         ))}
       </ul>
+
+      <div
+        className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4"
+        aria-hidden
+      >
+        <div className="flex flex-col gap-1.5">
+          <span className="block h-5 w-32 animate-pulse rounded bg-border" />
+          <span className="block h-4 w-full max-w-lg animate-pulse rounded bg-border" />
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="flex flex-col gap-1.5">
+              <span className="block h-4 w-24 animate-pulse rounded bg-border" />
+              <span className="block h-[38px] w-full animate-pulse rounded-lg bg-border" />
+            </div>
+          ))}
+        </div>
+        <span className="block h-[38px] w-28 animate-pulse rounded-lg bg-border" />
+      </div>
     </div>
   )
 }

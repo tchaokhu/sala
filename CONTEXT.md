@@ -18,12 +18,12 @@ Memberships across different Orgs.
 _Avoid_: Seat, user-org link
 
 **Role**:
-What a Member may do inside their Org. Either `owner` (may invite and remove
+What a Member may do inside their Org. Either `admin` (may invite and remove
 Members, edit the Org) or `member` (everything else). Roles never restrict which
 Properties a person can see — all Members see all of their Org's data. Both may
 change their own Display Name and their own login email; neither may change
 anyone else's email.
-_Avoid_: Permission, access level
+_Avoid_: Permission, access level, owner
 
 **Display Name**:
 What a person is called inside one Org. Carried on the Membership, not on the
@@ -32,10 +32,13 @@ Falls back to the login email when unset.
 _Avoid_: Full name, username, profile
 
 **Superadmin**:
-The operator of Sala, who creates Orgs and invites their first owner. Not a Role
+The operator of Sala, who creates Orgs and invites their first admin. Not a Role
 — Superadmin sits outside every Org and is not a Member of any. Reaches Orgs and
 Memberships through `/admin` and nothing else: an Org's Properties, Rentals,
 Payments, Tenants and Inquiries are closed to the operator too (ADR 0006).
+Also the only one who can remove an Org, and the only one who can put it back:
+removal is soft, closing the Org to its Members at once and leaving it
+restorable for sixty days before it is purged for good (ADR 0010).
 _Avoid_: Platform admin, root, god mode
 
 ## Inventory
@@ -55,8 +58,8 @@ Sala has one.
 _Avoid_: Project, condo, development
 
 **Owner**:
-The person who owns a Property and entrusts it to the Org. Distinct from the
-`owner` Role, which is about Sala itself and has nothing to do with real estate.
+The person who owns a Property and entrusts it to the Org. Always the real-estate
+sense — the Role that used to share this word is now `admin` (ADR 0010).
 _Avoid_: Landlord, lessor
 
 ## Tenancy

@@ -32,11 +32,11 @@ const DATABASE_URL = process.env.DATABASE_URL ?? 'postgres://sala:sala@localhost
 // c1, d1, e1, f1.
 const ORG_A = '0a000000-0000-0000-0000-0000000000a2'
 const ORG_B = '0b000000-0000-0000-0000-0000000000b2'
-// Two Members of Org A — one owner, one plain — and one person in Org B only,
+// Two Members of Org A — one admin, one plain — and one person in Org B only,
 // who is the outsider every guard below is written against.
-const OWNER_A = 'aa000000-0000-0000-0000-0000000000a2'
+const ADMIN_A = 'aa000000-0000-0000-0000-0000000000a2'
 const MEMBER_A = 'aa000000-0000-0000-0000-0000000000a3'
-const OWNER_B = 'bb000000-0000-0000-0000-0000000000b2'
+const ADMIN_B = 'bb000000-0000-0000-0000-0000000000b2'
 
 const client = new pg.Client({ connectionString: DATABASE_URL, connectionTimeoutMillis: 3000 })
 let reachable = false
@@ -95,15 +95,15 @@ beforeAll(async () => {
   await client.query(`DELETE FROM memberships WHERE org_id IN ($1, $2)`, [ORG_A, ORG_B])
   await client.query(`DELETE FROM orgs WHERE id IN ($1, $2)`, [ORG_A, ORG_B])
   await client.query(`DELETE FROM auth.users WHERE id IN ($1, $2, $3)`, [
-    OWNER_A, MEMBER_A, OWNER_B,
+    ADMIN_A, MEMBER_A, ADMIN_B,
   ])
 
   await client.query(
     `INSERT INTO auth.users (id, email) VALUES ($1, $2), ($3, $4), ($5, $6)`,
     [
-      OWNER_A, 'owner-a@example.test',
+      ADMIN_A, 'admin-a@example.test',
       MEMBER_A, 'Member-A@Example.test',
-      OWNER_B, 'owner-b@example.test',
+      ADMIN_B, 'admin-b@example.test',
     ],
   )
   await client.query(`INSERT INTO orgs (id, slug, name) VALUES ($1, $2, $2), ($3, $4, $4)`, [
@@ -111,10 +111,10 @@ beforeAll(async () => {
   ])
   await client.query(
     `INSERT INTO memberships (org_id, user_id, role, display_name) VALUES
-       ($1, $2, 'owner',  'สมชาย'),
+       ($1, $2, 'admin',  'สมชาย'),
        ($1, $3, 'member', NULL),
-       ($4, $5, 'owner',  'Somsri')`,
-    [ORG_A, OWNER_A, MEMBER_A, ORG_B, OWNER_B],
+       ($4, $5, 'admin',  'Somsri')`,
+    [ORG_A, ADMIN_A, MEMBER_A, ORG_B, ADMIN_B],
   )
 })
 
@@ -123,7 +123,7 @@ afterAll(async () => {
   await client.query(`DELETE FROM memberships WHERE org_id IN ($1, $2)`, [ORG_A, ORG_B])
   await client.query(`DELETE FROM orgs WHERE id IN ($1, $2)`, [ORG_A, ORG_B])
   await client.query(`DELETE FROM auth.users WHERE id IN ($1, $2, $3)`, [
-    OWNER_A, MEMBER_A, OWNER_B,
+    ADMIN_A, MEMBER_A, ADMIN_B,
   ])
   await client.end()
 })
@@ -144,10 +144,10 @@ describe('org_members', () => {
   })
 
   it.runIf(reachable)('returns both Members to a Member of that Org', async () => {
-    const rows = await queryAs<MemberRow>(OWNER_A, 'SELECT * FROM org_members($1)', [ORG_A])
-    expect(rows.map(r => r.user_id).sort()).toEqual([OWNER_A, MEMBER_A].sort())
-    expect(rows.find(r => r.user_id === OWNER_A)?.display_name).toBe('สมชาย')
-    expect(rows.find(r => r.user_id === OWNER_A)?.email).toBe('owner-a@example.test')
+    const rows = await queryAs<MemberRow>(ADMIN_A, 'SELECT * FROM org_members($1)', [ORG_A])
+    expect(rows.map(r => r.user_id).sort()).toEqual([ADMIN_A, MEMBER_A].sort())
+    expect(rows.find(r => r.user_id === ADMIN_A)?.display_name).toBe('สมชาย')
+    expect(rows.find(r => r.user_id === ADMIN_A)?.email).toBe('admin-a@example.test')
   })
 
   it.runIf(reachable)('returns the same to a plain member — Roles do not restrict reads', async () => {
@@ -156,9 +156,9 @@ describe('org_members', () => {
   })
 
   // The one that matters. The function is DEFINER, so nothing but its own WHERE
-  // clause is between Org B's owner and Org A's member list.
+  // clause is between Org B's admin and Org A's member list.
   it.runIf(reachable)('gives a member of another Org nothing', async () => {
-    const rows = await queryAs<MemberRow>(OWNER_B, 'SELECT * FROM org_members($1)', [ORG_A])
+    const rows = await queryAs<MemberRow>(ADMIN_B, 'SELECT * FROM org_members($1)', [ORG_A])
     expect(rows).toEqual([])
   })
 
@@ -193,23 +193,23 @@ describe('set_my_display_name', () => {
   it.runIf(reachable)('leaves every other row alone', async () => {
     const name = await asUser(MEMBER_A, async (q) => {
       await q(`SELECT set_my_display_name($1, 'มานี')`, [ORG_A])
-      return (await nameOf(q, ORG_A, OWNER_A))[0].display_name
+      return (await nameOf(q, ORG_A, ADMIN_A))[0].display_name
     })
     expect(name).toBe('สมชาย')
   })
 
   it.runIf(reachable)('clears the name when handed blank, rather than storing whitespace', async () => {
-    const name = await asUser(OWNER_A, async (q) => {
+    const name = await asUser(ADMIN_A, async (q) => {
       await q(`SELECT set_my_display_name($1, '   ')`, [ORG_A])
-      return (await nameOf(q, ORG_A, OWNER_A))[0].display_name
+      return (await nameOf(q, ORG_A, ADMIN_A))[0].display_name
     })
     expect(name).toBe(null)
   })
 
   it.runIf(reachable)('trims', async () => {
-    const name = await asUser(OWNER_A, async (q) => {
+    const name = await asUser(ADMIN_A, async (q) => {
       await q(`SELECT set_my_display_name($1, '  มานี  ')`, [ORG_A])
-      return (await nameOf(q, ORG_A, OWNER_A))[0].display_name
+      return (await nameOf(q, ORG_A, ADMIN_A))[0].display_name
     })
     expect(name).toBe('มานี')
   })
@@ -218,13 +218,13 @@ describe('set_my_display_name', () => {
   // the function has to be the thing that refuses.
   it.runIf(reachable)('refuses an Org the caller is not in', async () => {
     await expect(
-      queryAs(OWNER_B, `SELECT set_my_display_name($1, 'intruder')`, [ORG_A]),
+      queryAs(ADMIN_B, `SELECT set_my_display_name($1, 'intruder')`, [ORG_A]),
     ).rejects.toThrow(/not a member/)
 
     const rows = await queryAs<{ display_name: string | null }>(
-      OWNER_A,
+      ADMIN_A,
       `SELECT display_name FROM memberships WHERE org_id = $1 AND user_id = $2`,
-      [ORG_A, OWNER_A],
+      [ORG_A, ADMIN_A],
     )
     expect(rows[0].display_name).toBe('สมชาย')
   })
@@ -237,7 +237,7 @@ describe('set_my_display_name', () => {
 
   it.runIf(reachable)('refuses a name longer than the column allows', async () => {
     await expect(
-      queryAs(OWNER_A, `SELECT set_my_display_name($1, repeat('ก', 81))`, [ORG_A]),
+      queryAs(ADMIN_A, `SELECT set_my_display_name($1, repeat('ก', 81))`, [ORG_A]),
     ).rejects.toThrow(/longer than 80/)
   })
 })
@@ -249,7 +249,7 @@ describe('a member cannot promote themselves', () => {
   // Write and read share one transaction, so a silent no-op is visible as one.
   it.runIf(reachable)('cannot UPDATE role on their own row', async () => {
     const role = await asUser(MEMBER_A, async (q) => {
-      await q(`UPDATE memberships SET role = 'owner' WHERE org_id = $1 AND user_id = $2`, [
+      await q(`UPDATE memberships SET role = 'admin' WHERE org_id = $1 AND user_id = $2`, [
         ORG_A, MEMBER_A,
       ])
       const rows = await q<{ role: string }>(
@@ -265,9 +265,9 @@ describe('a member cannot promote themselves', () => {
     const name = await asUser(MEMBER_A, async (q) => {
       await q(
         `UPDATE memberships SET display_name = 'hijacked' WHERE org_id = $1 AND user_id = $2`,
-        [ORG_A, OWNER_A],
+        [ORG_A, ADMIN_A],
       )
-      return (await nameOf(q, ORG_A, OWNER_A))[0].display_name
+      return (await nameOf(q, ORG_A, ADMIN_A))[0].display_name
     })
     expect(name).toBe('สมชาย')
   })
@@ -290,7 +290,7 @@ describe('the console\'s reads are the console\'s', () => {
     const rows = await asService<MemberRow>('SELECT * FROM admin_org_members($1)', [ORG_A])
     expect(rows).toHaveLength(2)
     expect(rows.map(r => r.email).sort()).toEqual(
-      ['Member-A@Example.test', 'owner-a@example.test'].sort(),
+      ['Member-A@Example.test', 'admin-a@example.test'].sort(),
     )
   })
 
@@ -298,51 +298,56 @@ describe('the console\'s reads are the console\'s', () => {
   // would leak, and it is a grant, not a policy, that stops it.
   it.runIf(reachable)('refuses admin_org_members to a signed-in user', async () => {
     await expect(
-      queryAs(OWNER_A,'SELECT * FROM admin_org_members($1)', [ORG_A]),
+      queryAs(ADMIN_A,'SELECT * FROM admin_org_members($1)', [ORG_A]),
     ).rejects.toThrow(/permission denied/i)
   })
 
   it.runIf(reachable)('refuses admin_orgs to a signed-in user', async () => {
-    await expect(queryAs(OWNER_A, 'SELECT * FROM admin_orgs(50)')).rejects.toThrow(
+    await expect(queryAs(ADMIN_A, 'SELECT * FROM admin_orgs(50)')).rejects.toThrow(
       /permission denied/i,
     )
   })
 
   it.runIf(reachable)('refuses admin_user_id_by_email to a signed-in user', async () => {
     await expect(
-      queryAs(OWNER_A,`SELECT admin_user_id_by_email('owner-b@example.test')`),
+      queryAs(ADMIN_A,`SELECT admin_user_id_by_email('admin-b@example.test')`),
     ).rejects.toThrow(/permission denied/i)
   })
 
-  it.runIf(reachable)('refuses admin_owner_count to a signed-in user', async () => {
+  it.runIf(reachable)('refuses admin_admin_count to a signed-in user', async () => {
     await expect(
-      queryAs(OWNER_A,'SELECT admin_owner_count($1)', [ORG_A]),
+      queryAs(ADMIN_A,'SELECT admin_admin_count($1)', [ORG_A]),
     ).rejects.toThrow(/permission denied/i)
   })
 })
 
 describe('admin_orgs', () => {
-  it.runIf(reachable)('counts Members and owners per Org, in SQL', async () => {
+  it.runIf(reachable)('counts Members and admins per Org, in SQL', async () => {
     const rows = await asService<{
       slug: string
       member_count: number
-      owner_count: number
+      admin_count: number
       total: number
     }>('SELECT * FROM admin_orgs(200)')
 
     const a = rows.find(r => r.slug === 'member-admin-a')
     expect(a?.member_count).toBe(2)
-    expect(a?.owner_count).toBe(1)
+    expect(a?.admin_count).toBe(1)
 
     const b = rows.find(r => r.slug === 'member-admin-b')
     expect(b?.member_count).toBe(1)
-    expect(b?.owner_count).toBe(1)
+    expect(b?.admin_count).toBe(1)
   })
 
   it.runIf(reachable)('reports the unbounded total beside a bounded page', async () => {
-    const [row] = await asService<{ total: number }>('SELECT * FROM admin_orgs(1)')
-    const [{ n }] = await asService<{ n: number }>('SELECT count(*)::int AS n FROM orgs')
-    expect(row.total).toBe(n)
+    // One statement, not two: tests/rls files run in parallel against one
+    // database, and a second round-trip can land after another file's
+    // beforeAll/afterAll has changed how many Orgs exist. A single query's
+    // subqueries share one snapshot, so this stays correct under that.
+    const [{ total, n }] = await asService<{ total: number; n: number }>(
+      'SELECT total, (SELECT count(*)::int FROM orgs) AS n FROM admin_orgs(1)',
+    )
+    expect(total).toBe(n)
   })
 
   it.runIf(reachable)('never returns more than its limit', async () => {
@@ -361,9 +366,9 @@ describe('admin_orgs', () => {
 describe('admin_user_id_by_email', () => {
   it.runIf(reachable)('finds an account', async () => {
     const [row] = await asService<{ admin_user_id_by_email: string | null }>(
-      `SELECT admin_user_id_by_email('owner-a@example.test')`,
+      `SELECT admin_user_id_by_email('admin-a@example.test')`,
     )
-    expect(row.admin_user_id_by_email).toBe(OWNER_A)
+    expect(row.admin_user_id_by_email).toBe(ADMIN_A)
   })
 
   // GoTrue lowercases what it stores; an operator types what was written down.
@@ -382,20 +387,20 @@ describe('admin_user_id_by_email', () => {
   })
 })
 
-describe('admin_owner_count', () => {
-  it.runIf(reachable)('counts only owners', async () => {
-    const [row] = await asService<{ admin_owner_count: number }>(
-      'SELECT admin_owner_count($1)',
+describe('admin_admin_count', () => {
+  it.runIf(reachable)('counts only admins', async () => {
+    const [row] = await asService<{ admin_admin_count: number }>(
+      'SELECT admin_admin_count($1)',
       [ORG_A],
     )
-    expect(row.admin_owner_count).toBe(1)
+    expect(row.admin_admin_count).toBe(1)
   })
 
   it.runIf(reachable)('is zero for an Org with nobody in it', async () => {
-    const [row] = await asService<{ admin_owner_count: number }>(
-      'SELECT admin_owner_count($1)',
+    const [row] = await asService<{ admin_admin_count: number }>(
+      'SELECT admin_admin_count($1)',
       ['0c000000-0000-0000-0000-0000000000c2'],
     )
-    expect(row.admin_owner_count).toBe(0)
+    expect(row.admin_admin_count).toBe(0)
   })
 })

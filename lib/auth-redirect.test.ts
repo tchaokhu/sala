@@ -47,6 +47,7 @@ describe('signInAgain', () => {
   it('names the reason', () => {
     expect(signInAgain('expired', '/')).toBe('/login?error=expired')
     expect(signInAgain('device', '/')).toBe('/login?error=device')
+    expect(signInAgain('not-invited', '/')).toBe('/login?error=not-invited')
   })
 
   it('carries the destination, so a second link still lands there', () => {

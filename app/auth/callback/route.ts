@@ -12,10 +12,19 @@ import { safeNext, signInAgain } from '@/lib/auth-redirect'
 // Links that were not started by this browser — an invite, anything opened on a
 // different device — have no PKCE verifier to exchange against and go through
 // /auth/confirm instead.
+//
+// Google sign-in lands here too, on the same code-exchange path — but a
+// Google account nobody invited never gets that far. GoTrue refuses it before
+// a session can exist (project-wide `disable_signup`, ADR 0011) and redirects
+// here with `error_code` instead of `code`.
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl
   const code = searchParams.get('code')
   const next = safeNext(searchParams.get('next'))
+
+  if (searchParams.get('error_code') === 'signup_disabled') {
+    return NextResponse.redirect(origin + signInAgain('not-invited', next))
+  }
 
   if (code) {
     const supabase = await createClient()

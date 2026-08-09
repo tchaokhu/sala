@@ -5,8 +5,10 @@
 
 /** Why the person is back at the sign-in page. `expired` is a link that was used
  *  already or has timed out; `device` is a PKCE link opened somewhere other than
- *  the browser that asked for it. Different problems, different instructions. */
-export type LinkError = 'expired' | 'device'
+ *  the browser that asked for it; `not-invited` is a Google account GoTrue
+ *  refused to sign up because it has never been invited (project-wide
+ *  `disable_signup`, ADR 0011). Different problems, different instructions. */
+export type LinkError = 'expired' | 'device' | 'not-invited'
 
 /** Only ever a path on this origin. `//evil.com` and `https://evil.com` would
  *  otherwise turn a callback into an open redirect, and a backslash is worth

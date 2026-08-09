@@ -26,9 +26,6 @@ export default async function LoginPage({
 
         <div>
           <h1 className="text-lg font-semibold">Log in</h1>
-          <p className="mt-1 text-sm text-muted">
-            Enter your email and we will send you a link to log in.
-          </p>
         </div>
 
         <LoginForm next={next} linkError={parseLinkError(error)} />
@@ -37,8 +34,8 @@ export default async function LoginPage({
   )
 }
 
-/** Only the two reasons the callback sends. A typo or a hand-edited param shows
- *  no notice at all, rather than an empty box claiming something went wrong. */
+/** Only the reasons the callback sends. A typo or a hand-edited param shows no
+ *  notice at all, rather than an empty box claiming something went wrong. */
 function parseLinkError(value: string | undefined): LinkError | undefined {
-  return value === 'expired' || value === 'device' ? value : undefined
+  return value === 'expired' || value === 'device' || value === 'not-invited' ? value : undefined
 }

@@ -109,6 +109,32 @@ describe('schema shape', () => {
     expect(scoped.filter(t => !withFk.has(t))).toEqual([])
   })
 
+  it.runIf(reachable)('carries org_id in every foreign key between two org-scoped tables', async () => {
+    // A key on the id alone lets Org A's row name Org B's parent: RLS admits
+    // the child's org_id and the FK admits the id (ADR 0013). Only a key that
+    // matches org_id on both sides makes that row impossible to write.
+    const rows = await q<{ edge: string; child_org: boolean; parent_org: boolean }>(
+      `SELECT c.conrelid::regclass::text || '.' || c.conname AS edge,
+              EXISTS (SELECT 1 FROM unnest(c.conkey) k
+                        JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = k
+                       WHERE a.attname = 'org_id') AS child_org,
+              EXISTS (SELECT 1 FROM unnest(c.confkey) k
+                        JOIN pg_attribute a ON a.attrelid = c.confrelid AND a.attnum = k
+                       WHERE a.attname = 'org_id') AS parent_org
+         FROM pg_constraint c
+         JOIN pg_namespace n ON n.oid = c.connamespace
+        WHERE c.contype = 'f'
+          AND n.nspname = 'public'
+          AND c.confrelid <> 'orgs'::regclass
+          AND c.conrelid::regclass::text <> ALL ($1)
+          AND c.confrelid::regclass::text <> ALL ($1)`,
+      [[...GLOBAL_TABLES]],
+    )
+    // Vacuity guard: ten such edges existed when this was written.
+    expect(rows.length).toBeGreaterThanOrEqual(10)
+    expect(rows.filter(r => !r.child_org || !r.parent_org).map(r => r.edge)).toEqual([])
+  })
+
   it.runIf(reachable)('covers all four operations with a policy on every table', async () => {
     const rows = await q<{ tablename: string; cmd: string }>(
       `SELECT tablename, cmd FROM pg_policies WHERE schemaname = 'public'`,

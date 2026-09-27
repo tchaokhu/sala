@@ -139,18 +139,30 @@ describe('Platforms and Postings across Orgs', () => {
     'refuses a Posting naming another Org’s Platform, even under its own org_id',
     async () => {
       // The row would be a lie: org A's Posting pointing at org B's channel.
-      // RLS admits the org_id, so what has to refuse this is the application's
-      // own check — `ownedPlatformIds` in lib/postings.ts. The database lets it
-      // through today, which is exactly the unguarded cross-org FK recorded as
-      // a follow-up in TASK.md, so this asserts the hole rather than pretending
-      // it is closed: if it ever starts throwing, the follow-up shipped and
-      // this expectation should flip.
-      const written = await asUser(
-        MEMBER_A,
-        `INSERT INTO postings (org_id, property_id, platform_id) VALUES ($1,$2,$3)`,
-        [ORG_A, PROP_A2, PLAT_B],
-      )
-      expect(written).toBe(1)
+      // RLS admits the org_id, so it is the composite key from 0016 that
+      // refuses it — (platform_id, org_id) must name a Platform in org A.
+      // `ownedPlatformIds` in lib/postings.ts still checks first, so the caller
+      // gets a message rather than a constraint name (ADR 0013).
+      await expect(
+        asUser(
+          MEMBER_A,
+          `INSERT INTO postings (org_id, property_id, platform_id) VALUES ($1,$2,$3)`,
+          [ORG_A, PROP_A2, PLAT_B],
+        ),
+      ).rejects.toThrow(/postings_platform_id_fkey/)
+    },
+  )
+
+  it.runIf(reachable)(
+    'refuses a Posting naming another Org’s Property, even under its own org_id',
+    async () => {
+      await expect(
+        asUser(
+          MEMBER_A,
+          `INSERT INTO postings (org_id, property_id, platform_id) VALUES ($1,$2,$3)`,
+          [ORG_A, PROP_B, PLAT_A],
+        ),
+      ).rejects.toThrow(/postings_property_id_fkey/)
     },
   )
 
@@ -179,6 +191,29 @@ describe('what the database enforces on its own', () => {
         [PROP_A],
       )
       expect(rows[0].n).toBe(0)
+    } finally {
+      await client.query('ROLLBACK')
+    }
+  })
+
+  it.runIf(reachable)('deleting an Owner clears the Property’s owner_id and nothing else', async () => {
+    // 0016 made the key (owner_id, org_id). A bare SET NULL would null org_id
+    // too and fail on NOT NULL; `SET NULL (owner_id)` is what keeps deleting an
+    // Owner possible. Every SET NULL edge in 0016 is written the same way.
+    const OWNER_A = '31000000-0000-0000-0000-0000000000e2'
+    await client.query('BEGIN')
+    try {
+      await client.query(`INSERT INTO owners (id, org_id, name, phone) VALUES ($1,$2,'Khun A','0800000000')`, [
+        OWNER_A,
+        ORG_A,
+      ])
+      await client.query('UPDATE properties SET owner_id = $1 WHERE id = $2', [OWNER_A, PROP_A2])
+      await client.query('DELETE FROM owners WHERE id = $1', [OWNER_A])
+      const { rows } = await client.query(
+        'SELECT owner_id, org_id FROM properties WHERE id = $1',
+        [PROP_A2],
+      )
+      expect(rows[0]).toEqual({ owner_id: null, org_id: ORG_A })
     } finally {
       await client.query('ROLLBACK')
     }

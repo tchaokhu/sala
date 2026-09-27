@@ -99,6 +99,10 @@ ADR 0002 are the shape of that; these are the rules that keep it true.
   manages who is in which Org and nothing under Inventory, Tenancy or Leads in
   CONTEXT.md. Every action in `app/admin/` re-checks `isSuperadmin` itself — the
   layout gate does not run in front of a Server Action.
+- **A foreign key between two Org tables carries `org_id`.** The parent has
+  `UNIQUE (id, org_id)` and the child references `(col, org_id)`, so RLS
+  admitting the child's `org_id` cannot smuggle in another Org's parent id.
+  `SET NULL` names its column. The schema-shape test enforces it (ADR 0013).
 - **No policy grants `anon` a write.** Cozy Keys left `INSERT` on `inquiries`
   open to the anonymous role; in a shared database that is a hole into every Org.
 - **Uploads are org-prefixed and verified.** Files live under `{org_id}/…` and

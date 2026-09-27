@@ -13,10 +13,15 @@ export interface OrgDashboard {
   /** Excludes Rentals let by another agent (0017) — not the agency's workload. */
   rentalsActive: number
   rentalsEndingThisMonth: number
-  /** Money owed to the Org and past due, in baht. Excludes what the Org owes
-   *  outward — a deposit refund is a separate obligation, not a negative one. */
+  /** Money owed in and past due, in baht: what is still outstanding, so a
+   *  partly settled Payment counts by its remainder (0018). Excludes what is
+   *  owed back out — a Deposit Refund is a separate obligation, not a negative
+   *  one, and is `refundsLate`. */
   overdueAmount: number
   overdueCount: number
+  /** Deposit Refunds past due and outstanding. A count, never added to the
+   *  overdue figure. */
+  refundsLate: number
 }
 
 /**
@@ -47,5 +52,6 @@ export async function getOrgDashboard(
     // drivers; coerce rather than trust the wire format.
     overdueAmount: Number(row.overdue_amount),
     overdueCount: Number(row.overdue_count),
+    refundsLate: Number(row.refunds_late),
   }
 }

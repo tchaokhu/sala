@@ -54,6 +54,7 @@ interface Dashboard {
   rentals_ending_this_month: number
   overdue_amount: number
   overdue_count: number
+  refunds_late: number
 }
 
 /** The exact call a Server Component makes, run as `who`. Wrapped in a
@@ -74,6 +75,7 @@ async function dashboardAs(who: string | null, org: string, today = TODAY): Prom
       rentals_ending_this_month: Number(row.rentals_ending_this_month),
       overdue_amount: Number(row.overdue_amount),
       overdue_count: Number(row.overdue_count),
+      refunds_late: Number(row.refunds_late),
     }
   } finally {
     await client.query('ROLLBACK')
@@ -206,6 +208,8 @@ describe('org_dashboard', () => {
       rentals_ending_this_month: 1,
       overdue_amount: 3500,
       overdue_count: 2,
+      // The 5555 Deposit Refund: late, and counted here rather than in the sum.
+      refunds_late: 1,
     })
   })
 
@@ -219,6 +223,7 @@ describe('org_dashboard', () => {
       rentals_ending_this_month: 0,
       overdue_amount: 0,
       overdue_count: 0,
+      refunds_late: 0,
     })
   })
 
@@ -229,6 +234,7 @@ describe('org_dashboard', () => {
       rentals_ending_this_month: 0,
       overdue_amount: 0,
       overdue_count: 0,
+      refunds_late: 0,
     })
   })
 
@@ -240,6 +246,7 @@ describe('org_dashboard', () => {
       rentals_ending_this_month: 0,
       overdue_amount: 0,
       overdue_count: 0,
+      refunds_late: 0,
     })
   })
 

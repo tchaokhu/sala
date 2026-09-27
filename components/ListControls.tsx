@@ -50,7 +50,9 @@ export function FilterChip({
   href: string
   active: boolean
   label: string
-  count: number
+  /** What the chip counts — a number, or words when the count is not the
+   *  size of the list it opens ("2 late"). Absent draws no badge. */
+  count?: React.ReactNode
   /** `warn` for a chip that names work waiting, never for one that names a
    *  status — semantic colour stays separate from the teak accent (CLAUDE.md). */
   tone?: 'plain' | 'warn'
@@ -62,7 +64,7 @@ export function FilterChip({
       className={
         // A fixed height rather than padding, so the skeleton's chips are the
         // same size as the real ones and the row below them does not move.
-        'inline-flex h-8 items-center gap-2 rounded-full border pr-2 pl-3 text-sm transition-colors ' +
+        `inline-flex h-8 items-center gap-2 rounded-full border pl-3 text-sm transition-colors ${count === undefined ? 'pr-3' : 'pr-2'} ` +
         (active
           ? tone === 'warn'
             ? 'border-warn bg-warn text-bg'
@@ -73,16 +75,18 @@ export function FilterChip({
       }
     >
       {label}
-      <span
-        className={
-          'tabular rounded-full px-1.5 text-xs ' +
-          // The badge has to stay visible when the chip itself takes the hover
-          // background, so it is tinted off the border rather than off bg.
-          (active ? 'bg-on-accent/20' : tone === 'warn' ? 'bg-warn/20' : 'bg-border/50 text-muted')
-        }
-      >
-        {count}
-      </span>
+      {count !== undefined && (
+        <span
+          className={
+            'tabular rounded-full px-1.5 text-xs ' +
+            // The badge has to stay visible when the chip itself takes the hover
+            // background, so it is tinted off the border rather than off bg.
+            (active ? 'bg-on-accent/20' : tone === 'warn' ? 'bg-warn/20' : 'bg-border/50 text-muted')
+          }
+        >
+          {count}
+        </span>
+      )}
     </Link>
   )
 }

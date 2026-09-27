@@ -7,7 +7,7 @@
 // arithmetic.
 
 import { addMonthsIso, todayBangkok } from './dates'
-import type { Payment, PaymentStatus, Rental } from '@/types'
+import type { Payment, PaymentMethod, PaymentStatus, PaymentType, Rental } from '@/types'
 
 /** A Payment as it looks before the database assigns it an id. */
 export type NewPayment = Pick<
@@ -148,4 +148,52 @@ export function getPaymentStatus(
  *  in the other direction. */
 export function outstanding(p: { amount: number; settled_amount?: number | null }): number {
   return Math.max(0, p.amount - (p.settled_amount ?? 0))
+}
+
+/** Who the agency chases for a Payment (decision 2 of the Payments task). From
+ *  `type`, not stored: there is one answer per type, and ADR 0011 wants two
+ *  agencies known to differ before it becomes a column. `other` is the Tenant's
+ *  — ad-hoc Payments are not created anywhere yet, and when they are, what an
+ *  agency bills beyond the schedule is billed to the person in the room. */
+export type Payer = 'tenant' | 'owner'
+
+export function payerOf(type: PaymentType): Payer {
+  return type === 'commission' || type === 'deposit_refund' ? 'owner' : 'tenant'
+}
+
+/** One sum of money arriving against a Payment. */
+export interface Instalment {
+  amount: number
+  date: string
+  method: PaymentMethod
+  note: string | null
+}
+
+/** What a settle or correct writes: the four settlement columns together, as
+ *  0001's CHECK wants the first two. */
+export interface Settlement {
+  settled_amount: number
+  settled_date: string
+  method: PaymentMethod
+  note: string | null
+}
+
+/**
+ * A running total, not a history (decision 1): the instalment adds to what is
+ * already settled, the settled date moves to this one, the method is this
+ * one's, and a note given replaces the note — a blank keeps it. Capped at
+ * `amount`, because an overpayment is not something this records.
+ */
+export function applySettlement(
+  p: { amount: number; settled_amount?: number | null; note?: string | null },
+  i: Instalment,
+): Settlement {
+  // Rounded to satang: 0.1 + 0.2 is not 0.3 in a float, and numeric(12,2) is.
+  const total = Math.round(((p.settled_amount ?? 0) + i.amount) * 100) / 100
+  return {
+    settled_amount: Math.min(total, p.amount),
+    settled_date: i.date,
+    method: i.method,
+    note: i.note ?? p.note ?? null,
+  }
 }

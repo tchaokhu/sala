@@ -1,5 +1,5 @@
-// One Rental: its facts, its Payments (read-only — settling is the Payments
-// task), and the transitions it can still take.
+// One Rental: its facts, its Payments with Settle / Correct on each, and the
+// transitions it can still take.
 
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -7,22 +7,14 @@ import { ChevronLeft, Home } from 'lucide-react'
 import { requireMember } from '@/lib/supabase-server'
 import { todayBangkok } from '@/lib/dates'
 import { formatBaht, formatDateThai } from '@/lib/format'
-import { getPaymentStatus } from '@/lib/payments'
+import { getPaymentStatus, outstanding } from '@/lib/payments'
 import { LET_ELSEWHERE_NAME } from '@/lib/rental-input'
 import { getRental, getRentalStatus, listPaymentsForRental } from '@/lib/rentals'
 import { PageHeader } from '@/components/PageHeader'
 import { BUTTON } from '@/components/form'
-import { PaymentStatusPill, RentalStatePill, Tag } from '@/components/StatusPill'
-import type { PaymentType } from '@/types'
+import { PaymentSettle } from '@/components/PaymentSettle'
+import { PAYMENT_TYPE_LABELS, PaymentStatusPill, RentalStatePill, Tag } from '@/components/StatusPill'
 import { RentalManage } from './rental-forms'
-
-const PAYMENT_TYPE_LABELS: Record<PaymentType, string> = {
-  rent: 'Rent',
-  deposit: 'Deposit',
-  commission: 'Commission',
-  deposit_refund: 'Deposit Refund',
-  other: 'Other',
-}
 
 const bangkokDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok' })
 
@@ -127,7 +119,7 @@ export default async function RentalPage({
               : 'No Payments on this Rental — the rent is not followed and there is no Deposit or Commission'}
           </p>
         ) : (
-          <PaymentsTable payments={payments} today={today} />
+          <PaymentsTable slug={slug} payments={payments} today={today} />
         )}
         {capped && (
           <p className="text-xs text-warn">
@@ -162,42 +154,68 @@ export default async function RentalPage({
 const HEAD_CELL = 'px-4 py-3 font-semibold'
 
 function PaymentsTable({
+  slug,
   payments,
   today,
 }: {
+  slug: string
   payments: Awaited<ReturnType<typeof listPaymentsForRental>>['payments']
   today: string
 }) {
   return (
     <div className="overflow-x-auto rounded-xl border border-border bg-surface">
-      <table className="w-full min-w-[40rem] text-sm">
+      <table className="w-full min-w-[52rem] text-sm">
         <thead>
           <tr className="border-b border-border bg-bg/60 text-left text-[11px] tracking-wide text-muted">
             <th scope="col" className={HEAD_CELL}>Type</th>
             <th scope="col" className={HEAD_CELL}>Due</th>
             <th scope="col" className={`${HEAD_CELL} text-right`}>Amount</th>
+            <th scope="col" className={`${HEAD_CELL} text-right`}>Outstanding</th>
             <th scope="col" className={HEAD_CELL}>Status</th>
             <th scope="col" className={HEAD_CELL}>Settled</th>
+            <th scope="col" className={`${HEAD_CELL} text-right`}>Manage</th>
           </tr>
         </thead>
         <tbody>
-          {payments.map((p) => (
-            <tr key={p.id} className="h-12 border-b border-border last:border-0">
-              <td className="px-4 py-2">{PAYMENT_TYPE_LABELS[p.type]}</td>
-              <td className="tabular whitespace-nowrap px-4 py-2 text-muted">{formatDateThai(p.due_date)}</td>
-              <td className="tabular whitespace-nowrap px-4 py-2 text-right font-medium">
-                {formatBaht(p.amount)}
-              </td>
-              <td className="px-4 py-2">
-                <PaymentStatusPill status={getPaymentStatus(p, today)} />
-              </td>
-              <td className="tabular whitespace-nowrap px-4 py-2 text-muted">
-                {p.settled_date
-                  ? `${formatDateThai(p.settled_date)} · ${formatBaht(p.settled_amount)}`
-                  : '—'}
-              </td>
-            </tr>
-          ))}
+          {payments.map((p) => {
+            const left = outstanding(p)
+            return (
+              <tr key={p.id} className="h-12 border-b border-border last:border-0">
+                <td className="px-4 py-2">{PAYMENT_TYPE_LABELS[p.type]}</td>
+                <td className="tabular whitespace-nowrap px-4 py-2 text-muted">{formatDateThai(p.due_date)}</td>
+                <td className="tabular whitespace-nowrap px-4 py-2 text-right font-medium">
+                  {formatBaht(p.amount)}
+                </td>
+                <td className="tabular whitespace-nowrap px-4 py-2 text-right">
+                  {left > 0 ? formatBaht(left) : <span className="text-muted">—</span>}
+                </td>
+                <td className="px-4 py-2">
+                  <PaymentStatusPill status={getPaymentStatus(p, today)} />
+                </td>
+                <td className="tabular whitespace-nowrap px-4 py-2 text-muted">
+                  {p.settled_date
+                    ? `${formatDateThai(p.settled_date)} · ${formatBaht(p.settled_amount)}`
+                    : '—'}
+                </td>
+                <td className="px-4 py-2 text-right">
+                  <PaymentSettle
+                    slug={slug}
+                    payment={{
+                      id: p.id,
+                      amount: p.amount,
+                      settled_amount: p.settled_amount,
+                      settled_date: p.settled_date,
+                      method: p.method,
+                      note: p.note,
+                      outstanding: left,
+                    }}
+                    today={today}
+                    title={`${PAYMENT_TYPE_LABELS[p.type]} due ${formatDateThai(p.due_date)}`}
+                  />
+                </td>
+              </tr>
+            )
+          })}
         </tbody>
       </table>
     </div>

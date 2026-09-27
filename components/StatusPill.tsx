@@ -20,7 +20,7 @@ import type { LucideIcon } from 'lucide-react'
 import { Circle, CircleAlert, CircleCheck, CircleDashed, CircleDot, CircleMinus } from 'lucide-react'
 import type { PropertyStatus } from '@/lib/properties'
 import type { RentalState } from '@/lib/rentals'
-import type { PaymentStatus, RentalStatus } from '@/types'
+import type { PaymentMethod, PaymentStatus, PaymentType, RentalStatus } from '@/types'
 
 const STATUS: Record<PropertyStatus, { label: string; glyph: LucideIcon; filled?: boolean; className: string }> = {
   // Occupied and unremarkable — the shape still says "filled", the colour says
@@ -113,6 +113,20 @@ const PAYMENT: Record<PaymentStatus, Look> = {
   partial: { label: 'Partly settled', glyph: CircleDot, className: 'border-hold/40 text-hold' },
   overdue: { label: 'Overdue', glyph: CircleAlert, className: 'border-warn/40 text-warn' },
   pending: { label: 'Pending', glyph: CircleDashed, className: 'border-border text-muted' },
+}
+
+export const PAYMENT_TYPE_LABELS: Record<PaymentType, string> = {
+  rent: 'Rent',
+  deposit: 'Deposit',
+  commission: 'Commission',
+  deposit_refund: 'Deposit Refund',
+  other: 'Other',
+}
+
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  cash: 'Cash',
+  transfer: 'Transfer',
+  other: 'Other',
 }
 
 export function PaymentStatusPill({ status }: { status: PaymentStatus }) {

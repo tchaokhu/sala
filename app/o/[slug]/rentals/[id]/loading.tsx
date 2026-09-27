@@ -35,8 +35,10 @@ export default function RentalLoading() {
                 <span className="block h-4 w-24 animate-pulse rounded bg-border" />
                 <span className="block h-4 w-24 animate-pulse rounded bg-border" />
                 <span className="ml-auto block h-4 w-20 animate-pulse rounded bg-border" />
+                <span className="block h-4 w-20 animate-pulse rounded bg-border" />
                 <span className="block h-5 w-20 animate-pulse rounded-full bg-border" />
                 <span className="block h-4 w-32 animate-pulse rounded bg-border" />
+                <span className="block h-4 w-28 animate-pulse rounded bg-border" />
               </div>
             ))}
           </div>

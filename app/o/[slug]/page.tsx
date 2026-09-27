@@ -3,6 +3,8 @@
 // hydrates: this is a Server Component, and the four numbers are one aggregate
 // query rather than four counts or a table download reduced in the browser.
 
+import Link from 'next/link'
+import { CircleAlert } from 'lucide-react'
 import { requireMember } from '@/lib/supabase-server'
 import { getOrgDashboard } from '@/lib/dashboard'
 import { formatBaht } from '@/lib/format'
@@ -51,6 +53,19 @@ export default async function OrgHome({
             summary.overdueCount > 0
               ? `${summary.overdueCount} overdue`
               : 'Nothing outstanding'
+          }
+          more={
+            // Owed out, so a count beside the figure rather than inside it — in
+            // and out are never summed (0003).
+            summary.refundsLate > 0 && (
+              <Link
+                href={`/o/${slug}/payments?filter=refunds`}
+                className="inline-flex items-center gap-1 text-warn underline-offset-4 hover:underline"
+              >
+                <CircleAlert size={12} aria-hidden />
+                {summary.refundsLate} Deposit {summary.refundsLate === 1 ? 'Refund' : 'Refunds'} late
+              </Link>
+            )
           }
         >
           {formatBaht(summary.overdueAmount)}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildPaymentSchedule, futureUnpaid, getPaymentStatus, outstanding, settleThrough } from './payments'
+import { applySettlement, buildPaymentSchedule, futureUnpaid, getPaymentStatus, outstanding, payerOf, settleThrough } from './payments'
 import { addMonthsIso } from './dates'
 import type { Payment, Rental } from '@/types'
 
@@ -302,5 +302,59 @@ describe('outstanding', () => {
 
   it('reports zero — never a negative — on an overpayment', () => {
     expect(outstanding(payment({ amount: 12000, settled_amount: 15000 }))).toBe(0)
+  })
+})
+
+describe('payerOf', () => {
+  it('chases the Tenant for rent and the Deposit, the Owner for the rest', () => {
+    expect(payerOf('rent')).toBe('tenant')
+    expect(payerOf('deposit')).toBe('tenant')
+    expect(payerOf('commission')).toBe('owner')
+    expect(payerOf('deposit_refund')).toBe('owner')
+    expect(payerOf('other')).toBe('tenant')
+  })
+})
+
+describe('applySettlement', () => {
+  const rent = { amount: 8000, settled_amount: null, note: null }
+  const pay = (amount: number, date = '2026-10-05') =>
+    ({ amount, date, method: 'transfer' as const, note: null })
+
+  it('settles in full', () => {
+    expect(applySettlement(rent, pay(8000))).toEqual({
+      settled_amount: 8000,
+      settled_date: '2026-10-05',
+      method: 'transfer',
+      note: null,
+    })
+  })
+
+  it('leaves a partial settlement partly settled', () => {
+    const first = applySettlement(rent, pay(5000))
+    expect(first.settled_amount).toBe(5000)
+    expect(getPaymentStatus({ ...rent, ...first, due_date: '2026-10-01' }, '2026-10-10')).toBe('partial')
+  })
+
+  it('adds the remainder to the running total, with the latest date and method', () => {
+    const first = applySettlement(rent, pay(5000, '2026-10-05'))
+    const second = applySettlement(
+      { ...rent, ...first },
+      { amount: 3000, date: '2026-10-12', method: 'cash', note: null },
+    )
+    expect(second).toEqual({ settled_amount: 8000, settled_date: '2026-10-12', method: 'cash', note: null })
+  })
+
+  it('never goes above the amount', () => {
+    expect(applySettlement({ ...rent, settled_amount: 5000 }, pay(9000)).settled_amount).toBe(8000)
+  })
+
+  it('adds in satang, not in floats', () => {
+    expect(applySettlement({ amount: 1, settled_amount: 0.1 }, pay(0.2)).settled_amount).toBe(0.3)
+  })
+
+  it('keeps the note when none is given and replaces it when one is', () => {
+    const noted = { ...rent, settled_amount: 5000, note: 'first half by transfer' }
+    expect(applySettlement(noted, pay(1000)).note).toBe('first half by transfer')
+    expect(applySettlement(noted, { ...pay(1000), note: 'rest in cash' }).note).toBe('rest in cash')
   })
 })

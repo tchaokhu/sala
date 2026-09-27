@@ -88,7 +88,7 @@ if (ACTIVATE_SLUG) {
         AND p.org_id = o.id
         AND o.slug = $1
         AND p.type = 'rent'
-        AND p.settled_date IS NULL
+        AND p.outstanding > 0
         AND p.last_reminded_on IS NULL
         AND p.due_date < (now() AT TIME ZONE 'Asia/Bangkok')::date
       RETURNING p.id`,
@@ -108,7 +108,7 @@ const { rows: due } = await db.query(
           o.name AS org_name,
           p.id   AS payment_id,
           p.due_date::text AS due_date,
-          p.amount,
+          p.outstanding AS amount,  -- what is still owed, not the face amount (0018)
           pr.title AS property_title,
           r.tenant_name_snapshot AS tenant_name
      FROM payments p
@@ -116,7 +116,7 @@ const { rows: due } = await db.query(
      JOIN properties pr ON pr.id = p.property_id
      JOIN orgs       o  ON o.id = p.org_id
     WHERE p.type = 'rent'
-      AND p.settled_date IS NULL
+      AND p.outstanding > 0
       AND r.rent_tracked_by_us
       AND r.status = 'active'
       AND p.due_date <= (now() AT TIME ZONE 'Asia/Bangkok')::date + $1::int

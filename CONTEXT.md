@@ -97,7 +97,10 @@ Tenant to the Owner, the Commission to the Org — and `out` is money due back t
 the Tenant. It does not say whose account the money lands in; that follows from
 the Payment's type. Payments are
 generated up front for the whole Rental term, then settled as money actually
-moves. A Payment exists whether or not it has been settled. The monthly rent is
+moves. A Payment exists whether or not it has been settled. One paid in
+instalments keeps a running total — each adds to what is settled, and the date
+and method are the latest one's — and what is still outstanding is what is
+chased: a partly settled Payment past its due date is overdue by the remainder. The monthly rent is
 only among them where the Org follows the rent for that Rental — which is not
 the same as holding it, since an Org can chase rent the Tenant pays straight to
 the Owner. Where nobody follows it, the schedule is the Deposit and the
@@ -120,7 +123,8 @@ Rental starts.
 _Avoid_: Return, payback, reversal
 
 **Commission**:
-The Org's cut, owed only when the Org itself brokered the Rental. Never charged
+The Org's cut, paid by the Owner, owed only when the Org itself brokered the
+Rental. Never charged
 on a Rental the Org merely administers. Charged again each time a Rental is
 renewed.
 _Avoid_: Fee, brokerage

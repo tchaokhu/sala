@@ -17,6 +17,7 @@ export function StatTile({
   label,
   tone = 'plain',
   hint,
+  more,
   children,
 }: {
   label: string
@@ -24,6 +25,8 @@ export function StatTile({
   /** A second line under the number — the count behind a sum, say. Reserved
    *  even when absent, so a tile that gains one does not shove its neighbours. */
   hint?: React.ReactNode
+  /** A line under the hint, only when there is something to say. */
+  more?: React.ReactNode
   children: React.ReactNode
 }) {
   return (
@@ -33,6 +36,7 @@ export function StatTile({
         {children}
       </p>
       <p className="mt-1 flex h-5 items-center text-xs text-muted">{hint}</p>
+      {more && <p className="mt-0.5 flex min-h-5 items-center text-xs">{more}</p>}
     </div>
   )
 }

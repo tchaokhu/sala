@@ -12,9 +12,13 @@ import { ChevronLeft } from 'lucide-react'
 import { requireMember } from '@/lib/supabase-server'
 import { listBuildingOptions } from '@/lib/buildings'
 import { listOwnerOptions } from '@/lib/owners'
+import { listActivePlatforms } from '@/lib/platforms'
+import { listPostingsForProperty } from '@/lib/postings'
+import { todayBangkok } from '@/lib/dates'
 import { getPropertyForEdit } from '@/lib/properties'
 import { signedPropertyImageUrls } from '@/lib/property-storage'
 import { PageHeader } from '@/components/PageHeader'
+import { PostingChecklist } from '@/components/PostingChecklist'
 import { EditPropertyForm } from './edit-property-form'
 import { PropertyDeleteForm } from './property-delete-form'
 
@@ -26,13 +30,17 @@ export default async function EditPropertyPage({
   const { slug, id } = await params
   const org = await requireMember(slug)
 
-  // None of the three depends on the others, so they go together. The Building
-  // and Owner lists are small and bounded and get filtered in the browser, as on
-  // the add form.
-  const [property, buildings, owners] = await Promise.all([
+  // None of these depends on the others, so they go together. The Building,
+  // Owner and Platform lists are small and bounded and get filtered in the
+  // browser, as on the add form. The Postings read is keyed by an id that came
+  // from the route, not from the Property row, so it does not have to wait for
+  // it either (CLAUDE.md: never chain independent queries).
+  const [property, buildings, owners, platforms, postings] = await Promise.all([
     getPropertyForEdit(org.id, id),
     listBuildingOptions(org.id),
     listOwnerOptions(org.id),
+    listActivePlatforms(org.id),
+    listPostingsForProperty(org.id, id),
   ])
   if (!property) notFound()
 
@@ -61,6 +69,18 @@ export default async function EditPropertyPage({
         buildingsCapped={buildings.capped}
         owners={owners.options}
         ownersCapped={owners.capped}
+      />
+
+      {/* Its own form for the same reason as the delete one below: ticking a
+          channel posts to a different action, and it should not be able to fail
+          on an unrelated field in the form above. */}
+      <PostingChecklist
+        slug={slug}
+        propertyId={property.id}
+        platforms={platforms.options}
+        capped={platforms.capped}
+        current={postings}
+        today={todayBangkok()}
       />
 
       {/* Its own form below the edit one rather than a button inside it: the two

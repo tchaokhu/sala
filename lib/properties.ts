@@ -49,6 +49,9 @@ export interface PropertyListRow {
    *  Tenant record removed later does not blank out the list. */
   tenantName: string | null
   rentalEndDate: string | null
+  /** Names of the Platforms this room is advertised on. Empty means nobody is
+   *  marketing it — the state the list is scanned for (ADR 0003). */
+  postedOn: string[]
 }
 
 export interface PropertyPage {
@@ -71,10 +74,17 @@ interface PropertyRecord {
   // Embedded to-one: an object in the response, typed as either because
   // PostgREST's inference decides which. `embeddedOwner` normalises it.
   owners: EmbeddedOwnerName | EmbeddedOwnerName[] | null
+  // Embedded to-many: one entry per channel this room is up on, absent
+  // entirely when it is up nowhere.
+  postings: EmbeddedPosting[] | null
 }
 
 interface EmbeddedOwnerName {
   name: string
+}
+
+interface EmbeddedPosting {
+  platforms: { name: string } | { name: string }[] | null
 }
 
 /** PostgREST renders an embedded to-one as an object but may type it as an
@@ -94,7 +104,13 @@ function embeddedOne<T>(embed: T | T[] | null | undefined): T | null {
  */
 export async function listProperties(
   orgId: string,
-  opts: { status?: PropertyStatus | null; cursor?: string | null; limit?: number } = {},
+  opts: {
+    status?: PropertyStatus | null
+    cursor?: string | null
+    limit?: number
+    /** Only rooms with no Posting at all. */
+    postedNowhere?: boolean
+  } = {},
 ): Promise<PropertyPage> {
   const limit = opts.limit ?? PAGE_SIZE
   const after = decodeCursor(opts.cursor)
@@ -106,7 +122,10 @@ export async function listProperties(
       'id, title, room_number, property_type, bedrooms, bathrooms, area_sqm, price_monthly, status, created_at, ' +
         // One join in the same round-trip rather than a second query keyed by
         // owner_id — the Owner column is on every row of the list.
-        'owners(name)',
+        'owners(name), ' +
+        // Second embed in the same round-trip. A to-many this time, so it comes
+        // back as an array and is empty for a room posted nowhere.
+        'postings(platforms(name))',
     )
     .eq('org_id', orgId)
     .order('created_at', { ascending: false })
@@ -116,6 +135,11 @@ export async function listProperties(
     .limit(limit + 1)
 
   if (opts.status) query = query.eq('status', opts.status)
+  // PostgREST filters a parent by the absence of an embedded resource with
+  // `is.null` on the relationship name. It is the NOT EXISTS the tile counts
+  // with, expressed the only way PostgREST expresses it — tests/rls covers it
+  // precisely because it reads like it should not work.
+  if (opts.postedNowhere) query = query.is('postings', null)
   if (after) query = query.or(keysetFilter(after))
 
   const { data, error } = await query
@@ -146,6 +170,10 @@ export async function listProperties(
       ownerName: embeddedOne(p.owners)?.name ?? null,
       tenantName: rentals.get(p.id)?.tenantName ?? null,
       rentalEndDate: rentals.get(p.id)?.endDate ?? null,
+      postedOn: (p.postings ?? [])
+        .map((post) => embeddedOne(post.platforms)?.name)
+        .filter((name): name is string => Boolean(name))
+        .sort((a, b) => a.localeCompare(b)),
     })),
     nextCursor,
   }
@@ -313,6 +341,8 @@ export interface PropertyCounts {
   available: number
   reserved: number
   rented: number
+  /** Available rooms with no Posting at all — nobody is marketing them. */
+  postedNowhere: number
 }
 
 /** The counts above the table. One row from Postgres (ADR 0005), not a reduce
@@ -327,5 +357,6 @@ export async function getPropertyCounts(orgId: string): Promise<PropertyCounts> 
     available: Number(row.available),
     reserved: Number(row.reserved),
     rented: Number(row.rented),
+    postedNowhere: Number(row.posted_nowhere),
   }
 }

@@ -15,6 +15,7 @@ import { resolveBuilding, UnknownBuildingError } from '@/lib/buildings'
 import { ownerBelongsToOrg } from '@/lib/owners'
 import { BUCKET, discard } from '@/lib/property-storage'
 import { getPropertyForEdit } from '@/lib/properties'
+import { parsePostingsField, savePostings, UnknownPlatformError } from '@/lib/postings'
 import type { ActionResult } from '@/lib/action-result'
 
 // Editing and removing a Property — see
@@ -214,4 +215,35 @@ export async function deleteProperty(formData: FormData): Promise<ActionResult> 
   // Throws NEXT_REDIRECT, so it stays outside any try — a catch here would
   // swallow the navigation. The edit page this was posted from is gone.
   redirect(`/o/${slug}/properties?deleted=1`)
+}
+
+/**
+ * Saving the tick-list of where this Property has been advertised.
+ *
+ * Its own action rather than part of `updateProperty` on purpose: ticking a
+ * channel is not a whole-Property write, and it should not be able to fail on
+ * an unrelated field's validation — or to rewrite the title as a side effect of
+ * recording that a room went up on Livinginsider.
+ */
+export async function updatePostings(formData: FormData): Promise<ActionResult> {
+  const slug = cleanText(formData.get('slug'), 40)
+  const id = cleanText(formData.get('property_id'), 40)
+  if (!slug || !id) return { ok: false, message: 'The request was incomplete. Try again.' }
+
+  const org = await requireMember(slug)
+  const next = parsePostingsField(formData.get('postings'))
+
+  try {
+    await savePostings(org.id, id, next)
+  } catch (err) {
+    if (err instanceof UnknownPlatformError) {
+      return { ok: false, message: 'One of those channels was not found. Reload the page and try again.' }
+    }
+    return failed('Saving where this room is posted', err)
+  }
+
+  revalidatePath(`/o/${slug}/properties`)
+  revalidatePath(`/o/${slug}/properties/${id}`)
+  revalidatePath(`/o/${slug}/properties/${id}/edit`)
+  return { ok: true, message: 'Saved' }
 }

@@ -99,6 +99,20 @@ _Avoid_: Fee, brokerage
 
 ## Leads and paperwork
 
+**Platform**:
+A place an Org advertises its Properties — Facebook, Livinginsider, a LINE
+group. Each Org keeps its own list the way it keeps its own Buildings, even when
+two Orgs name the same site. A Platform an Org stops using goes inactive rather
+than away, so the Postings that already name it still read.
+_Avoid_: Channel, site, portal, marketplace
+
+**Posting**:
+The fact that one Property is advertised on one Platform, with the link when
+there is one. A Posting exists only where the advertisement does — a Property
+with no Posting is one nobody is currently marketing, which is what the
+Properties list is scanned for.
+_Avoid_: Listing, ad, post, publication
+
 **Inquiry**:
 An unsolicited approach from someone interested in a Property, captured from
 outside Sala. Not yet a Tenant and not attached to a Rental.

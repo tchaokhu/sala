@@ -34,14 +34,19 @@ export default async function PropertiesPage({
     created?: string
     photos?: string
     deleted?: string
+    posted?: string
   }>
 }) {
   const { slug } = await params
-  const { status: rawStatus, cursor, created, photos, deleted } = await searchParams
+  const { status: rawStatus, cursor, created, photos, deleted, posted } = await searchParams
 
   // Anything unrecognised in the query string is dropped rather than sent to
   // the database — the same reflex as never taking the Org from a request.
   const status: PropertyStatus | null = isPropertyStatus(rawStatus) ? rawStatus : null
+  // A second, independent filter: rooms nobody is advertising. Exclusive with
+  // the status chips rather than combined with them — two filters that can both
+  // be half-on is a state nobody can read off the page.
+  const postedNowhere = posted === 'nowhere'
 
   // The layout has already gated this route; requireMember is memoised per
   // request, so asking again for the Org's id costs nothing.
@@ -50,15 +55,25 @@ export default async function PropertiesPage({
   // Independent of each other, so they go together rather than in sequence.
   const [counts, page] = await Promise.all([
     getPropertyCounts(org.id),
-    listProperties(org.id, { status, cursor }),
+    listProperties(org.id, { status: postedNowhere ? null : status, cursor, postedNowhere }),
   ])
 
   const base = `/o/${slug}/properties`
-  const href = (next: PropertyStatus | null) => (next ? `${base}?status=${next}` : base)
+
+  /** Every list link is built the same way, so the cursor can be appended
+   *  without guessing whether a `?` is already there. */
+  function link(opts: { status?: PropertyStatus | null; nowhere?: boolean; cursor?: string } = {}) {
+    const q = new URLSearchParams()
+    if (opts.status) q.set('status', opts.status)
+    if (opts.nowhere) q.set('posted', 'nowhere')
+    if (opts.cursor) q.set('cursor', opts.cursor)
+    const qs = q.toString()
+    return qs ? `${base}?${qs}` : base
+  }
   const showing = counts.total === 0 ? 0 : page.rows.length
   // What the number on screen is a fraction of: the filtered count when a
   // filter is on, not the Org's whole holding.
-  const matching = status ? counts[status] : counts.total
+  const matching = postedNowhere ? counts.postedNowhere : status ? counts[status] : counts.total
   // Both of these come from the query string, so neither is rendered back: the
   // id only decides whether the banner appears, and the count is read as a
   // number or ignored.
@@ -112,16 +127,31 @@ export default async function PropertiesPage({
 
       {/* Links, not buttons: the filter is a location. */}
       <nav aria-label="Filter by status" className="flex flex-wrap gap-2">
-        <FilterChip href={href(null)} active={status === null} label="All" count={counts.total} />
+        <FilterChip
+          href={link()}
+          active={status === null && !postedNowhere}
+          label="All"
+          count={counts.total}
+        />
         {PROPERTY_STATUSES.map((s) => (
           <FilterChip
             key={s}
-            href={href(s)}
-            active={status === s}
+            href={link({ status: s })}
+            active={!postedNowhere && status === s}
             label={STATUS_LABELS[s]}
             count={counts[s]}
           />
         ))}
+        {/* Not a status — a room nobody is advertising can be in any of them.
+            It earns a chip of its own because it is the thing the page is
+            scanned for, and warn because it is work waiting. */}
+        <FilterChip
+          href={link({ nowhere: true })}
+          active={postedNowhere}
+          label="Posted nowhere"
+          count={counts.postedNowhere}
+          tone="warn"
+        />
       </nav>
 
       <PropertyTable rows={page.rows} slug={slug} newHref={`${base}/new`} />
@@ -142,9 +172,14 @@ export default async function PropertiesPage({
           )}
         </span>
         <div className="flex items-center gap-2">
-          <PagerLink href={href(status)} disabled={!cursor} icon={ChevronsLeft} label="First page" />
           <PagerLink
-            href={`${href(status)}${status ? '&' : '?'}cursor=${page.nextCursor}`}
+            href={link({ status, nowhere: postedNowhere })}
+            disabled={!cursor}
+            icon={ChevronsLeft}
+            label="First page"
+          />
+          <PagerLink
+            href={link({ status, nowhere: postedNowhere, cursor: page.nextCursor ?? undefined })}
             disabled={!page.nextCursor}
             icon={ChevronRight}
             iconSide="right"
@@ -197,11 +232,15 @@ function FilterChip({
   active,
   label,
   count,
+  tone = 'plain',
 }: {
   href: string
   active: boolean
   label: string
   count: number
+  /** `warn` for a chip that names work waiting, never for one that names a
+   *  status — semantic colour stays separate from the teak accent (CLAUDE.md). */
+  tone?: 'plain' | 'warn'
 }) {
   return (
     <Link
@@ -212,8 +251,12 @@ function FilterChip({
         // same size as the real ones and the row below them does not move.
         'inline-flex h-8 items-center gap-2 rounded-full border pr-2 pl-3 text-sm transition-colors ' +
         (active
-          ? 'border-accent bg-accent text-on-accent'
-          : 'border-border bg-surface text-muted hover:border-muted hover:text-ink')
+          ? tone === 'warn'
+            ? 'border-warn bg-warn text-bg'
+            : 'border-accent bg-accent text-on-accent'
+          : tone === 'warn'
+            ? 'border-warn/40 bg-warn/10 text-warn hover:border-warn'
+            : 'border-border bg-surface text-muted hover:border-muted hover:text-ink')
       }
     >
       {label}
@@ -222,7 +265,7 @@ function FilterChip({
           'tabular rounded-full px-1.5 text-xs ' +
           // The badge has to stay visible when the chip itself takes the hover
           // background, so it is tinted off the border rather than off bg.
-          (active ? 'bg-on-accent/20' : 'bg-border/50 text-muted')
+          (active ? 'bg-on-accent/20' : tone === 'warn' ? 'bg-warn/20' : 'bg-border/50 text-muted')
         }
       >
         {count}

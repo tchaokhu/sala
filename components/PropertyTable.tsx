@@ -80,7 +80,7 @@ export function PropertyTable({
 
   return (
     <div className="overflow-x-auto rounded-xl border border-border bg-surface">
-      <table className="w-full min-w-[60rem] text-sm">
+      <table className="w-full min-w-[68rem] text-sm">
         <thead>
           <tr className="border-b border-border bg-bg/60 text-left text-[11px] tracking-wide text-muted">
             <th scope="col" className={HEAD_CELL}>Property</th>
@@ -90,6 +90,7 @@ export function PropertyTable({
             <th scope="col" className={HEAD_CELL}>Status</th>
             <th scope="col" className={HEAD_CELL}>Current Tenant</th>
             <th scope="col" className={HEAD_CELL}>Owner</th>
+            <th scope="col" className={HEAD_CELL}>Posted</th>
             <th scope="col" className={`${HEAD_CELL} text-right`}>Manage</th>
           </tr>
         </thead>
@@ -144,6 +145,28 @@ export function PropertyTable({
                     <span className="text-muted">—</span>
                   )}
                 </td>
+                <td className="px-4 py-3">
+                  {/* A room advertised nowhere gets a chip of its own rather
+                      than an em dash: this is the state the list is scanned
+                      for, so it reads as form and not only as colour
+                      (CLAUDE.md). */}
+                  {row.postedOn.length > 0 ? (
+                    <div className="flex max-w-48 flex-wrap gap-1">
+                      {row.postedOn.map((name) => (
+                        <span
+                          key={name}
+                          className="rounded border border-border px-1.5 py-0.5 text-xs text-muted"
+                        >
+                          {name}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="inline-block rounded border border-warn/40 bg-warn/10 px-1.5 py-0.5 text-xs font-medium text-warn">
+                      Nowhere
+                    </span>
+                  )}
+                </td>
                 <td className="px-4 py-3 text-right">
                   {/* Named for a screen reader, which hears a column of
                       identical "View"/"Edit" links otherwise. */}
@@ -196,6 +219,7 @@ export function PropertyTableSkeleton({ rows = 8 }: { rows?: number }) {
             <span className="block h-4 w-20 animate-pulse rounded bg-border" />
             <span className="block h-5 w-16 animate-pulse rounded-full bg-border" />
             <span className="block h-4 w-24 animate-pulse rounded bg-border" />
+            <span className="block h-5 w-20 animate-pulse rounded bg-border" />
             <span className="block h-4 w-12 animate-pulse rounded bg-border" />
           </div>
         ))}

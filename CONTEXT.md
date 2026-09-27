@@ -77,6 +77,12 @@ _Avoid_: Landlord, lessor
 **Rental**:
 An agreement placing one Tenant in one Property for a fixed span, at an agreed
 monthly rent. Creating an active Rental is what makes a Property occupied.
+Ending one removes the Payments due after the day it ends that nobody has
+settled; settled ones stay. Renewing ends one on its end date and starts the
+next the following day, same Property and Tenant. One with nothing settled and
+no Rental Document can be deleted outright, as a mistake rather than as history.
+A room let by another agent is a Rental too — no money on it, and recorded only
+so the room comes back up when it frees (ADR 0011, 0014).
 _Avoid_: Lease, contract, booking, agreement
 
 **Tenant**:
@@ -85,8 +91,11 @@ among the most sensitive data in an Org.
 _Avoid_: Renter, occupant, lessee, customer
 
 **Payment**:
-One expected sum on one date under one Rental, moving in a stated direction —
-money the Org expects to collect, or money it expects to hand back. Payments are
+One expected sum on one date under one Rental, with a direction that says who
+pays: `in` is money the Org expects someone to pay — rent and the Deposit by the
+Tenant to the Owner, the Commission to the Org — and `out` is money due back to
+the Tenant. It does not say whose account the money lands in; that follows from
+the Payment's type. Payments are
 generated up front for the whole Rental term, then settled as money actually
 moves. A Payment exists whether or not it has been settled. The monthly rent is
 only among them where the Org follows the rent for that Rental — which is not
@@ -96,19 +105,24 @@ Commission alone (ADR 0011).
 _Avoid_: Invoice, transaction, receipt, charge
 
 **Deposit**:
-Security money the Tenant hands over at the start of a Rental. The Org holds it
-rather than earns it, which is why it comes back out at the end.
+Security money the Tenant pays the Owner at the start of a Rental. The Org does
+not hold it; it records the Deposit to follow that it was paid. A renewed Rental
+carries the amount but no new Deposit Payment — the money is still with the
+Owner.
 _Avoid_: Security, bond, guarantee
 
 **Deposit Refund**:
-The Deposit going back to the Tenant when a Rental ends, less whatever the Org
-withholds for damage or arrears. The amount is decided at closing, so it is never
-part of the schedule generated when the Rental starts.
+The Deposit going back to the Tenant when a Rental ends, returned by the Owner
+less whatever is withheld for damage or arrears, and followed by the Org. It is
+due a stated time after the Rental ends — thirty days unless changed. The amount
+is decided at closing, so it is never part of the schedule generated when the
+Rental starts.
 _Avoid_: Return, payback, reversal
 
 **Commission**:
 The Org's cut, owed only when the Org itself brokered the Rental. Never charged
-on a Rental the Org merely administers.
+on a Rental the Org merely administers. Charged again each time a Rental is
+renewed.
 _Avoid_: Fee, brokerage
 
 ## Leads and paperwork

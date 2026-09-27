@@ -250,6 +250,9 @@ export interface PropertyEditRow {
    *  renders them. null is the ordinary "nobody on file", not an import
    *  artefact. */
   owner: OwnerOption | null
+  /** The active Rental behind this Property, if any. What locks `status` on the
+   *  edit form (ADR 0009, amended) and what the detail page links to. */
+  activeRentalId: string | null
 }
 
 /**
@@ -261,9 +264,10 @@ export interface PropertyEditRow {
  * difference. RLS refuses it anyway; the `org_id` filter makes that a zero-row
  * read rather than a policy denial.
  *
- * `status` and `images` are read here rather than accepted from the form:
- * `updateProperty` decides the status lock and which photos really belong to
- * this row against these values, not against hidden fields a client sent.
+ * `status`, `images` and the active Rental are read here rather than accepted
+ * from the form: `updateProperty` decides the status lock and which photos
+ * really belong to this row against these values, not against hidden fields a
+ * client sent.
  */
 export async function getPropertyForEdit(
   orgId: string,
@@ -275,10 +279,13 @@ export async function getPropertyForEdit(
     .select(
       'id, title, room_number, property_type, bedrooms, bathrooms, area_sqm, price_monthly, ' +
         'floor, description, contact_line, status, images, owner_id, ' +
-        'buildings(id, name, district, google_map_url), owners(id, name, phone)',
+        'buildings(id, name, district, google_map_url), owners(id, name, phone), rentals(id)',
     )
     .eq('id', id)
     .eq('org_id', orgId)
+    // Filters the embed, not the Property: `rentals` comes back as the active
+    // one or nothing (rentals_one_active_per_property allows no more).
+    .eq('rentals.status', 'active')
     .maybeSingle()
   if (error) throw error
   if (!data) return null
@@ -308,6 +315,7 @@ export async function getPropertyForEdit(
       ? { id: b.id, name: b.name, district: b.district, googleMapUrl: b.google_map_url }
       : null,
     owner: o ? { id: o.id, name: o.name, phone: o.phone } : null,
+    activeRentalId: row.rentals?.[0]?.id ?? null,
   }
 }
 
@@ -331,6 +339,7 @@ interface PropertyEditRecord {
     | { id: string; name: string; district: string; google_map_url: string | null }[]
     | null
   owners: EmbeddedOwner | EmbeddedOwner[] | null
+  rentals: { id: string }[] | null
 }
 
 interface EmbeddedOwner {

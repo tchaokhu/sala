@@ -102,10 +102,12 @@ async function addRental(
   endDate: string,
   status: 'active' | 'ended' | 'cancelled' = 'active',
 ) {
+  // rented_by_us, because both flags off is a Rental let by another agent,
+  // which Active Rentals leaves out (0017).
   const { rows } = await client.query(
     `INSERT INTO rentals (org_id, property_id, tenant_name_snapshot, start_date, end_date,
-                          monthly_rent, status)
-     VALUES ($1, $2, 'ผู้เช่า', '2025-08-01', $3, 20000, $4) RETURNING id`,
+                          monthly_rent, status, rented_by_us)
+     VALUES ($1, $2, 'ผู้เช่า', '2025-08-01', $3, 20000, $4, true) RETURNING id`,
     [org, propertyId, endDate, status],
   )
   return rows[0].id as string

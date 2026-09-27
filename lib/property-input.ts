@@ -118,14 +118,17 @@ export function parsePropertyForm(form: FormLike): Parsed<NewProperty> {
 /**
  * The same fields, with edit's rules for `status`.
  *
- * `currentStatus` is read from the row by the action, never from the form — the
- * lock below is only a lock if the thing it locks on is the database's answer.
+ * `currentStatus` and `hasActiveRental` are read from the database by the
+ * action, never from the form — the lock below is only a lock if the thing it
+ * locks on is the database's answer.
  *
- * Two ways this differs from create:
- *   * A Property already at `rented` stays there whatever was posted. There is
- *     no Rental-management flow that could end the tenancy (ADR 0009), so the
- *     form hides the field — and this is what makes a hand-built POST hiding
- *     nothing hit the same wall.
+ * Three ways this differs from create:
+ *   * A Property with an active Rental keeps its status whatever was posted.
+ *     Status transitions belong to the Rental flow (ADR 0009, amended): ending
+ *     or deleting the Rental is what frees the room.
+ *   * A Property at `rented` with no active Rental behind it — the stale kind
+ *     the ETL carried over — can be set back to Available or Reserved. Edit
+ *     still never *sets* `rented`; only creating a Rental does.
  *   * Blank or absent means *no change*, not `'available'`. Create's default is
  *     right for a row that does not exist yet; on edit it would quietly demote a
  *     `reserved` Property the moment somebody saved a price correction.
@@ -133,12 +136,13 @@ export function parsePropertyForm(form: FormLike): Parsed<NewProperty> {
 export function parsePropertyEditForm(
   form: FormLike,
   currentStatus: PropertyStatus,
+  hasActiveRental: boolean,
 ): Parsed<PropertyFields & { status: PropertyStatus }> {
   const fields = parsePropertyFields(form)
   if (!fields.ok) return fields
 
-  if (currentStatus === 'rented') {
-    return { ok: true, values: { ...fields.values, status: 'rented' } }
+  if (hasActiveRental) {
+    return { ok: true, values: { ...fields.values, status: currentStatus } }
   }
 
   const rawStatus = form.get('status')
@@ -346,18 +350,19 @@ export function mb(bytes: number): string {
 
 // ─── Plumbing ────────────────────────────────────────────────────────────────
 
-function fail(message: string): { ok: false; message: string } {
+export function fail(message: string): { ok: false; message: string } {
   return { ok: false, message }
 }
 
-function blankToNull(input: unknown, maxLen: number): string | null {
+export function blankToNull(input: unknown, maxLen: number): string | null {
   return cleanText(input, maxLen) || null
 }
 
 /** A number field. Blank is `null` and the caller decides what that means;
  *  `required` makes blank an error instead. Rounded to satang, because that is
- *  the precision every numeric column here keeps. */
-function number(
+ *  the precision every numeric column here keeps. Shared with
+ *  lib/rental-input.ts, whose money columns are the same numeric(12,2). */
+export function number(
   input: unknown,
   opts: { label: string; min: number; max: number; integer?: boolean; required?: boolean },
 ): Parsed<number | null> {

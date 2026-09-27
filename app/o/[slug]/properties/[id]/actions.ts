@@ -47,13 +47,14 @@ export async function updateProperty(formData: FormData): Promise<ActionResult> 
   const supabase = await createClient()
 
   // The row as the database has it, not as the form describes it. Two things
-  // hang off this read: the status lock (ADR 0009 — a `rented` Property cannot
-  // be moved by an edit) and which photos this Property actually holds. Both
-  // would be trivially defeatable if they came from hidden fields.
+  // hang off this read: the status lock (ADR 0009, amended — a Property with an
+  // active Rental cannot be moved by an edit) and which photos this Property
+  // actually holds. Both would be trivially defeatable if they came from hidden
+  // fields.
   const current = await getPropertyForEdit(org.id, id)
   if (!current) return { ok: false, message: NOT_FOUND }
 
-  const parsed = parsePropertyEditForm(formData, current.status)
+  const parsed = parsePropertyEditForm(formData, current.status, current.activeRentalId !== null)
   if (!parsed.ok) return parsed
 
   const choice = parseBuildingChoice(formData)
@@ -157,7 +158,9 @@ export async function updateProperty(formData: FormData): Promise<ActionResult> 
   await discard(supabase, removed)
 
   revalidatePath(`/o/${slug}/properties`)
+  revalidatePath(`/o/${slug}/properties/${id}`)
   revalidatePath(`/o/${slug}/properties/${id}/edit`)
+  revalidatePath(`/o/${slug}/rentals/new`)
   revalidatePath(`/o/${slug}`)
   return { ok: true, message: 'Saved' }
 }
@@ -168,9 +171,9 @@ export async function updateProperty(formData: FormData): Promise<ActionResult> 
  * `rentals.property_id` and `payments.property_id` are both ON DELETE RESTRICT,
  * so a Property that has ever carried a Rental or a Payment cannot be removed —
  * Postgres refuses it with SQLSTATE 23503 and this says so plainly. It explains
- * and stops there: there is no Rental-management flow in the product yet, so an
- * instruction like "end the Rental first" would name a door that does not exist
- * (ADR 0009).
+ * and stops there: ending a Rental does not free the Property either — the
+ * ended Rental still references it — so "end the Rental first" would name a
+ * door that does not lead out (ADR 0009).
  *
  * The delete and the read of what to sweep are the same statement, so the image
  * paths come back only if the row actually went. A blocked delete returns before

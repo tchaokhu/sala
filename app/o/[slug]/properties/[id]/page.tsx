@@ -13,7 +13,7 @@
 
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ChevronLeft, MapPin, Pencil, Phone } from 'lucide-react'
+import { ChevronLeft, KeyRound, MapPin, Pencil, Phone, ScrollText } from 'lucide-react'
 import { requireMember } from '@/lib/supabase-server'
 import { getPropertyForEdit } from '@/lib/properties'
 import { signedPropertyImageUrls } from '@/lib/property-storage'
@@ -21,7 +21,7 @@ import { formatBaht } from '@/lib/format'
 import { PROPERTY_TYPE_LABELS } from '@/lib/property-input'
 import { PageHeader } from '@/components/PageHeader'
 import { MapPreview } from '@/components/MapPreview'
-import { PRIMARY_BUTTON } from '@/components/form'
+import { BUTTON, PRIMARY_BUTTON } from '@/components/form'
 import { StatusPill } from '@/components/StatusPill'
 import { PropertyPhotoGallery } from './photo-gallery'
 
@@ -52,13 +52,32 @@ export default async function PropertyViewPage({
           title={property.title}
           summary={<StatusPill status={property.status} />}
           actions={
-            <Link
-              href={`/o/${slug}/properties/${id}/edit`}
-              className={`${PRIMARY_BUTTON} inline-flex items-center gap-1.5`}
-            >
-              <Pencil size={14} aria-hidden />
-              Edit
-            </Link>
+            <>
+              {property.activeRentalId ? (
+                <Link
+                  href={`/o/${slug}/rentals/${property.activeRentalId}`}
+                  className={`${BUTTON} inline-flex items-center gap-1.5`}
+                >
+                  <ScrollText size={14} aria-hidden />
+                  View the Rental
+                </Link>
+              ) : (
+                <Link
+                  href={`/o/${slug}/rentals/new?property=${id}`}
+                  className={`${BUTTON} inline-flex items-center gap-1.5`}
+                >
+                  <KeyRound size={14} aria-hidden />
+                  Rent this Property
+                </Link>
+              )}
+              <Link
+                href={`/o/${slug}/properties/${id}/edit`}
+                className={`${PRIMARY_BUTTON} inline-flex items-center gap-1.5`}
+              >
+                <Pencil size={14} aria-hidden />
+                Edit
+              </Link>
+            </>
           }
         />
       </div>

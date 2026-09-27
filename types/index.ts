@@ -112,6 +112,9 @@ export interface Rental {
   deposit: number
   commission: number
   rented_by_us: boolean
+  /** Whether the Org follows this tenancy's monthly rent — what decides if a
+   *  rent schedule exists at all (ADR 0011). Not custody. */
+  rent_tracked_by_us: boolean
   status: RentalStatus
   ended_at?: string
   ended_reason?: string

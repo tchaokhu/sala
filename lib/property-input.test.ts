@@ -109,8 +109,12 @@ describe('parsePropertyForm', () => {
 })
 
 describe('parsePropertyEditForm', () => {
-  function parseEdit(fields: Record<string, string>, currentStatus: PropertyStatus) {
-    return parsePropertyEditForm(form(fields), currentStatus)
+  function parseEdit(
+    fields: Record<string, string>,
+    currentStatus: PropertyStatus,
+    hasActiveRental = currentStatus === 'rented',
+  ) {
+    return parsePropertyEditForm(form(fields), currentStatus, hasActiveRental)
   }
 
   it('reads the same fields create does', () => {
@@ -150,10 +154,10 @@ describe('parsePropertyEditForm', () => {
     expect(parseEdit({ ...MINIMUM, status: 'rented' }, 'reserved')).toMatchObject({ ok: false })
   })
 
-  it('keeps a rented Property rented whatever was posted', () => {
-    // The lock, and the reason the UI hiding the <select> is not the lock: there
-    // is no Rental-management flow that could end the tenancy, so nothing this
-    // form receives may claim one has.
+  it('keeps a Property with an active Rental where it is, whatever was posted', () => {
+    // The lock, and the reason the UI hiding the <select> is not the lock:
+    // ending or deleting the Rental is what frees the room (ADR 0009, amended),
+    // so nothing this form receives may claim the tenancy is over.
     for (const posted of ['available', 'reserved', 'rented', 'deleted', '']) {
       const result = parseEdit({ ...MINIMUM, status: posted }, 'rented')
       expect(result.ok, `posted status ${JSON.stringify(posted)}`).toBe(true)
@@ -163,6 +167,21 @@ describe('parsePropertyEditForm', () => {
     const absent = parseEdit(MINIMUM, 'rented')
     expect(absent.ok).toBe(true)
     if (absent.ok) expect(absent.values.status).toBe('rented')
+  })
+
+  it('lets a stale rented Property — no active Rental — go back to Available', () => {
+    const freed = parseEdit({ ...MINIMUM, status: 'available' }, 'rented', false)
+    expect(freed).toMatchObject({ ok: true, values: { status: 'available' } })
+    expect(parseEdit({ ...MINIMUM, status: 'reserved' }, 'rented', false)).toMatchObject({ ok: true, values: { status: 'reserved' } })
+    // Untouched, it stays as it is; posted `rented` is still refused.
+    expect(parseEdit(MINIMUM, 'rented', false)).toMatchObject({ ok: true, values: { status: 'rented' } })
+    expect(parseEdit({ ...MINIMUM, status: 'rented' }, 'rented', false)).toMatchObject({ ok: false })
+  })
+
+  it('locks on the active Rental, not on the status column', () => {
+    // Inconsistent data (an active Rental behind an `available` row) is left
+    // for the Rental flow to put right, not moved by an edit.
+    expect(parseEdit({ ...MINIMUM, status: 'reserved' }, 'available', true)).toMatchObject({ ok: true, values: { status: 'available' } })
   })
 
   it('leaves the status alone when the form says nothing about it', () => {

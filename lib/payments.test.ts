@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildPaymentSchedule, getPaymentStatus, outstanding } from './payments'
+import { buildPaymentSchedule, futureUnpaid, getPaymentStatus, outstanding, settleThrough } from './payments'
 import { addMonthsIso } from './dates'
 import type { Payment, Rental } from '@/types'
 
@@ -21,6 +21,8 @@ const rental = (overrides: Partial<Rental> = {}): Rental => ({
   deposit: 0,
   commission: 0,
   rented_by_us: false,
+  // True so every case below written before the rent gate keeps its meaning.
+  rent_tracked_by_us: true,
   status: 'active',
   created_at: '2026-01-15T00:00:00Z',
   updated_at: '2026-01-15T00:00:00Z',
@@ -177,6 +179,76 @@ describe('buildPaymentSchedule', () => {
     }))
     expect(records.filter(r => r.type === 'rent')).toHaveLength(1)
     expect(records.find(r => r.type === 'deposit')).toBeDefined()
+  })
+})
+
+describe('buildPaymentSchedule — the rent gate (ADR 0011)', () => {
+  it('writes no rent when the Org does not follow it, and still the Deposit and Commission', () => {
+    const types = buildPaymentSchedule(
+      rental({ rent_tracked_by_us: false, deposit: 24000, commission: 12000, rented_by_us: true }),
+    ).map(r => r.type)
+    expect(types).toEqual(['deposit', 'commission'])
+  })
+
+  it('writes nothing at all for a Rental let by another agent', () => {
+    expect(buildPaymentSchedule(rental({
+      rent_tracked_by_us: false, rented_by_us: false, deposit: 0, commission: 0,
+    }))).toEqual([])
+  })
+})
+
+describe('buildPaymentSchedule — renewal (depositHeld)', () => {
+  it('leaves the Deposit out: it is still with the Owner from the Rental before', () => {
+    const records = buildPaymentSchedule(
+      rental({ deposit: 24000, commission: 12000, rented_by_us: true }),
+      { depositHeld: true },
+    )
+    expect(records.find(r => r.type === 'deposit')).toBeUndefined()
+    expect(records.filter(r => r.type === 'commission')).toHaveLength(1)
+    expect(records.filter(r => r.type === 'rent')).toHaveLength(12)
+  })
+})
+
+describe('settleThrough', () => {
+  const schedule = buildPaymentSchedule(rental({ deposit: 24000 }))
+
+  it('settles everything due on or before the date, the day itself included', () => {
+    const rows = settleThrough(schedule, '2026-03-15')
+    const settled = rows.filter(r => r.settled_date !== null)
+    // Jan, Feb and Mar rent, plus the Deposit on the start date.
+    expect(settled).toHaveLength(4)
+    expect(settled.every(r => r.settled_date === r.due_date && r.settled_amount === r.amount)).toBe(true)
+    expect(rows.find(r => r.due_date === '2026-04-15')).toMatchObject({ settled_date: null, settled_amount: null })
+  })
+
+  it('stops the day before the next due date', () => {
+    expect(settleThrough(schedule, '2026-03-14').filter(r => r.settled_date).length).toBe(3)
+  })
+
+  it('settles nothing when no date is given', () => {
+    expect(settleThrough(schedule, null).every(r => r.settled_date === null)).toBe(true)
+  })
+})
+
+describe('futureUnpaid', () => {
+  const rows = [
+    payment({ id: 'a', due_date: '2026-09-30' }),
+    payment({ id: 'b', due_date: '2026-10-01' }),
+    payment({ id: 'c', due_date: '2026-11-01', settled_date: '2026-09-01', settled_amount: 12000 }),
+    payment({ id: 'd', due_date: '2026-12-01' }),
+  ]
+
+  it('is what ending on a date deletes: unsettled, due after that day', () => {
+    expect(futureUnpaid(rows, '2026-09-30').map(p => p.id)).toEqual(['b', 'd'])
+  })
+
+  it('keeps the end day itself and never counts a settled row', () => {
+    expect(futureUnpaid(rows, '2026-09-29').map(p => p.id)).toEqual(['a', 'b', 'd'])
+    expect(futureUnpaid(rows, '2026-12-01')).toEqual([])
+  })
+
+  it('treats a null settled_date as unpaid, the way the database returns it', () => {
+    expect(futureUnpaid([{ due_date: '2026-10-01', settled_date: null }], '2026-09-30')).toHaveLength(1)
   })
 })
 

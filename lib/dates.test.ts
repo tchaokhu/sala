@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { daysBetween, daysInMonth, parseIsoDate, todayBangkok } from './dates'
+import { addDaysIso, daysBetween, daysInMonth, isIsoDate, parseIsoDate, todayBangkok } from './dates'
 
 describe('parseIsoDate', () => {
   it('splits a well-formed date', () => {
@@ -49,5 +49,25 @@ describe('todayBangkok', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-04-19T17:30:00Z'))
     expect(todayBangkok()).toBe('2026-04-20')
+  })
+})
+
+describe('addDaysIso', () => {
+  it('steps across month, year and leap-day boundaries', () => {
+    expect(addDaysIso('2026-09-30', 1)).toBe('2026-10-01')
+    expect(addDaysIso('2026-12-31', 1)).toBe('2027-01-01')
+    expect(addDaysIso('2028-02-28', 1)).toBe('2028-02-29')
+    expect(addDaysIso('2026-03-01', -1)).toBe('2026-02-28')
+    expect(addDaysIso('2026-09-27', 30)).toBe('2026-10-27')
+  })
+})
+
+describe('isIsoDate', () => {
+  it('accepts real dates and refuses impossible or malformed ones', () => {
+    expect(isIsoDate('2028-02-29')).toBe(true)
+    expect(isIsoDate('2026-02-29')).toBe(false)
+    expect(isIsoDate('2026-13-01')).toBe(false)
+    expect(isIsoDate('2026-9-1')).toBe(false)
+    expect(isIsoDate('')).toBe(false)
   })
 })

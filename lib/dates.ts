@@ -57,3 +57,19 @@ export function daysBetween(fromIso: string, toIso: string): number {
   const to = Date.UTC(b.year, b.month - 1, b.day)
   return Math.round((to - from) / 86_400_000)
 }
+
+/** Add N days to a YYYY-MM-DD string. Negative steps back. UTC arithmetic on
+ *  the parts, for the same reason as everything else in this file. */
+export function addDaysIso(iso: string, n: number): string {
+  const { year, month, day } = parseIsoDate(iso)
+  const d = new Date(Date.UTC(year, month - 1, day + n))
+  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`
+}
+
+/** True for a real calendar date written YYYY-MM-DD — so a form's 2026-02-30
+ *  is refused rather than rolled into March. */
+export function isIsoDate(input: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input)) return false
+  const { year, month, day } = parseIsoDate(input)
+  return month >= 1 && month <= 12 && day >= 1 && day <= daysInMonth(year, month)
+}

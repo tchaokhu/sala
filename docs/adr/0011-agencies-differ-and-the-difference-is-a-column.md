@@ -114,3 +114,36 @@ changed: every row the ETL set was set by looking for settled rent Payments,
 which is evidence of following, not of custody. Nothing else in this decision
 changed, and the rule at the end of it is what caught this — the flag existed
 because one agency was asked, and asking a second is what corrected it.
+
+## Amended, 2026-09-27
+
+**`direction` is who pays, not custody.** The paragraph above calls it a record
+of money that "really does pass through an Org". That is not what the first
+agency needs it to mean: rent and the Deposit go from the Tenant straight to the
+Owner, and the Owner refunds the Deposit, yet the agency follows all of it. So
+`in` is money the agency expects someone to pay — rent and the Deposit by the
+Tenant to the Owner, the Commission to the agency — and `out` is money due back
+to the Tenant, which today is the Deposit Refund. Who receives it follows from
+`type`. No column changed; the sentence did.
+
+**The rent gate is in the code now.** The Consequences above said
+`buildPaymentSchedule` writes rent only when `rent_tracked_by_us` is true. It
+did not: the flag was not on the `Rental` type and the function had no such
+check. It has both now, and a test for each side.
+
+That gate is also what makes the overdue figure in `org_dashboard` read only
+followed rent, and it does so by construction rather than by a filter: a rent
+Payment is only ever generated for a Rental whose rent is followed, and nothing
+changes that flag once a Rental exists (there is no editing a Rental's terms).
+The one way round it was data written before the gate — on 2026-09-27 every
+Rental on the project with a rent Payment had `rent_tracked_by_us = true`, so
+there is none. The sentence above asking for this "in the SQL and in a test"
+is met by the gate's test, not by a clause in the dashboard's query; if a
+Rental's flag ever becomes editable, that is the day the query needs it.
+
+**A Rental let by another agent is `NOT rented_by_us AND NOT
+rent_tracked_by_us`** — no Deposit, no Commission, no schedule. The agency had
+no hand in the tenancy and records it only so the room comes back up as it
+frees: it is left out of Active Rentals and counted in Ending this month. It has
+no column of its own. By this ADR's rule it gets one the day those two flags
+stop identifying it unambiguously.

@@ -17,8 +17,10 @@
 // font/platform variance in how a status reads.
 
 import type { LucideIcon } from 'lucide-react'
-import { Circle, CircleDashed, CircleDot } from 'lucide-react'
+import { Circle, CircleAlert, CircleCheck, CircleDashed, CircleDot, CircleMinus } from 'lucide-react'
 import type { PropertyStatus } from '@/lib/properties'
+import type { RentalState } from '@/lib/rentals'
+import type { PaymentStatus, RentalStatus } from '@/types'
 
 const STATUS: Record<PropertyStatus, { label: string; glyph: LucideIcon; filled?: boolean; className: string }> = {
   // Occupied and unremarkable — the shape still says "filled", the colour says
@@ -59,4 +61,70 @@ export const STATUS_LABELS: Record<PropertyStatus, string> = {
   available: STATUS.available.label,
   reserved: STATUS.reserved.label,
   rented: STATUS.rented.label,
+}
+
+type Look = { label: string; glyph: LucideIcon; className: string; filled?: boolean }
+
+function Pill({ look }: { look: Look }) {
+  const { label, glyph: Glyph, filled, className } = look
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2 py-0.5 text-xs ${className}`}
+    >
+      <Glyph size={12} aria-hidden fill={filled ? 'currentColor' : 'none'} />
+      {label}
+    </span>
+  )
+}
+
+/** Where a Rental stands: ended, or how much of its term is left. `state` is
+ *  getRentalStatus's, computed on the server against Bangkok's today. */
+export function RentalStatePill({
+  status,
+  state,
+  daysLeft,
+}: {
+  status: RentalStatus
+  state: RentalState
+  daysLeft: number | null
+}) {
+  if (status !== 'active') {
+    return <Pill look={{ label: 'Ended', glyph: CircleMinus, className: 'border-border text-muted' }} />
+  }
+  if (state === 'expired') {
+    return <Pill look={{ label: 'Past end date', glyph: CircleAlert, className: 'border-warn/40 text-warn' }} />
+  }
+  if (state === 'expiring') {
+    return (
+      <Pill
+        look={{
+          label: daysLeft === 0 ? 'Ends today' : `Ends in ${daysLeft} ${daysLeft === 1 ? 'day' : 'days'}`,
+          glyph: CircleDot,
+          className: 'border-hold/40 text-hold',
+        }}
+      />
+    )
+  }
+  return <Pill look={{ label: 'Active', glyph: Circle, filled: true, className: 'border-ok/40 text-ok' }} />
+}
+
+const PAYMENT: Record<PaymentStatus, Look> = {
+  settled: { label: 'Settled', glyph: CircleCheck, className: 'border-ok/40 text-ok' },
+  partial: { label: 'Partly settled', glyph: CircleDot, className: 'border-hold/40 text-hold' },
+  overdue: { label: 'Overdue', glyph: CircleAlert, className: 'border-warn/40 text-warn' },
+  pending: { label: 'Pending', glyph: CircleDashed, className: 'border-border text-muted' },
+}
+
+export function PaymentStatusPill({ status }: { status: PaymentStatus }) {
+  return <Pill look={PAYMENT[status]} />
+}
+
+/** A fact about a Rental that is not its state — "Let by another agent", "Rent
+ *  not followed". Square-cornered, so it never reads as one of the pills. */
+export function Tag({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-block whitespace-nowrap rounded border border-border px-1.5 py-0.5 text-xs text-muted">
+      {children}
+    </span>
+  )
 }

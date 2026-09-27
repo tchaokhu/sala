@@ -42,3 +42,24 @@ best-effort and costs storage, not correctness.
 Property delete follows the same order for the same reason: the row is deleted
 first, and only on success are its Storage objects swept. A delete blocked by
 `ON DELETE RESTRICT` therefore never touches Storage at all.
+
+## Amended, 2026-09-27
+
+The status lock above was written for a product with no Rental-management
+flow, and read "a Property at `rented` shows status as read-only". That flow
+exists now (ADR 0014), and the transitions belong to it as this ADR said they
+would: creating a Rental sets its Property `rented`, ending or deleting one sets
+it `available`, and renewing leaves it `rented`.
+
+The lock is now **"an active Rental exists"**, not "status is `rented`". The
+difference matters because thirteen Properties came across from Cozy Keys at
+`rented` with no Rental behind them — let through the agency but never recorded,
+let by another agent, or simply stale. Under the old wording none of them could
+be put right. Now a stale one can be set back to Available from its edit form,
+and one that really is let can be recorded as a Rental. Edit still cannot *set*
+`rented`; only creating a Rental does. `getPropertyForEdit` reads the active
+Rental alongside the row, and `parsePropertyEditForm` locks on that.
+
+Delete is unchanged. An ended Rental still references its Property, so ending
+it does not make the Property deletable; a Rental entered by mistake can itself
+be deleted while nothing under it is settled, and then the Property can go.

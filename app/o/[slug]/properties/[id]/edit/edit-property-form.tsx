@@ -186,29 +186,45 @@ export function EditPropertyForm({
             />
           </Field>
 
-          {/* A Property at "Rented" has no field here at all — not a disabled
-              one. There is no Rental-management flow that could end the tenancy
-              (ADR 0009), and a field that is only hidden is still a field a
-              hand-built POST can fill. The action locks it too; this is the half
-              a person sees. */}
-          {property.status === 'rented' ? (
+          {/* A Property with an active Rental has no field here at all — not a
+              disabled one: a field that is only hidden is still a field a
+              hand-built POST can fill. The action locks it too (ADR 0009,
+              amended); this is the half a person sees. */}
+          {property.activeRentalId ? (
             <div className="flex flex-col gap-1.5">
               <span className="text-sm font-medium">Status</span>
               <span className="flex h-[38px] items-center">
-                <StatusPill status="rented" />
+                <StatusPill status={property.status} />
               </span>
               <span className="text-xs text-muted">
-                This status can only change when the Rental ends
+                Changes when{' '}
+                <Link
+                  href={`/o/${slug}/rentals/${property.activeRentalId}`}
+                  className="text-accent underline-offset-4 hover:underline"
+                >
+                  its Rental
+                </Link>{' '}
+                ends
               </span>
             </div>
           ) : (
-            <Field label="Status" hint='A Property is only "Rented" when it has a Rental'>
+            <Field
+              label="Status"
+              hint={
+                property.status === 'rented'
+                  ? 'Marked Rented, but no Rental is recorded — set it to Available if the room is free'
+                  : 'A Property is only "Rented" when it has a Rental'
+              }
+            >
               <select
                 name="status"
                 disabled={pending}
-                defaultValue={property.status}
+                // Blank posts as "no change", so a stale Rented room keeps its
+                // status until somebody picks another one.
+                defaultValue={property.status === 'rented' ? '' : property.status}
                 className={INPUT}
               >
+                {property.status === 'rented' && <option value="">{STATUS_LABELS.rented}</option>}
                 {CREATABLE_STATUSES.map((status) => (
                   <option key={status} value={status}>
                     {STATUS_LABELS[status]}

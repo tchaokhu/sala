@@ -10,6 +10,7 @@ import { todayBangkok } from './dates'
 
 export interface OrgDashboard {
   propertiesTotal: number
+  /** Excludes Rentals let by another agent (0017) — not the agency's workload. */
   rentalsActive: number
   rentalsEndingThisMonth: number
   /** Money owed to the Org and past due, in baht. Excludes what the Org owes

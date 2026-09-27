@@ -23,15 +23,27 @@ const CODE = /\.(ts|tsx|js|jsx|mjs|cjs)$/
 const ADMIN_CLIENT = 'lib/supabase-admin.ts'
 const ALLOWED_IMPORTERS = ['app/admin/', ADMIN_CLIENT]
 
-/** The one thing outside a request path that needs the key: the Org purge
- *  (ADR 0010). CLAUDE.md scopes the key to "the cron job and app/admin/", and
- *  this is that cron job — Supabase Storage holds no session for it to borrow,
- *  so sweeping a purged Org's `{org_id}/` prefix cannot be done any other way.
- *  It runs from a terminal, never from a request, and never reaches a browser.
+/** The things outside a request path that need the key. CLAUDE.md scopes it to
+ *  "the cron job and app/admin/"; each entry below has to say why it is neither
+ *  and still allowed.
+ *
+ *  `purge-deleted-orgs.mjs` — the Org purge (ADR 0010). This is that cron job.
+ *  Supabase Storage holds no session for it to borrow, so sweeping a purged
+ *  Org's `{org_id}/` prefix cannot be done any other way. It runs from a
+ *  terminal, never from a request, and never reaches a browser.
+ *
+ *  `etl-cozy-keys.mjs` — the one-time Cozy Keys load (ADR 0003, ADR 0004). It
+ *  uploads a Property's photos and an Org's documents into Sala's private
+ *  buckets, which the storage policies gate on Membership; there is no signed-in
+ *  Member during a migration, so there is no session to do it on. Its rows go in
+ *  over a direct database connection rather than through this key, and like the
+ *  purge it is a terminal script that no request can reach. It should be removed
+ *  from this list once the cutover in ADR 0003 is done and the old project is
+ *  archived — at that point nothing needs it again.
  *
  *  Named by exact path, not by a `scripts/` prefix: the next script to want
  *  this should have to add itself here and say why. */
-const ALLOWED_SCRIPTS = ['scripts/purge-deleted-orgs.mjs']
+const ALLOWED_SCRIPTS = ['scripts/purge-deleted-orgs.mjs', 'scripts/etl-cozy-keys.mjs']
 
 async function sourceFiles(dir = ROOT): Promise<string[]> {
   const out: string[] = []

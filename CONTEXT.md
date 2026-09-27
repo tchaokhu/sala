@@ -44,10 +44,20 @@ _Avoid_: Platform admin, root, god mode
 ## Inventory
 
 **Property**:
-One rentable thing an Org has on its books — a condo unit, a house or a
-townhome. Its name is its Building's name and its room number, put together
-rather than typed (ADR 0008).
+One rentable thing an Org can offer — a condo unit, a house or a townhome —
+whether it sits on the Org's own books or was found elsewhere and can be shown
+without holding it. Which of the two it is, is its Mandate. Its name is its
+Building's name and its room number, put together rather than typed (ADR 0008).
 _Avoid_: Room, unit, listing, asset
+
+**Mandate**:
+Whether a Property is the Org's own or merely one it can offer. `own` means an
+Owner entrusted the room to the Org. `sourced` means the Org found it in a
+public group or through another agent and holds nothing — a sourced Property
+never has an Owner. Letting one does not make it own: brokering someone else's
+room is an ordinary Rental, and it is `rented_by_us` that records who closed it
+(ADR 0011).
+_Avoid_: Ownership, source, listing type
 
 **Building**:
 The named development a Property sits in, carrying the map pin, the facilities
@@ -78,7 +88,11 @@ _Avoid_: Renter, occupant, lessee, customer
 One expected sum on one date under one Rental, moving in a stated direction —
 money the Org expects to collect, or money it expects to hand back. Payments are
 generated up front for the whole Rental term, then settled as money actually
-moves. A Payment exists whether or not it has been settled.
+moves. A Payment exists whether or not it has been settled. The monthly rent is
+only among them where the Org follows the rent for that Rental — which is not
+the same as holding it, since an Org can chase rent the Tenant pays straight to
+the Owner. Where nobody follows it, the schedule is the Deposit and the
+Commission alone (ADR 0011).
 _Avoid_: Invoice, transaction, receipt, charge
 
 **Deposit**:

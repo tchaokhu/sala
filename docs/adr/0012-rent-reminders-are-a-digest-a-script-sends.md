@@ -1,0 +1,92 @@
+# Rent reminders are one digest, and a script sends them
+
+Following the monthly rent is a service the first agency sells (ADR 0011,
+amended). The mechanism it asked for: email the agent a day before rent is due,
+repeat every two days while it stays unpaid, and the agent chases the Tenant.
+
+Three decisions follow, and none of them is the obvious one.
+
+## One email a day per Org, not one per Payment
+
+An agency with forty tenancies has forty due dates a month and, at any moment,
+a handful genuinely late. Sent per Payment, a bad week is a dozen near-identical
+emails, and the reliable outcome of a dozen near-identical emails is a filter
+rule that hides all of them. The reminder would then be worse than nothing: it
+would look like the work was covered.
+
+So: one message per Org per day, listing what is due tomorrow and what is
+already late, ordered by due date. It is the same shape as the page an agent
+would open anyway, which is the point — the email is a nudge to go and work, not
+a place to work.
+
+## It stops thirty days past due
+
+Rent a month overdue is not a reminder problem. Nobody has forgotten; the
+agency is having a conversation with the Owner about what happens next, and a
+message every two days for the rest of the year is noise that trains the
+recipient to stop reading — which costs the reminders that *are* actionable.
+
+Thirty days is the cutoff. A Payment past it still shows as overdue everywhere
+in the app; it just stops emailing.
+
+## A script, run by hand, until there is a scheduler
+
+There is no scheduler in this codebase. ADR 0001 and ADR 0002 both describe a
+nightly job in prose; neither has ever been wired to one, and
+`scripts/purge-deleted-orgs.mjs` says so at the top of the file rather than
+pretending otherwise. Inventing a scheduling mechanism for reminders alone would
+mean picking a deployment target for the whole product as a side effect of a
+mail feature.
+
+So this is the third hand-run script, written to the same shape as the other
+two: dry run by default, `--send` to act, and a report that is counts and
+addresses rather than contents. When a real deployment target exists, Rental
+expiry, Org purge and rent reminders move onto it together — that sentence is
+already in the purge script, and this ADR is the second thing waiting on it.
+
+## Consequences
+
+`payments.last_reminded_on` (0015) is what makes "again in two days" a fact
+rather than a hope, and what stops a re-run of the job from sending twice. The
+job's whole predicate reads off it:
+
+    type = 'rent'
+    AND settled_date IS NULL
+    AND rental.rent_tracked_by_us
+    AND rental.status = 'active'
+    AND due_date <= today + 1
+    AND due_date >= today - 30
+    AND (last_reminded_on IS NULL OR last_reminded_on <= today - 2)
+
+The first reminder and every repeat fall out of one condition; there is no
+separate "first send" branch to keep in step.
+
+Turning this on for an Org that already has months of unsettled rent would send
+one enormous first digest about a backlog everybody knows about. The job stamps
+`last_reminded_on` on existing overdue rows the first time it runs against an
+Org, so reminding starts from the day the feature was switched on rather than
+from the day the debt started. The backlog is still visible in the app, where it
+belongs.
+
+Recipients are every Member of the Org, from `auth.users` via `memberships`.
+Sala has no per-Property assignment — all Members see all of their Org's data
+(CONTEXT.md) — so there is nobody more specific to send to, and inventing an
+assignee to narrow the list would be inventing a permission model.
+
+The job reads the database directly over `SUPABASE_DB_URL`, including
+`auth.users` for the addresses, and needs no service role key. That keeps
+`tests/no-service-role-leak.test.ts`'s allowlist at two entries rather than
+three.
+
+## What is deliberately not here
+
+No reminder to the Tenant. The agency chases its own tenants, and a message
+from software the Tenant has never heard of, about money they owe someone else,
+is a way to lose a customer.
+
+No `reminders` table. One date per Payment answers everything the schedule
+asks; a delivery log can arrive when something reads it.
+
+No per-Org configuration of the timing. One agency has been asked and one
+answer given — the rule at the end of ADR 0011 says a column when two agencies
+are known to differ, not before.

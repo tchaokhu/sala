@@ -142,9 +142,9 @@ export default async function PropertiesPage({
             count={counts[s]}
           />
         ))}
-        {/* Not a status — a room nobody is advertising can be in any of them.
-            It earns a chip of its own because it is the thing the page is
-            scanned for, and warn because it is work waiting. */}
+        {/* Not a status chip — it narrows Available to the rooms nobody is
+            advertising (0013). It earns a chip of its own because it is the
+            thing the page is scanned for, and warn because it is work waiting. */}
         <FilterChip
           href={link({ nowhere: true })}
           active={postedNowhere}

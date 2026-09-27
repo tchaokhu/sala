@@ -108,7 +108,8 @@ export async function listProperties(
     status?: PropertyStatus | null
     cursor?: string | null
     limit?: number
-    /** Only rooms with no Posting at all. */
+    /** Only available rooms with no Posting at all — the same rooms
+     *  `org_property_counts` counts as `posted_nowhere` (0013). */
     postedNowhere?: boolean
   } = {},
 ): Promise<PropertyPage> {
@@ -138,8 +139,10 @@ export async function listProperties(
   // PostgREST filters a parent by the absence of an embedded resource with
   // `is.null` on the relationship name. It is the NOT EXISTS the tile counts
   // with, expressed the only way PostgREST expresses it — tests/rls covers it
-  // precisely because it reads like it should not work.
-  if (opts.postedNowhere) query = query.is('postings', null)
+  // precisely because it reads like it should not work. Available only, as the
+  // count is: a let room needs no advertising, and a list longer than the
+  // number on its chip is one a person cannot trust.
+  if (opts.postedNowhere) query = query.is('postings', null).eq('status', 'available')
   if (after) query = query.or(keysetFilter(after))
 
   const { data, error } = await query

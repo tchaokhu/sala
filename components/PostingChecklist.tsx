@@ -10,7 +10,7 @@
 // Un-ticking removes the row (0011). There is no "meant to post it" state, so
 // the box means the advertisement exists — nothing else.
 
-import { useState } from 'react'
+import { startTransition, useState } from 'react'
 import Link from 'next/link'
 import { INPUT, Notice, PRIMARY_BUTTON, useFormAction } from '@/components/form'
 import type { PlatformOption } from '@/lib/platforms'
@@ -85,8 +85,17 @@ export function PostingChecklist({
   }
 
   return (
+    // Submitted by hand rather than through `action=`: React resets a form once
+    // its action settles, and a reset puts every checkbox back to unticked —
+    // React keeps a controlled text input's `value` attribute in step but not a
+    // checkbox's `checked`. The ticks would then disagree with the state that
+    // builds the payload. The payload needs JS anyway, so nothing is lost.
     <form
-      action={action}
+      onSubmit={(e) => {
+        e.preventDefault()
+        const formData = new FormData(e.currentTarget)
+        startTransition(() => action(formData))
+      }}
       className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-4"
     >
       <div>

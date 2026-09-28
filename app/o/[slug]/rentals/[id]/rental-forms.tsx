@@ -64,7 +64,7 @@ export function RentalManage({
   // the Rental — that message is the only place the deleted count is said.
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 xl:grid-cols-2">
         {active && <RenewCard slug={slug} rental={rental} />}
         <EndCard slug={slug} rental={rental} payments={payments} today={today} active={active} />
       </div>

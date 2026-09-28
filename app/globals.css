@@ -24,6 +24,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
+    color-scheme: dark;
     --bg: #1c1917;
     --surface: #252220;
     --border: #3a3532;
@@ -40,6 +41,7 @@
 
 /* An explicit choice always beats the OS preference, in both directions. */
 :root[data-theme="light"] {
+  color-scheme: light;
   --bg: #fafaf9;
   --surface: #ffffff;
   --border: #e3e0dc;
@@ -55,6 +57,7 @@
 }
 
 :root[data-theme="dark"] {
+  color-scheme: dark;
   --bg: #1c1917;
   --surface: #252220;
   --border: #3a3532;
@@ -104,4 +107,20 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* A table wider than the page scrolls sideways; its Manage column stays in view,
+   so the action on a row is never scrolled off-screen. Rows spanning the table
+   (confirmations) are left alone. */
+.sticky-manage th:last-child,
+.sticky-manage td:last-child:not([colspan]) {
+  position: sticky;
+  right: 0;
+  background: var(--surface);
+  box-shadow: -1px 0 0 var(--border);
+}
+
+/* The header row is bg/60 over surface; the stuck header cell matches it. */
+.sticky-manage th:last-child {
+  background: color-mix(in srgb, var(--bg) 60%, var(--surface));
 }

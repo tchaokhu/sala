@@ -501,8 +501,8 @@ describe('delete_rental', () => {
       asMember(MEMBER_A, async () => {
         const { rows } = await q(CREATE_SQL, createArgs(ORG_A, PROP_A1, TENANT_A, null, OURS, scheduleJson({})))
         await q(
-          `INSERT INTO rental_documents (org_id, rental_id, storage_path, file_name, mime_type, size_bytes)
-           VALUES ($1, $2, $3, 'contract.pdf', 'application/pdf', 1024)`,
+          `INSERT INTO rental_documents (org_id, rental_id, storage_path, file_name, mime_type, size_bytes, kind)
+           VALUES ($1, $2, $3, 'contract.pdf', 'application/pdf', 1024, 'contract')`,
           [ORG_A, rows[0].id, `${ORG_A}/rentals/${rows[0].id}/x.pdf`],
         )
         return q('SELECT delete_rental($1, $2)', [ORG_A, rows[0].id])
@@ -546,7 +546,7 @@ describe('the counts', () => {
     })
 
   it.runIf(reachable)('org_rental_counts leaves let-elsewhere out of Active and in Ending this month', async () => {
-    // Active: A2 and A4 (ours). Let elsewhere: A3, which ends 30 Sep — the
+    // Active: A2 and A4 (ours), neither with a contract. Let elsewhere: A3, which ends 30 Sep — the
     // only one ending this month. A4 ended its term on 31 Aug with no expiry
     // job to close it (ADR 0012).
     expect(await countsAs(MEMBER_A, ORG_A)).toEqual({
@@ -555,6 +555,7 @@ describe('the counts', () => {
       ending_this_month: 1,
       past_end_date: 1,
       ended: 1,
+      no_contract: 2,
     })
   })
 
@@ -569,6 +570,7 @@ describe('the counts', () => {
       ending_this_month: 0,
       past_end_date: 0,
       ended: 0,
+      no_contract: 0,
     })
     expect(await dashboardAs(MEMBER_B, ORG_A)).toEqual({ rentals_active: 0, rentals_ending_this_month: 0 })
   })

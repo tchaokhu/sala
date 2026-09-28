@@ -156,6 +156,10 @@ filled in per Rental.
 _Avoid_: Form, blank
 
 **Rental Document**:
-A finished file attached to one specific Rental — a signed contract, an ID scan,
-a transfer slip.
+A finished file attached to one specific Rental, with a kind: a contract, an ID
+copy, a transfer slip, an inspection (move-in condition report or photos), a
+receipt, or other. A renewed Rental shows its predecessors' Documents — those of
+earlier Rentals with the same Property and Tenant — without copying them; each
+is deleted from the Rental it belongs to. An active Rental of the Org's own with
+no contract of its own is flagged, because a renewal signs a new one.
 _Avoid_: Attachment, upload, file

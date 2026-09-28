@@ -53,6 +53,7 @@ export const RENTAL_FILTERS = [
   'ending_this_month',
   'past_end_date',
   'ended',
+  'no_contract',
 ] as const
 export type RentalFilter = (typeof RENTAL_FILTERS)[number]
 
@@ -75,6 +76,9 @@ export interface RentalListRow {
   /** NOT rented_by_us AND NOT rent_tracked_by_us (ADR 0011, amended). */
   letElsewhere: boolean
   status: RentalStatus
+  /** A `contract` Rental Document is attached to this Rental itself — a
+   *  predecessor's does not count, since a renewal signs a new one. */
+  hasContract: boolean
 }
 
 export interface RentalPage {
@@ -94,6 +98,11 @@ interface RentalListRecord {
   status: RentalStatus
   created_at: string
   properties: EmbeddedProperty | EmbeddedProperty[] | null
+}
+
+interface RentalListQueryRecord extends RentalListRecord {
+  /** Filtered to kind = contract, at most one. */
+  rental_documents: { id: string }[] | null
 }
 
 interface EmbeddedProperty {
@@ -134,9 +143,14 @@ export async function listRentals(
     .from('rentals')
     .select(
       'id, property_id, tenant_name_snapshot, start_date, end_date, monthly_rent, ' +
-        'rented_by_us, rent_tracked_by_us, status, created_at, properties(title, room_number)',
+        'rented_by_us, rent_tracked_by_us, status, created_at, properties(title, room_number), ' +
+        'rental_documents(id)',
     )
     .eq('org_id', orgId)
+    // The embed is narrowed to this Rental's own contracts, one is enough to
+    // know; `no_contract` below keeps only the parents it leaves empty.
+    .eq('rental_documents.kind', 'contract')
+    .limit(1, { referencedTable: 'rental_documents' })
     .order('created_at', { ascending: false })
     .order('id', { ascending: false })
     .limit(limit + 1)
@@ -159,6 +173,12 @@ export async function listRentals(
     case 'ended':
       query = query.eq('status', 'ended')
       break
+    case 'no_contract':
+      query = query
+        .eq('status', 'active')
+        .or('rented_by_us.is.true,rent_tracked_by_us.is.true')
+        .is('rental_documents', null)
+      break
   }
   // A second `or` is ANDed with the filter's, not a replacement for it:
   // postgrest-js appends each one as its own query parameter.
@@ -167,7 +187,7 @@ export async function listRentals(
   const { data, error } = await query
   if (error) throw error
 
-  const records = (data ?? []) as unknown as RentalListRecord[]
+  const records = (data ?? []) as unknown as RentalListQueryRecord[]
   const page = records.slice(0, limit)
   const last = page.at(-1)
   const nextCursor =
@@ -189,13 +209,14 @@ export async function listRentals(
         rentTrackedByUs: r.rent_tracked_by_us,
         letElsewhere: !r.rented_by_us && !r.rent_tracked_by_us,
         status: r.status,
+        hasContract: (r.rental_documents?.length ?? 0) > 0,
       }
     }),
     nextCursor,
   }
 }
 
-export interface RentalDetail extends RentalListRow {
+export interface RentalDetail extends Omit<RentalListRow, 'hasContract'> {
   tenantId: string | null
   tenantPhone: string | null
   deposit: number
@@ -319,6 +340,8 @@ export interface RentalCounts {
   /** Active, end date gone by — no expiry job yet (ADR 0012). */
   pastEndDate: number
   ended: number
+  /** Active and ours, with no contract Document of its own. */
+  noContract: number
 }
 
 /** One row from Postgres (ADR 0005), not a count per chip. */
@@ -338,6 +361,7 @@ export async function getRentalCounts(
     endingThisMonth: Number(row.ending_this_month),
     pastEndDate: Number(row.past_end_date),
     ended: Number(row.ended),
+    noContract: Number(row.no_contract),
   }
 }
 

@@ -37,7 +37,7 @@ export function RentalTable({
 
   return (
     <div className="overflow-x-auto rounded-xl border border-border bg-surface">
-      <table className="w-full min-w-[56rem] text-sm">
+      <table className="sticky-manage w-full min-w-[48rem] text-sm">
         <thead>
           <tr className="border-b border-border bg-bg/60 text-left text-[11px] tracking-wide text-muted">
             <th scope="col" className={HEAD_CELL}>Property</th>
@@ -77,6 +77,9 @@ export function RentalTable({
                       <Tag>{LET_ELSEWHERE_NAME}</Tag>
                     ) : (
                       !row.rentTrackedByUs && <Tag>Rent not followed</Tag>
+                    )}
+                    {row.status === 'active' && !row.letElsewhere && !row.hasContract && (
+                      <Tag tone="warn">No contract</Tag>
                     )}
                   </div>
                 </td>

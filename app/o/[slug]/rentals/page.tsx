@@ -24,6 +24,7 @@ const CHIPS: { filter: RentalFilter; label: string; count: keyof RentalCounts; t
   { filter: 'ending_this_month', label: 'Ending this month', count: 'endingThisMonth' },
   { filter: 'past_end_date', label: 'Past end date', count: 'pastEndDate', tone: 'warn' },
   { filter: 'ended', label: 'Ended', count: 'ended' },
+  { filter: 'no_contract', label: 'No contract', count: 'noContract', tone: 'warn' },
 ]
 
 export default async function RentalsPage({

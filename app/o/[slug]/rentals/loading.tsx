@@ -10,7 +10,7 @@ export default function RentalsLoading() {
       />
 
       <div className="flex flex-wrap gap-2" aria-hidden>
-        {['w-16', 'w-24', 'w-48', 'w-40', 'w-36', 'w-24'].map((w, i) => (
+        {['w-16', 'w-24', 'w-48', 'w-40', 'w-36', 'w-24', 'w-32'].map((w, i) => (
           <span key={i} className={`block h-8 animate-pulse rounded-full bg-border ${w}`} />
         ))}
       </div>

@@ -134,10 +134,15 @@ export function PaymentStatusPill({ status }: { status: PaymentStatus }) {
 }
 
 /** A fact about a Rental that is not its state — "Let by another agent", "Rent
- *  not followed". Square-cornered, so it never reads as one of the pills. */
-export function Tag({ children }: { children: React.ReactNode }) {
+ *  not followed". Square-cornered, so it never reads as one of the pills.
+ *  `warn` for a fact that is work waiting ("No contract"). */
+export function Tag({ children, tone = 'plain' }: { children: React.ReactNode; tone?: 'plain' | 'warn' }) {
   return (
-    <span className="inline-block whitespace-nowrap rounded border border-border px-1.5 py-0.5 text-xs text-muted">
+    <span
+      className={`inline-block whitespace-nowrap rounded border px-1.5 py-0.5 text-xs ${
+        tone === 'warn' ? 'border-warn/40 text-warn' : 'border-border text-muted'
+      }`}
+    >
       {children}
     </span>
   )

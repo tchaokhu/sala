@@ -1,5 +1,5 @@
-// One Rental: its facts, its Payments with Settle / Correct on each, and the
-// transitions it can still take.
+// One Rental: its facts, its Payments with Settle / Correct on each, its
+// Documents, and the transitions it can still take.
 
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -10,11 +10,13 @@ import { formatBaht, formatDateThai } from '@/lib/format'
 import { getPaymentStatus, outstanding } from '@/lib/payments'
 import { LET_ELSEWHERE_NAME } from '@/lib/rental-input'
 import { getRental, getRentalStatus, listPaymentsForRental } from '@/lib/rentals'
+import { listRentalDocuments, signedDocumentUrls, type RentalDocument } from '@/lib/rental-documents'
 import { PageHeader } from '@/components/PageHeader'
 import { BUTTON } from '@/components/form'
 import { PaymentSettle } from '@/components/PaymentSettle'
 import { PAYMENT_TYPE_LABELS, PaymentStatusPill, RentalStatePill, Tag } from '@/components/StatusPill'
 import { RentalManage } from './rental-forms'
+import { RentalDocuments, type ShownDocument } from './document-forms'
 
 const bangkokDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok' })
 
@@ -26,11 +28,24 @@ export default async function RentalPage({
   const { slug, id } = await params
   const org = await requireMember(slug)
 
-  const [rental, { payments, capped }] = await Promise.all([
+  const [rental, { payments, capped }, documents] = await Promise.all([
     getRental(org.id, id),
     listPaymentsForRental(org.id, id),
+    listRentalDocuments(org.id, id),
   ])
   if (!rental) notFound()
+
+  const urls = await signedDocumentUrls([...documents.own, ...documents.earlier])
+  // storagePath stays on the server: the id is all Delete needs.
+  const shown = (d: RentalDocument): ShownDocument => ({
+    id: d.id,
+    kind: d.kind,
+    fileName: d.fileName,
+    sizeBytes: d.sizeBytes,
+    addedOn: bangkokDate.format(new Date(d.createdAt)),
+    url: urls[d.storagePath]?.url ?? null,
+    downloadUrl: urls[d.storagePath]?.downloadUrl ?? null,
+  })
 
   const today = todayBangkok()
   const { state, daysLeft } = getRentalStatus(rental.endDate, today)
@@ -129,6 +144,20 @@ export default async function RentalPage({
         )}
       </section>
 
+      <RentalDocuments
+        slug={slug}
+        rentalId={rental.id}
+        letElsewhere={rental.letElsewhere}
+        own={documents.own.map(shown)}
+        earlier={documents.earlier.map((d) => ({
+          ...shown(d),
+          rentalId: d.rentalId,
+          rentalStartDate: d.rentalStartDate,
+          rentalEndDate: d.rentalEndDate,
+        }))}
+        capped={documents.capped}
+      />
+
       <RentalManage
         slug={slug}
         rental={{
@@ -164,7 +193,7 @@ function PaymentsTable({
 }) {
   return (
     <div className="overflow-x-auto rounded-xl border border-border bg-surface">
-      <table className="w-full min-w-[52rem] text-sm">
+      <table className="sticky-manage w-full min-w-[52rem] text-sm">
         <thead>
           <tr className="border-b border-border bg-bg/60 text-left text-[11px] tracking-wide text-muted">
             <th scope="col" className={HEAD_CELL}>Type</th>

@@ -60,3 +60,25 @@ there — so no automated test covers the upload path. `tests/rls/property-creat
 covers the row half against real policies; the object half is verified against
 the project by hand, which is what the verification steps in this feature's plan
 are for.
+
+## Amended, 2026-09-27
+
+Rental Documents follow the same rule, in the `sala-docs` bucket.
+`uploadRentalDocuments` (`app/o/[slug]/rentals/[id]/document-actions.ts`)
+checks Membership, reads the Rental under the Org, validates what arrived
+(`lib/document-input.ts`: PDF, DOCX, JPEG, PNG; 20 MB a file and 20 MB a
+submission, under the same 24 MB `bodySizeLimit`), mints each Document's id,
+uploads every file in one `Promise.all` to
+`{org_id}/rentals/{rental_id}/{document_id}.{ext}`, and inserts the rows last;
+any failure sweeps the intended keys best-effort. The uploaded filename is kept
+only in `file_name`, for display and as the download name on the signed URL.
+
+Delete runs the other way: the row is deleted first, then the object is
+removed. A row therefore never points at bytes that are gone; a removal that
+fails leaves an orphan no row references, logged by the Document's id — never
+its filename, which can name a Tenant — for an operator to sweep.
+
+Documents are read through signed URLs minted on the server per render, with
+the ten-minute TTL Property photos use. Upload happens on the Rental page only,
+never on the new-Rental form, because the Rental's id must exist before a key
+can name it.

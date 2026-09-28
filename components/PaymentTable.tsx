@@ -28,7 +28,7 @@ export function PaymentTable({
 
   return (
     <div className="overflow-x-auto rounded-xl border border-border bg-surface">
-      <table className="w-full min-w-[64rem] text-sm">
+      <table className="sticky-manage w-full min-w-[64rem] text-sm">
         <thead>
           <tr className="border-b border-border bg-bg/60 text-left text-[11px] tracking-wide text-muted">
             <th scope="col" className={HEAD_CELL}>Due</th>

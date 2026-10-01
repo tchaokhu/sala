@@ -141,7 +141,18 @@ export default async function BuildingPage({
               <tbody>
                 {properties.rows.map((p) => (
                   <tr key={p.id} className="h-12 border-b border-border last:border-0">
-                    <td className="px-4 py-2 font-medium">{p.title}</td>
+                    <td className="px-4 py-2">
+                      <span className="font-medium">{p.title}</span>
+                      <span className="block text-xs text-muted">
+                        {[
+                          p.roomNumber && `Room ${p.roomNumber}`,
+                          p.floor != null && `Floor ${p.floor}`,
+                          p.ownerName,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ') || 'No room number or Owner'}
+                      </span>
+                    </td>
                     <td className="tabular whitespace-nowrap px-4 py-2 text-right">{formatBaht(p.priceMonthly)}</td>
                     <td className="px-4 py-2">
                       <StatusPill status={p.status} />

@@ -16,7 +16,7 @@
 
 import { createClient } from './supabase-server'
 import { decodeCursor, encodeCursor } from './cursor'
-import { keysetFilter, type PropertyStatus } from './properties'
+import { embeddedOne, keysetFilter, type PropertyStatus } from './properties'
 
 /** Enough Buildings for any agency this product is for, and a bound rather than
  *  no bound. `capped` is what the form says out loud when it is reached, so a
@@ -197,6 +197,11 @@ export const BUILDING_PROPERTIES_LIMIT = 100
 export interface BuildingProperty {
   id: string
   title: string
+  /** The title is the Building's name for every ETL row without a room
+   *  number, so these are what tell one row from the next. */
+  roomNumber: string | null
+  floor: number | null
+  ownerName: string | null
   status: PropertyStatus
   priceMonthly: number
 }
@@ -209,7 +214,7 @@ export async function listBuildingProperties(
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('properties')
-    .select('id, title, status, price_monthly')
+    .select('id, title, room_number, floor, status, price_monthly, owners(name)')
     .eq('org_id', orgId)
     .eq('building_id', buildingId)
     .order('title', { ascending: true })
@@ -217,11 +222,22 @@ export async function listBuildingProperties(
     .limit(BUILDING_PROPERTIES_LIMIT + 1)
   if (error) throw error
 
-  const rows = (data ?? []) as { id: string; title: string; status: PropertyStatus; price_monthly: number }[]
+  const rows = (data ?? []) as {
+    id: string
+    title: string
+    room_number: string | null
+    floor: number | null
+    status: PropertyStatus
+    price_monthly: number
+    owners: { name: string } | { name: string }[] | null
+  }[]
   return {
     rows: rows.slice(0, BUILDING_PROPERTIES_LIMIT).map((p) => ({
       id: p.id,
       title: p.title,
+      roomNumber: p.room_number,
+      floor: p.floor,
+      ownerName: embeddedOne(p.owners)?.name ?? null,
       status: p.status,
       priceMonthly: Number(p.price_monthly),
     })),

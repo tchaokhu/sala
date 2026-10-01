@@ -90,7 +90,7 @@ interface EmbeddedPosting {
 /** PostgREST renders an embedded to-one as an object but may type it as an
  *  array; every embed here is read through this so that detail stays out of the
  *  pages. */
-function embeddedOne<T>(embed: T | T[] | null | undefined): T | null {
+export function embeddedOne<T>(embed: T | T[] | null | undefined): T | null {
   return Array.isArray(embed) ? (embed[0] ?? null) : (embed ?? null)
 }
 

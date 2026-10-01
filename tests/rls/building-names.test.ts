@@ -9,8 +9,8 @@ import pg from 'pg'
 
 const DATABASE_URL = process.env.DATABASE_URL ?? 'postgres://sala:sala@localhost:54329/sala'
 
-const ORG_A = '0a000000-0000-0000-0000-0000000000b1'
-const ORG_B = '0b000000-0000-0000-0000-0000000000b1'
+const ORG_A = '0a000000-0000-0000-0000-0000000000f7'
+const ORG_B = '0b000000-0000-0000-0000-0000000000f7'
 
 const client = new pg.Client({ connectionString: DATABASE_URL, connectionTimeoutMillis: 3000 })
 let reachable = false

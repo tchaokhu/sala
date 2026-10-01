@@ -124,3 +124,49 @@ body {
 .sticky-manage th:last-child {
   background: color-mix(in srgb, var(--bg) 60%, var(--surface));
 }
+
+/* SalaLoader (components/SalaLoader.tsx). One 1.8s cycle: the upper tier draws,
+   then the lower, then the three rooms light left to right, then all of it
+   rests before going round again. Under reduced motion the generic rule above
+   would freeze each animation on its last frame — the roof wiped off and the
+   rooms dimmed — so the mark opts out entirely and sits still and whole. */
+.sala-loader {
+  animation: sala-fade-in 200ms ease-out 150ms both;
+}
+
+.sala-tier {
+  stroke-dasharray: 1;
+  animation: sala-draw 1.8s ease-in-out infinite both;
+}
+.sala-tier-2 { animation-delay: 0.15s; }
+
+.sala-room {
+  animation: sala-light 1.8s ease-in-out infinite both;
+}
+.sala-room-1 { animation-delay: 0.45s; }
+.sala-room-2 { animation-delay: 0.6s; }
+.sala-room-3 { animation-delay: 0.75s; }
+
+@keyframes sala-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes sala-draw {
+  0% { stroke-dashoffset: 1; }
+  35%, 80% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -1; }
+}
+
+@keyframes sala-light {
+  0%, 10% { opacity: 0.15; }
+  30%, 70% { opacity: 1; }
+  100% { opacity: 0.15; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sala-tier,
+  .sala-room {
+    animation: none !important;
+  }
+}

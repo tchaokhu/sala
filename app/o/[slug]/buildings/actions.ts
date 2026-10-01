@@ -15,6 +15,14 @@ import type { ActionResult } from '@/lib/action-result'
 // The map link is resolved here rather than in the pure parser because
 // following a redirect is I/O — see lib/google-map-resolve.ts and ADR 0008.
 
+/** buildings_org_name_key (0020): one Building per name in an Org. */
+function duplicate(name: string): ActionResult {
+  return {
+    ok: false,
+    message: `A Building named ${name} already exists — open it from the Buildings list instead`,
+  }
+}
+
 function failed(what: string, err: unknown): ActionResult {
   console.error(`[buildings] ${what}:`, err)
   return { ok: false, message: `${what} failed. Try again, and tell your administrator if it keeps failing.` }
@@ -36,6 +44,7 @@ export async function createBuilding(formData: FormData): Promise<ActionResult> 
     .insert({ ...parsed.values, google_map_url, org_id: org.id })
     .select('id')
     .single()
+  if (error?.code === '23505') return duplicate(parsed.values.name)
   if (error) return failed('Adding the Building', error)
 
   revalidatePath(`/o/${slug}/buildings`)
@@ -65,6 +74,7 @@ export async function updateBuilding(formData: FormData): Promise<ActionResult> 
     .update({ ...parsed.values, google_map_url })
     .eq('id', id)
     .eq('org_id', org.id)
+  if (error?.code === '23505') return duplicate(parsed.values.name)
   if (error) return failed('Saving the Building', error)
 
   revalidatePath(`/o/${slug}/buildings`)

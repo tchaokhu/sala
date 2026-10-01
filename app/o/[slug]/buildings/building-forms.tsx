@@ -9,7 +9,8 @@
 import { Trash2 } from 'lucide-react'
 import { INPUT, Notice, PRIMARY_BUTTON, useFormAction } from '@/components/form'
 import { ConfirmAction } from '@/components/ConfirmAction'
-import type { BuildingRow } from '@/lib/buildings'
+import type { BuildingDetail, BuildingRow } from '@/lib/buildings'
+import { MAX_LIST_ITEMS } from '@/lib/building-input'
 import { createBuilding, deleteBuilding, updateBuilding } from './actions'
 
 const MAP_HINT = 'Paste the link from the share button in the Google Maps app. Short links (maps.app.goo.gl) work too.'
@@ -32,7 +33,7 @@ export function CreateBuildingForm({ slug }: { slug: string }) {
   )
 }
 
-export function EditBuildingForm({ slug, building }: { slug: string; building: BuildingRow }) {
+export function EditBuildingForm({ slug, building }: { slug: string; building: BuildingDetail }) {
   const [result, action, pending] = useFormAction(updateBuilding)
 
   return (
@@ -95,8 +96,8 @@ export function DeleteBuildingForm({
   )
 }
 
-/** The same five fields, for creating and for editing. */
-function Fields({ pending, building }: { pending: boolean; building?: BuildingRow }) {
+/** The same fields, for creating and for editing. */
+function Fields({ pending, building }: { pending: boolean; building?: BuildingDetail }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <label className="flex flex-col gap-1.5 sm:col-span-2">
@@ -164,6 +165,41 @@ function Fields({ pending, building }: { pending: boolean; building?: BuildingRo
         />
         <span className="text-xs text-muted">{MAP_HINT}</span>
       </label>
+
+      <ListField label="Facilities" name="facilities" pending={pending} items={building?.facilities} placeholder={'Swimming pool\nFitness\nCo-working space'} />
+      <ListField label="Nearby" name="nearby" pending={pending} items={building?.nearby} placeholder={'BTS Phra Ram 9\nCentral Rama 9'} />
     </div>
+  )
+}
+
+/** One item per line — see parseList for why lines and not commas. */
+function ListField({
+  label,
+  name,
+  pending,
+  items,
+  placeholder,
+}: {
+  label: string
+  name: 'facilities' | 'nearby'
+  pending: boolean
+  items?: string[]
+  placeholder: string
+}) {
+  return (
+    <label className="flex flex-col gap-1.5">
+      <span className="text-sm font-medium">{label}</span>
+      <textarea
+        name={name}
+        rows={6}
+        disabled={pending}
+        defaultValue={(items ?? []).join('\n')}
+        placeholder={placeholder}
+        className={INPUT}
+      />
+      <span className="text-xs text-muted">
+        One per line, up to {MAX_LIST_ITEMS}
+      </span>
+    </label>
   )
 }

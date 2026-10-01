@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseBuildingForm } from './building-input'
+import { MAX_LIST_ITEM, MAX_LIST_ITEMS, parseBuildingForm, parseList } from './building-input'
 
 function form(fields: Record<string, string>) {
   return { get: (name: string) => (name in fields ? fields[name] : null) }
@@ -40,5 +40,48 @@ describe('parseBuildingForm', () => {
     expect(
       parseBuildingForm(form({ name: 'ลุมพินี', google_map_url: 'javascript:alert(1)' })),
     ).toMatchObject({ ok: false })
+  })
+})
+
+describe('parseList', () => {
+  it('reads one item per line, keeping the separators real items contain', () => {
+    expect(parseList('Lobby + Lounge\nCo-working / พื้นที่นั่งทำงาน\r\nสระว่ายน้ำ', 'Facilities')).toEqual({
+      ok: true,
+      values: ['Lobby + Lounge', 'Co-working / พื้นที่นั่งทำงาน', 'สระว่ายน้ำ'],
+    })
+  })
+
+  it('drops blank lines, tidies spaces, and keeps the first spelling of a repeat', () => {
+    expect(parseList('  Fitness  \n\n   \nfitness\nSky   lounge', 'Facilities')).toEqual({
+      ok: true,
+      values: ['Fitness', 'Sky lounge'],
+    })
+  })
+
+  it('treats a missing field as an empty list', () => {
+    expect(parseList(null, 'Nearby')).toEqual({ ok: true, values: [] })
+  })
+
+  it('refuses a line that is too long, naming the list and the limit', () => {
+    const result = parseList('x'.repeat(MAX_LIST_ITEM + 1), 'Nearby')
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.message).toContain(`Nearby line under ${MAX_LIST_ITEM}`)
+  })
+
+  it('refuses more items than the cap, and accepts exactly the cap', () => {
+    const many = (n: number) => Array.from({ length: n }, (_, i) => `Item ${i}`).join('\n')
+    expect(parseList(many(MAX_LIST_ITEMS), 'Facilities')).toMatchObject({ ok: true })
+    expect(parseList(many(MAX_LIST_ITEMS + 1), 'Facilities')).toMatchObject({ ok: false })
+  })
+})
+
+describe('parseBuildingForm lists', () => {
+  it('carries facilities and nearby through to the values', () => {
+    const result = parseBuildingForm(form({ name: 'ลุมพินี', facilities: 'Fitness\nSauna', nearby: 'BTS' }))
+    expect(result).toMatchObject({ ok: true, values: { facilities: ['Fitness', 'Sauna'], nearby: ['BTS'] } })
+  })
+
+  it('stops on a bad list', () => {
+    expect(parseBuildingForm(form({ name: 'ลุมพินี', nearby: 'x'.repeat(MAX_LIST_ITEM + 1) }))).toMatchObject({ ok: false })
   })
 })

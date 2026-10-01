@@ -100,7 +100,7 @@ export async function listBuildings(
   // PostgREST reads * as the wildcard in `ilike`; the % and _ a person types are
   // literal to it, but the commas and parens that would break out of the filter
   // grammar are not, so the term is stripped of them before it goes anywhere.
-  if (search) query = query.ilike('name', `*${search.replace(/[,()*]/g, '')}*`)
+  if (search) query = query.ilike('name', `*${search}*`)
   if (after) query = query.or(keysetFilter(after))
 
   const { data, error } = await query
@@ -265,7 +265,39 @@ export async function resolveBuilding(
     .insert({ org_id: orgId, name, district: '', province: '' })
     .select('id, name')
     .single()
+
+  // The name was typed rather than picked, and the Org already has it
+  // (buildings_org_name_key, 0020). That is the same development, so it is the
+  // existing Building — this is how the duplicate Blisses were made.
+  if (error?.code === UNIQUE_VIOLATION) {
+    const existing = await buildingNamed(orgId, name)
+    if (existing) return existing
+  }
   if (error) throw error
 
   return data as { id: string; name: string }
+}
+
+const UNIQUE_VIOLATION = '23505'
+
+/** The Org's Building whose name matches ignoring case and outer spaces — the
+ *  index's own rule. PostgREST has no lower(), so `ilike` narrows and the exact
+ *  comparison happens here. */
+export async function buildingNamed(
+  orgId: string,
+  name: string,
+): Promise<{ id: string; name: string } | null> {
+  const key = name.trim().toLocaleLowerCase()
+  // % and _ are wildcards to ilike; escaped, they match themselves.
+  const pattern = `*${name.trim().replace(/[\\%_]/g, (c) => `\\${c}`)}*`
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('buildings')
+    .select('id, name')
+    .eq('org_id', orgId)
+    .ilike('name', pattern)
+    .limit(20)
+  if (error) throw error
+  const rows = (data ?? []) as { id: string; name: string }[]
+  return rows.find((b) => b.name.trim().toLocaleLowerCase() === key) ?? null
 }

@@ -77,6 +77,14 @@ interface PropertyRecord {
   // Embedded to-many: one entry per channel this room is up on, absent
   // entirely when it is up nowhere.
   postings: EmbeddedPosting[] | null
+  // Embedded to-many, filtered to status = active — so zero or one entry,
+  // rentals_one_active_per_property guaranteeing the one.
+  rentals: EmbeddedActiveRental[] | null
+}
+
+interface EmbeddedActiveRental {
+  tenant_name_snapshot: string
+  end_date: string
 }
 
 interface EmbeddedOwnerName {
@@ -126,7 +134,10 @@ export async function listProperties(
         'owners(name), ' +
         // Second embed in the same round-trip. A to-many this time, so it comes
         // back as an array and is empty for a room posted nowhere.
-        'postings(platforms(name))',
+        'postings(platforms(name)), ' +
+        // Third embed: the active Rental, if any. It used to be a second query
+        // keyed by the page's ids, which had to wait for this one to return.
+        'rentals(tenant_name_snapshot, end_date)',
     )
     .eq('org_id', orgId)
     .order('created_at', { ascending: false })
@@ -134,6 +145,9 @@ export async function listProperties(
     // One more than asked for: if it comes back, there is another page. Cheaper
     // than a second count query, and it cannot disagree with the rows shown.
     .limit(limit + 1)
+    // Filters the embedded rows, not the Properties: a room with no active
+    // Rental still comes back, with an empty `rentals`.
+    .eq('rentals.status', 'active')
 
   if (opts.status) query = query.eq('status', opts.status)
   // PostgREST filters a parent by the absence of an embedded resource with
@@ -157,8 +171,6 @@ export async function listProperties(
   const nextCursor =
     records.length > limit && last ? encodeCursor({ createdAt: last.created_at, id: last.id }) : null
 
-  const rentals = await activeRentalsFor(page.map((p) => p.id))
-
   return {
     rows: page.map((p) => ({
       id: p.id,
@@ -171,8 +183,8 @@ export async function listProperties(
       priceMonthly: Number(p.price_monthly),
       status: p.status,
       ownerName: embeddedOne(p.owners)?.name ?? null,
-      tenantName: rentals.get(p.id)?.tenantName ?? null,
-      rentalEndDate: rentals.get(p.id)?.endDate ?? null,
+      tenantName: p.rentals?.[0]?.tenant_name_snapshot ?? null,
+      rentalEndDate: p.rentals?.[0]?.end_date ?? null,
       postedOn: (p.postings ?? [])
         .map((post) => embeddedOne(post.platforms)?.name)
         .filter((name): name is string => Boolean(name))
@@ -196,32 +208,6 @@ export function keysetFilter(after: PageKey): string {
   // correct; there is nothing to normalise.
   const at = after.createdAt
   return `created_at.lt.${at},and(created_at.eq.${at},id.lt.${after.id})`
-}
-
-/** The active Rental behind each Property on the page, if any. One query for
- *  the whole page — the shape Cozy Keys got wrong by asking per row. */
-async function activeRentalsFor(
-  propertyIds: string[],
-): Promise<Map<string, { tenantName: string; endDate: string }>> {
-  const found = new Map<string, { tenantName: string; endDate: string }>()
-  if (propertyIds.length === 0) return found
-
-  const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('rentals')
-    .select('property_id, tenant_name_snapshot, end_date')
-    .in('property_id', propertyIds)
-    .eq('status', 'active')
-  if (error) throw error
-
-  for (const r of (data ?? []) as {
-    property_id: string
-    tenant_name_snapshot: string
-    end_date: string
-  }[]) {
-    found.set(r.property_id, { tenantName: r.tenant_name_snapshot, endDate: r.end_date })
-  }
-  return found
 }
 
 /** One Property as the edit form needs it: every column the form can change,

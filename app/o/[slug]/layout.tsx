@@ -33,7 +33,8 @@ export default async function OrgLayout({
   }
 
   // Free: requireMember has already resolved the user this request, and
-  // currentUser is memoised per render rather than asking the auth server again.
+  // currentUser is memoised per render, and reads the verified token rather
+  // than asking the auth server (ADR 0015).
   const user = await currentUser()
 
   return (

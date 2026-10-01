@@ -2,7 +2,7 @@
 //
 // @supabase/ssr keeps the session in cookies that expire, and a Server Component
 // cannot write cookies — this is where the refresh actually happens. On every
-// matched request it reads the user, which rotates the tokens, and writes the
+// matched request it reads the session's claims, which rotates the tokens, and writes the
 // refreshed cookies onto both the request (so the same request sees them) and
 // the response (so the browser stores them). supabase-server.ts leans on this:
 // its cookie writes are swallowed precisely because this runs first.
@@ -51,9 +51,12 @@ export async function updateSession(request: NextRequest) {
     },
   )
 
-  // Do not run code between createServerClient and getUser: getUser is what
-  // refreshes the token, and a stray await here can desync the cookies.
-  const { data: { user } } = await supabase.auth.getUser()
+  // Do not run code between createServerClient and getClaims: getClaims is what
+  // refreshes the token, and a stray await here can desync the cookies. It
+  // verifies the JWT locally against the project's signing key instead of asking
+  // the auth server, which was a round-trip in front of every request (ADR 0015).
+  const { data } = await supabase.auth.getClaims()
+  const user = data?.claims?.sub ? data.claims : null
 
   const { pathname } = request.nextUrl
   const isPublic = PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/'))

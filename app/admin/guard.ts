@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { currentUser } from '@/lib/supabase-server'
+import { verifiedUser } from '@/lib/supabase-server'
 import { isSuperadmin, noSuperadminsConfigured } from '@/lib/superadmin'
 
 /** Signed in, but not an operator. Mapped to a 404 rather than a 403 — the same
@@ -27,9 +27,12 @@ export class NotAuthenticatedError extends Error {
  *
  *  Throws rather than calling notFound() so the same function serves both — an
  *  action that redirected to a 404 page would swallow its own failure. Callers
- *  map the two errors; see app/admin/layout.tsx. */
+ *  map the two errors; see app/admin/layout.tsx.
+ *
+ *  Asks the auth server, not the token: the console runs on the service role,
+ *  so an operator deleted in Auth loses it now, not in an hour (ADR 0015). */
 export async function requireSuperadmin() {
-  const user = await currentUser()
+  const user = await verifiedUser()
   if (!user) throw new NotAuthenticatedError()
 
   if (!isSuperadmin(user.id)) {

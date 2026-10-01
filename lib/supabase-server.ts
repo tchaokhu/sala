@@ -56,14 +56,34 @@ export const createClient = cache(async function createClient() {
   )
 })
 
-/** The signed-in user, or null. Cached per request because both the gate and
- *  the shell want it and `getUser()` is a round-trip to the auth server each
- *  time — asking twice for the same answer inside one render is exactly the
- *  chained-request habit CLAUDE.md is about. */
-export const currentUser = cache(async function currentUser() {
+export type SessionUser = { id: string; email: string | null }
+
+/** The signed-in user, or null — read from the session's JWT, verified locally
+ *  against the project's ES256 signing key rather than by asking the auth
+ *  server. That round-trip sat in front of every Org page, twice (proxy and
+ *  layout), and is the one ADR 0015 removes. A user deleted or banned in Auth
+ *  keeps a valid token until it expires (an hour at most); a Membership removed
+ *  takes effect at once, because requireMember reads it from the database on
+ *  every request.
+ *
+ *  Cached per request because the gate, the shell and some pages all want it. */
+export const currentUser = cache(async function currentUser(): Promise<SessionUser | null> {
+  const supabase = await createClient()
+  const { data } = await supabase.auth.getClaims()
+  const claims = data?.claims
+  if (!claims?.sub) return null
+  return { id: claims.sub, email: typeof claims.email === 'string' ? claims.email : null }
+})
+
+/** The signed-in user as the auth server sees it right now — one round-trip.
+ *  For the Superadmin console only: its actions run on the service role, so a
+ *  deleted operator must lose it at once rather than when their token expires
+ *  (ADR 0015). Org pages use currentUser. */
+export const verifiedUser = cache(async function verifiedUser(): Promise<SessionUser | null> {
   const supabase = await createClient()
   const { data } = await supabase.auth.getUser()
-  return data.user ?? null
+  if (!data.user) return null
+  return { id: data.user.id, email: data.user.email ?? null }
 })
 
 function supabaseGateway(supabase: Awaited<ReturnType<typeof createClient>>): MemberGateway {

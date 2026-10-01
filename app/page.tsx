@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase-server'
+import { createClient, currentUser } from '@/lib/supabase-server'
 import { isSuperadmin } from '@/lib/superadmin'
 import { SalaMark } from '@/components/SalaMark'
 
@@ -10,9 +10,9 @@ import { SalaMark } from '@/components/SalaMark'
 // account that exists but was never given a Membership — a bootstrapping state an
 // owner resolves in the SQL editor (ADR 0002).
 export default async function Home() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await currentUser()
   if (!user) redirect('/login')
+  const supabase = await createClient()
 
   const { data } = await supabase
     .from('memberships')

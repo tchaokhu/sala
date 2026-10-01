@@ -1,17 +1,14 @@
 'use client'
 
-// The write halves of the Buildings page.
+// The write halves of the Buildings pages: the add form on /buildings/new, and
+// edit and delete on the Building's own page in its `?edit=1` mode.
 //
-// Editing is behind a <details>, so a page of twenty Buildings reads as a list
-// rather than twenty open forms — and the summary line stays the thing you scan.
-//
-// Deleting takes two clicks and the second one says what it destroys, with the
-// number (CLAUDE.md). No confirm() dialog: a modal that blocks the page is
-// worse than a button that changes its mind.
+// Deleting asks in a dialog (ConfirmAction) that says what it destroys, with the
+// number (CLAUDE.md).
 
-import { useState } from 'react'
-import { Pencil, Trash2 } from 'lucide-react'
-import { BUTTON, INPUT, Notice, PRIMARY_BUTTON, useFormAction } from '@/components/form'
+import { Trash2 } from 'lucide-react'
+import { INPUT, Notice, PRIMARY_BUTTON, useFormAction } from '@/components/form'
+import { ConfirmAction } from '@/components/ConfirmAction'
 import type { BuildingRow } from '@/lib/buildings'
 import { createBuilding, deleteBuilding, updateBuilding } from './actions'
 
@@ -22,19 +19,12 @@ export function CreateBuildingForm({ slug }: { slug: string }) {
 
   return (
     <form action={action} className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-4">
-      <div>
-        <h2 className="font-semibold">Add a Building</h2>
-        <p className="mt-1 text-sm text-muted">
-          The Building name becomes the Property name — “Lumpini Park Rama 9 12/34”, for example.
-        </p>
-      </div>
-
       <input type="hidden" name="slug" value={slug} />
       <Fields pending={pending} />
 
       <div className="flex flex-wrap items-center gap-3">
         <button type="submit" disabled={pending} className={PRIMARY_BUTTON}>
-          {pending ? 'Saving…' : 'Add Building'}
+          {pending ? 'Saving…' : 'Save Building'}
         </button>
         <Notice result={result} />
       </div>
@@ -42,34 +32,18 @@ export function CreateBuildingForm({ slug }: { slug: string }) {
   )
 }
 
-export function BuildingRowForms({ slug, building }: { slug: string; building: BuildingRow }) {
-  return (
-    <div className="flex flex-col gap-3 border-t border-border pt-3">
-      <details className="group">
-        <summary className="inline-flex w-fit cursor-pointer list-none items-center gap-1.5 text-sm text-muted transition-colors hover:text-ink">
-          <Pencil size={14} aria-hidden />
-          Edit Building
-        </summary>
-        <EditForm slug={slug} building={building} />
-      </details>
-
-      <DeleteForm slug={slug} building={building} />
-    </div>
-  )
-}
-
-function EditForm({ slug, building }: { slug: string; building: BuildingRow }) {
+export function EditBuildingForm({ slug, building }: { slug: string; building: BuildingRow }) {
   const [result, action, pending] = useFormAction(updateBuilding)
 
   return (
-    <form action={action} className="mt-3 flex flex-col gap-4">
+    <form action={action} className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-4">
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="building_id" value={building.id} />
       <Fields pending={pending} building={building} />
 
       <div className="flex flex-wrap items-center gap-3">
-        <button type="submit" disabled={pending} className={BUTTON}>
-          {pending ? 'Saving…' : 'Save'}
+        <button type="submit" disabled={pending} className={PRIMARY_BUTTON}>
+          {pending ? 'Saving…' : 'Save changes'}
         </button>
         <Notice result={result} />
       </div>
@@ -77,30 +51,36 @@ function EditForm({ slug, building }: { slug: string; building: BuildingRow }) {
   )
 }
 
-function DeleteForm({ slug, building }: { slug: string; building: BuildingRow }) {
-  const [result, action, pending] = useFormAction(deleteBuilding)
-  const [armed, setArmed] = useState(false)
-
-  if (!armed) {
-    return (
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          onClick={() => setArmed(true)}
-          className="inline-flex w-fit items-center gap-1.5 text-sm text-muted transition-colors hover:text-warn"
-        >
-          <Trash2 size={14} aria-hidden />
-          Delete Building
-        </button>
-        <Notice result={result} />
-      </div>
-    )
-  }
-
+/** Delete, through the one confirm dialog every delete uses. Used on the
+ *  Building's page and on its row in the list; either way the action redirects
+ *  to the list. It says what it strands, with the number (CLAUDE.md). */
+export function DeleteBuildingForm({
+  slug,
+  building,
+  compact = false,
+}: {
+  slug: string
+  building: Pick<BuildingRow, 'id' | 'name' | 'propertyCount'>
+  /** The list row's short "Delete" rather than "Delete Building". */
+  compact?: boolean
+}) {
   return (
-    <form action={action} className="flex flex-col gap-2 rounded-lg border border-warn/40 bg-warn/5 p-3">
-      <p className="text-sm">
-        Delete <span className="font-semibold">{building.name}</span>?{' '}
+    <ConfirmAction
+      action={deleteBuilding}
+      fields={{ slug, building_id: building.id }}
+      triggerLabel={`Delete ${building.name}`}
+      trigger={
+        <>
+          <Trash2 size={14} aria-hidden />
+          {compact ? 'Delete' : 'Delete Building'}
+        </>
+      }
+      title="Delete Building"
+    >
+      <p>
+        Delete <span className="font-semibold">{building.name}</span>?
+      </p>
+      <p>
         {building.propertyCount > 0 ? (
           <>
             The <span className="tabular font-semibold">{building.propertyCount}</span>{' '}
@@ -111,24 +91,7 @@ function DeleteForm({ slug, building }: { slug: string; building: BuildingRow })
           'No Properties are in this Building.'
         )}
       </p>
-
-      <input type="hidden" name="slug" value={slug} />
-      <input type="hidden" name="building_id" value={building.id} />
-
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-lg border border-warn px-3 py-2 text-sm font-medium text-warn transition-colors hover:bg-warn/10 disabled:opacity-60"
-        >
-          {pending ? 'Deleting…' : 'Confirm delete'}
-        </button>
-        <button type="button" onClick={() => setArmed(false)} className={BUTTON}>
-          Cancel
-        </button>
-        <Notice result={result} />
-      </div>
-    </form>
+    </ConfirmAction>
   )
 }
 

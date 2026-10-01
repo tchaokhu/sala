@@ -19,6 +19,7 @@ import {
   type RentalDocumentKind,
 } from '@/lib/document-input'
 import { deleteRentalDocument, uploadRentalDocuments } from './document-actions'
+import { ConfirmAction } from '@/components/ConfirmAction'
 
 export interface ShownDocument {
   id: string
@@ -37,8 +38,6 @@ export interface EarlierDocument extends ShownDocument {
   rentalEndDate: string
 }
 
-const WARN_BUTTON =
-  'rounded-lg border border-warn px-3 py-2 text-sm font-medium text-warn transition-colors hover:bg-warn/10 disabled:opacity-60'
 
 const ROW_LINK = 'inline-flex items-center gap-1.5 whitespace-nowrap text-muted transition-colors hover:text-ink'
 
@@ -142,7 +141,7 @@ function DocumentsTable({
         </thead>
         <tbody>
           {docs.map((doc) => (
-            <DocumentRow key={doc.id} slug={slug} doc={doc} columns={earlier ? 6 : 5} />
+            <DocumentRow key={doc.id} slug={slug} doc={doc} />
           ))}
         </tbody>
       </table>
@@ -153,19 +152,15 @@ function DocumentsTable({
 function DocumentRow({
   slug,
   doc,
-  columns,
 }: {
   slug: string
   doc: ShownDocument | EarlierDocument
-  columns: number
 }) {
-  const [result, action, pending] = useFormAction(deleteRentalDocument)
-  const [armed, setArmed] = useState(false)
   const earlier = 'rentalId' in doc
 
   return (
     <>
-      <tr className={`h-12 ${armed || result ? '' : 'border-b border-border last:border-0'}`}>
+      <tr className="h-12 border-b border-border last:border-0">
         <td className="whitespace-nowrap px-4 py-2">{DOCUMENT_KIND_LABELS[doc.kind]}</td>
         <td className="px-4 py-2">
           <span className="block max-w-56 truncate" title={doc.fileName}>
@@ -198,49 +193,28 @@ function DocumentRow({
               <span className="whitespace-nowrap text-xs text-muted">Unavailable — reload the page</span>
             )}
             {!earlier && (
-              <button
-                type="button"
-                onClick={() => setArmed(true)}
-                disabled={armed}
-                className={`${ROW_LINK} hover:text-warn disabled:opacity-60`}
+              <ConfirmAction
+                action={deleteRentalDocument}
+                fields={{ slug, document_id: doc.id }}
+                triggerClassName={`${ROW_LINK} hover:text-warn`}
+                triggerLabel={`Delete ${doc.fileName}`}
+                trigger={
+                  <>
+                    <Trash2 size={14} aria-hidden />
+                    Delete
+                  </>
+                }
+                title="Delete Rental Document"
               >
-                <Trash2 size={14} aria-hidden />
-                Delete
-              </button>
+                <p>
+                  Deletes &lsquo;<span className="font-semibold break-all">{doc.fileName}</span>&rsquo;
+                  ({DOCUMENT_KIND_LABELS[doc.kind]}). It cannot be recovered.
+                </p>
+              </ConfirmAction>
             )}
           </div>
         </td>
       </tr>
-      {(armed || result) && (
-        <tr className="border-b border-border last:border-0">
-          <td colSpan={columns} className="px-4 pb-3">
-            {armed ? (
-              <form
-                onSubmit={submitWith(action)}
-                className="flex flex-col gap-2 rounded-lg border border-warn/40 bg-warn/5 p-3"
-              >
-                <p className="text-sm">
-                  Deletes &lsquo;<span className="font-semibold break-all">{doc.fileName}</span>&rsquo;. It
-                  cannot be recovered.
-                </p>
-                <input type="hidden" name="slug" value={slug} />
-                <input type="hidden" name="document_id" value={doc.id} />
-                <div className="flex flex-wrap items-center gap-2">
-                  <button type="submit" disabled={pending} className={WARN_BUTTON}>
-                    {pending ? 'Deleting…' : 'Confirm delete'}
-                  </button>
-                  <button type="button" onClick={() => setArmed(false)} disabled={pending} className={BUTTON}>
-                    Cancel
-                  </button>
-                  <Notice result={result} />
-                </div>
-              </form>
-            ) : (
-              <Notice result={result} />
-            )}
-          </td>
-        </tr>
-      )}
     </>
   )
 }

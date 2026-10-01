@@ -22,7 +22,7 @@ import {
 import { requireMember } from '@/lib/supabase-server'
 import { listOwners, OWNERS_PAGE_SIZE } from '@/lib/owners'
 import { PageHeader } from '@/components/PageHeader'
-import { INPUT } from '@/components/form'
+import { SEARCH_INPUT } from '@/components/styles'
 import { CreateOwnerForm } from './owner-forms'
 
 export default async function OwnersPage({
@@ -64,7 +64,7 @@ export default async function OwnersPage({
             defaultValue={search}
             placeholder="Search by name or phone"
             aria-label="Search Owners by name or phone"
-            className={`${INPUT} w-full pl-9`}
+            className={`${SEARCH_INPUT} w-full pl-9`}
           />
         </div>
         <button

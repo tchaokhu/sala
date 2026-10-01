@@ -1,31 +1,35 @@
-// The Buildings page — the Buildings an Org keeps.
+// The Buildings list — the Buildings an Org keeps, one short row each.
 //
-// This is where the name in the Property form's combobox comes from, and where
-// the map link lives: one pin per Building rather than one per unit inside it
-// (ADR 0008). The count beside each row is what a delete would strand, counted
-// in Postgres.
+// A row is what a person scans for: the name, the area, how many Properties sit
+// in it, whether it has a map. Everything else — the map itself, facilities,
+// the Properties by name, editing — is on the Building's own page, so twenty
+// Buildings read as a list rather than twenty maps (ADR 0008 for why the map is
+// the Building's and not the unit's).
 //
 // Search and cursor live in the URL, like the Property list, so the page is
 // shareable and the back button works.
 
 import Link from 'next/link'
-import { ChevronRight, ChevronsLeft, MapPin, Search } from 'lucide-react'
+import { ChevronRight, ChevronsLeft, Eye, MapPin, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { requireMember } from '@/lib/supabase-server'
 import { BUILDINGS_PAGE_SIZE, listBuildings } from '@/lib/buildings'
 import { PageHeader } from '@/components/PageHeader'
-import { MapPreview } from '@/components/MapPreview'
-import { INPUT } from '@/components/form'
-import { BuildingRowForms, CreateBuildingForm } from './building-forms'
+import { PagerLink } from '@/components/ListControls'
+import { SEARCH_INPUT } from '@/components/styles'
+import { DeleteBuildingForm } from './building-forms'
+
+const HEAD_CELL = 'px-4 py-3 font-semibold'
+const ROW_LINK = 'inline-flex items-center gap-1.5 whitespace-nowrap text-muted transition-colors hover:text-ink'
 
 export default async function BuildingsPage({
   params,
   searchParams,
 }: {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{ q?: string; cursor?: string }>
+  searchParams: Promise<{ q?: string; cursor?: string; deleted?: string }>
 }) {
   const { slug } = await params
-  const { q, cursor } = await searchParams
+  const { q, cursor, deleted } = await searchParams
 
   const org = await requireMember(slug)
   const page = await listBuildings(org.id, { search: q, cursor })
@@ -38,9 +42,26 @@ export default async function BuildingsPage({
       <PageHeader
         title="Buildings"
         summary="The names Properties are named after, and the map every Property in a Building shares"
+        actions={
+          <Link
+            href={`${base}/new`}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-accent bg-accent px-3 py-2 text-sm font-medium text-on-accent transition-opacity hover:opacity-90"
+          >
+            <Plus size={16} aria-hidden />
+            Add Building
+          </Link>
+        }
       />
 
-      <CreateBuildingForm slug={slug} />
+      {deleted && (
+        <p
+          role="status"
+          className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-muted"
+        >
+          <Trash2 size={16} aria-hidden />
+          Building deleted. The Properties that were in it are still here.
+        </p>
+      )}
 
       {/* A form, not a controlled input: the search term is a location. */}
       <form action={base} className="flex flex-wrap items-center gap-2">
@@ -56,7 +77,7 @@ export default async function BuildingsPage({
             defaultValue={search}
             placeholder="Search Building names"
             aria-label="Search Building names"
-            className={`${INPUT} w-full pl-9`}
+            className={`${SEARCH_INPUT} w-full pl-9`}
           />
         </div>
         <button
@@ -76,43 +97,74 @@ export default async function BuildingsPage({
         <div className="rounded-xl border border-dashed border-border bg-surface p-8 text-center">
           <p className="font-semibold">{search ? 'No Buildings found' : 'No Buildings yet'}</p>
           <p className="mt-1 text-sm text-muted">
-            {search ? 'Try another word, or clear the search' : 'Add the first Building in the form above'}
+            {search ? (
+              'Try another word, or clear the search'
+            ) : (
+              <>
+                <Link href={`${base}/new`} className="text-accent underline-offset-4 hover:underline">
+                  Add the first Building
+                </Link>
+                , then name Properties after it
+              </>
+            )}
           </p>
         </div>
       ) : (
-        <ul className="flex flex-col gap-3">
-          {page.rows.map((building) => (
-            <li
-              key={building.id}
-              className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4"
-            >
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-semibold">{building.name}</p>
-                  <p className="mt-0.5 text-sm text-muted">
-                    {building.nameEn && <span className="mr-2">{building.nameEn}</span>}
-                    {[building.district, building.province].filter(Boolean).join(' · ') || 'No area set yet'}
-                  </p>
-                </div>
-                <p className="tabular shrink-0 text-sm text-muted">
-                  <span className="font-semibold text-ink">{building.propertyCount}</span>{' '}
-                  {building.propertyCount === 1 ? 'Property' : 'Properties'}
-                </p>
-              </div>
-
-              {building.googleMapUrl ? (
-                <MapPreview url={building.googleMapUrl} title={`Map of ${building.name}`} />
-              ) : (
-                <p className="flex items-center gap-2 text-sm text-muted">
-                  <MapPin size={16} aria-hidden />
-                  No map link yet
-                </p>
-              )}
-
-              <BuildingRowForms slug={slug} building={building} />
-            </li>
-          ))}
-        </ul>
+        <div className="overflow-x-auto rounded-xl border border-border bg-surface">
+          <table className="sticky-manage w-full min-w-[40rem] text-sm">
+            <thead>
+              <tr className="border-b border-border bg-bg/60 text-left text-[11px] tracking-wide text-muted">
+                <th scope="col" className={HEAD_CELL}>Building</th>
+                <th scope="col" className={HEAD_CELL}>Area</th>
+                <th scope="col" className={`${HEAD_CELL} text-right`}>Properties</th>
+                <th scope="col" className={HEAD_CELL}>Map</th>
+                <th scope="col" className={`${HEAD_CELL} text-right`}>Manage</th>
+              </tr>
+            </thead>
+            <tbody>
+              {page.rows.map((b) => (
+                <tr
+                  key={b.id}
+                  className="h-14 border-b border-border transition-colors last:border-0 hover:bg-bg/60"
+                >
+                  <td className="px-4 py-2">
+                    <Link href={`${base}/${b.id}`} className="font-medium underline-offset-4 hover:underline">
+                      {b.name}
+                    </Link>
+                    {b.nameEn && <span className="block text-xs text-muted">{b.nameEn}</span>}
+                  </td>
+                  <td className="px-4 py-2 text-muted">
+                    {[b.district, b.province].filter(Boolean).join(' · ') || '—'}
+                  </td>
+                  <td className="tabular px-4 py-2 text-right font-medium">{b.propertyCount}</td>
+                  <td className="px-4 py-2 text-muted">
+                    {b.googleMapUrl ? (
+                      <span className="inline-flex items-center gap-1">
+                        <MapPin size={14} aria-hidden />
+                        Pinned
+                      </span>
+                    ) : (
+                      'No map yet'
+                    )}
+                  </td>
+                  <td className="px-4 py-2 text-right">
+                    <div className="flex items-center justify-end gap-4">
+                      <Link href={`${base}/${b.id}`} className={ROW_LINK}>
+                        <Eye size={14} aria-hidden />
+                        View
+                      </Link>
+                      <Link href={`${base}/${b.id}?edit=1`} className={ROW_LINK}>
+                        <Pencil size={14} aria-hidden />
+                        Edit
+                      </Link>
+                      <DeleteBuildingForm slug={slug} building={b} compact />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted">
@@ -143,41 +195,5 @@ export default async function BuildingsPage({
         </div>
       </div>
     </div>
-  )
-}
-
-function PagerLink({
-  href,
-  disabled,
-  icon: Icon,
-  label,
-  iconSide = 'left',
-}: {
-  href: string
-  disabled: boolean
-  icon: typeof ChevronRight
-  label: string
-  iconSide?: 'left' | 'right'
-}) {
-  const shape =
-    'inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 whitespace-nowrap'
-  const icon = <Icon size={16} aria-hidden />
-
-  if (disabled) {
-    return (
-      <span aria-disabled className={`${shape} opacity-40`}>
-        {iconSide === 'left' && icon}
-        {label}
-        {iconSide === 'right' && icon}
-      </span>
-    )
-  }
-
-  return (
-    <Link href={href} className={`${shape} transition-colors hover:text-ink`}>
-      {iconSide === 'left' && icon}
-      {label}
-      {iconSide === 'right' && icon}
-    </Link>
   )
 }

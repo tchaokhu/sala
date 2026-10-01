@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 import { createClient, requireMember } from '@/lib/supabase-server'
 import { cleanText } from '@/lib/validate'
 import { parseBuildingForm } from '@/lib/building-input'
@@ -30,15 +31,18 @@ export async function createBuilding(formData: FormData): Promise<ActionResult> 
   const supabase = await createClient()
   const google_map_url = await resolveMapUrl(parsed.values.google_map_url)
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('buildings')
     .insert({ ...parsed.values, google_map_url, org_id: org.id })
+    .select('id')
+    .single()
   if (error) return failed('Adding the Building', error)
 
   revalidatePath(`/o/${slug}/buildings`)
   // The Property form reads the same list.
   revalidatePath(`/o/${slug}/properties/new`)
-  return { ok: true, message: `Added Building ${parsed.values.name}` }
+  // Outside any try: redirect() works by throwing.
+  redirect(`/o/${slug}/buildings/${(data as { id: string }).id}?created=1`)
 }
 
 export async function updateBuilding(formData: FormData): Promise<ActionResult> {
@@ -64,6 +68,7 @@ export async function updateBuilding(formData: FormData): Promise<ActionResult> 
   if (error) return failed('Saving the Building', error)
 
   revalidatePath(`/o/${slug}/buildings`)
+  revalidatePath(`/o/${slug}/buildings/${id}`)
   revalidatePath(`/o/${slug}/properties/new`)
   return { ok: true, message: 'Saved' }
 }
@@ -89,5 +94,6 @@ export async function deleteBuilding(formData: FormData): Promise<ActionResult> 
 
   revalidatePath(`/o/${slug}/buildings`)
   revalidatePath(`/o/${slug}/properties/new`)
-  return { ok: true, message: 'Building deleted. The Properties that were in it are still here.' }
+  // Its own page is gone, so the answer is said on the list.
+  redirect(`/o/${slug}/buildings?deleted=1`)
 }

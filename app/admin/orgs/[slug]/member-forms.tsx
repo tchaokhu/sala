@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Circle } from 'lucide-react'
 import { BUTTON, INPUT, Notice, PRIMARY_BUTTON, useFormAction } from '@/components/form'
+import { ConfirmAction } from '@/components/ConfirmAction'
 import {
   addMember,
   removeMember,
@@ -239,9 +240,9 @@ function RoleForm({
   )
 }
 
-/** Two steps, and the first one says what the second destroys — including what
- *  it does *not* destroy, because "Delete" next to a person reads as deleting
- *  them (CLAUDE.md: destructive actions say what they destroy). */
+/** Asks in the confirm dialog every delete uses, and says what it destroys —
+ *  including what it does *not* destroy, because "Remove" next to a person
+ *  reads as deleting them (CLAUDE.md: destructive actions say what they destroy). */
 function RemoveForm({
   member,
   orgId,
@@ -255,8 +256,6 @@ function RemoveForm({
   orgName: string
   isLastAdmin: boolean
 }) {
-  const [result, action, pending] = useFormAction(removeMember)
-  const [confirming, setConfirming] = useState(false)
   const who = member.display_name ?? member.email
 
   if (isLastAdmin) {
@@ -268,48 +267,23 @@ function RemoveForm({
     )
   }
 
-  if (!confirming) {
-    return (
-      <div className="flex flex-col gap-2">
-        <button
-          type="button"
-          onClick={() => setConfirming(true)}
-          className={BUTTON + ' self-start border-warn text-warn'}
-        >
-          Remove from the Org
-        </button>
-        <Notice result={result} />
-      </div>
-    )
-  }
-
   return (
-    <form action={action} className="flex flex-col gap-3 rounded-lg border border-warn p-3">
-      <input type="hidden" name="org_id" value={orgId} />
-      <input type="hidden" name="slug" value={slug} />
-      <input type="hidden" name="user_id" value={member.user_id} />
-
-      <div className="text-sm">
-        <p className="font-semibold text-warn">Remove {who} from {orgName}?</p>
-        <p className="mt-1 text-muted">
-          They lose access to this Org&apos;s data. Their account and email stay, their roles in
-          other Orgs do not change, and you can add them back at any time.
-        </p>
-      </div>
-
-      <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-lg border border-warn px-3 py-2 text-sm text-warn transition-opacity hover:opacity-90 disabled:opacity-60"
-        >
-          {pending ? 'Removing…' : 'Confirm, remove'}
-        </button>
-        <button type="button" onClick={() => setConfirming(false)} className={BUTTON}>
-          Cancel
-        </button>
-      </div>
-      <Notice result={result} />
-    </form>
+    <ConfirmAction
+      action={removeMember}
+      fields={{ org_id: orgId, slug, user_id: member.user_id }}
+      triggerClassName={BUTTON + ' self-start border-warn text-warn'}
+      trigger="Remove from the Org"
+      title="Remove Member"
+      confirmLabel="Remove"
+      pendingLabel="Removing…"
+    >
+      <p>
+        Remove <span className="font-semibold">{who}</span> from {orgName}?
+      </p>
+      <p className="text-muted">
+        They lose access to this Org&apos;s data. Their account and email stay, their roles in other
+        Orgs do not change, and you can add them back at any time.
+      </p>
+    </ConfirmAction>
   )
 }

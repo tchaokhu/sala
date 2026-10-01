@@ -7,6 +7,7 @@
 
 import { startTransition, useState } from 'react'
 import { RefreshCw, Square, Trash2 } from 'lucide-react'
+import { ConfirmAction } from '@/components/ConfirmAction'
 import { BUTTON, Card, Field, INPUT, Notice, PRIMARY_BUTTON, useFormAction } from '@/components/form'
 import { previewAmount, SchedulePreview } from '@/components/SchedulePreview'
 import { buildPaymentSchedule, futureUnpaid } from '@/lib/payments'
@@ -353,55 +354,34 @@ function DeleteCard({
   rental: ManagedRental
   paymentCount: number
 }) {
-  const [result, action, pending] = useFormAction(deleteRental)
-  const [armed, setArmed] = useState(false)
-
   return (
     <Card
       title="Delete Rental"
       note="For a Rental entered by mistake. Possible only while none of its Payments is settled and no Rental Document is attached."
     >
-      {armed ? (
-        <form
-          onSubmit={submitWith(action)}
-          className="flex flex-col gap-2 rounded-lg border border-warn/40 bg-warn/5 p-3"
-        >
-          <p className="text-sm">
-            {paymentCount > 0 ? (
-              <>
-                Deletes this Rental and its <span className="tabular font-semibold">{paymentCount}</span>{' '}
-                {paymentCount === 1 ? 'Payment' : 'Payments'}.
-              </>
-            ) : (
-              'Deletes this Rental. It has no Payments.'
-            )}
-            {rental.status === 'active' && ' The Property goes back to Available.'}
-          </p>
-          <input type="hidden" name="slug" value={slug} />
-          <input type="hidden" name="rental_id" value={rental.id} />
-          <div className="flex flex-wrap items-center gap-2">
-            <button type="submit" disabled={pending} className={WARN_BUTTON}>
-              {pending ? 'Deleting…' : 'Confirm delete'}
-            </button>
-            <button type="button" onClick={() => setArmed(false)} className={BUTTON}>
-              Cancel
-            </button>
-            <Notice result={result} />
-          </div>
-        </form>
-      ) : (
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setArmed(true)}
-            className="inline-flex w-fit items-center gap-1.5 text-sm text-muted transition-colors hover:text-warn"
-          >
+      <ConfirmAction
+        action={deleteRental}
+        fields={{ slug, rental_id: rental.id }}
+        trigger={
+          <>
             <Trash2 size={14} aria-hidden />
             Delete Rental
-          </button>
-          <Notice result={result} />
-        </div>
-      )}
+          </>
+        }
+        title="Delete Rental"
+      >
+        <p>
+          {paymentCount > 0 ? (
+            <>
+              Deletes this Rental and its <span className="tabular font-semibold">{paymentCount}</span>{' '}
+              {paymentCount === 1 ? 'Payment' : 'Payments'}. It cannot be recovered.
+            </>
+          ) : (
+            'Deletes this Rental. It has no Payments. It cannot be recovered.'
+          )}
+        </p>
+        {rental.status === 'active' && <p>The Property goes back to Available.</p>}
+      </ConfirmAction>
     </Card>
   )
 }

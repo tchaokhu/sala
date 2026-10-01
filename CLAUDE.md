@@ -157,6 +157,9 @@ Sala is operated, not read. People scan it for the thing that needs attention.
   shift when the data lands.
 - **Destructive actions say what they destroy.** Ending a Rental deletes future
   unpaid Payments; the confirmation says so, with the number.
+- **Every delete asks in a dialog.** Use `components/ConfirmAction.tsx` — one
+  pattern for the whole app, portalled so a sticky table cell cannot paint over
+  it, with Cancel focused. No inline two-click deletes, no `confirm()`.
 - **Errors say what to do next.** No apologies, no raw Postgres text. A failed
   upload says the file was too large and what the limit is.
 - **Both themes get built.** Light and dark are designed together, not inverted.

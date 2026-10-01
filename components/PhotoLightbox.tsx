@@ -33,7 +33,7 @@ export function PhotoLightbox({
         type="button"
         aria-label="Close preview"
         onClick={onClose}
-        className="absolute inset-0 bg-ink/70"
+        className="absolute inset-0 bg-black/60"
       />
       <div
         role="dialog"

@@ -102,7 +102,7 @@ export function PaymentSettle({
             aria-label="Cancel"
             disabled={pending}
             onClick={() => setMode(null)}
-            className="absolute inset-0 bg-ink/70"
+            className="absolute inset-0 bg-black/60"
           />
           <div
             role="dialog"

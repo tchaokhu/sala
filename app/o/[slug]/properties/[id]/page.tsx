@@ -21,7 +21,7 @@ import { formatBaht } from '@/lib/format'
 import { PROPERTY_TYPE_LABELS } from '@/lib/property-input'
 import { PageHeader } from '@/components/PageHeader'
 import { MapPreview } from '@/components/MapPreview'
-import { BUTTON, PRIMARY_BUTTON } from '@/components/form'
+import { BUTTON, PRIMARY_BUTTON } from '@/components/styles'
 import { StatusPill } from '@/components/StatusPill'
 import { PropertyPhotoGallery } from './photo-gallery'
 

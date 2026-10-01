@@ -16,7 +16,7 @@
 
 import { createClient } from './supabase-server'
 import { decodeCursor, encodeCursor } from './cursor'
-import { keysetFilter } from './properties'
+import { keysetFilter, type PropertyStatus } from './properties'
 
 /** Enough Buildings for any agency this product is for, and a bound rather than
  *  no bound. `capped` is what the form says out loud when it is reached, so a
@@ -149,6 +149,84 @@ export async function buildingName(orgId: string, buildingId: string): Promise<s
     .maybeSingle()
   if (error) throw error
   return (data as { name: string } | null)?.name ?? null
+}
+
+export interface BuildingDetail extends BuildingRow {
+  facilities: string[]
+  nearby: string[]
+}
+
+/** One Building in full, for its own page. Null when it is not this Org's. */
+export async function getBuilding(orgId: string, buildingId: string): Promise<BuildingDetail | null> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('buildings')
+    .select('id, name, name_en, district, province, google_map_url, facilities, nearby, properties(count)')
+    .eq('id', buildingId)
+    .eq('org_id', orgId)
+    .maybeSingle()
+  if (error) throw error
+  if (!data) return null
+
+  const b = data as {
+    id: string
+    name: string
+    name_en: string | null
+    district: string
+    province: string
+    google_map_url: string | null
+    facilities: string[] | null
+    nearby: string[] | null
+    properties: { count: number }[] | null
+  }
+  return {
+    id: b.id,
+    name: b.name,
+    nameEn: b.name_en,
+    district: b.district,
+    province: b.province,
+    googleMapUrl: b.google_map_url,
+    facilities: b.facilities ?? [],
+    nearby: b.nearby ?? [],
+    propertyCount: b.properties?.[0]?.count ?? 0,
+  }
+}
+
+export const BUILDING_PROPERTIES_LIMIT = 100
+
+export interface BuildingProperty {
+  id: string
+  title: string
+  status: PropertyStatus
+  priceMonthly: number
+}
+
+/** The Properties in one Building, for its page. Bounded; `capped` says so. */
+export async function listBuildingProperties(
+  orgId: string,
+  buildingId: string,
+): Promise<{ rows: BuildingProperty[]; capped: boolean }> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('properties')
+    .select('id, title, status, price_monthly')
+    .eq('org_id', orgId)
+    .eq('building_id', buildingId)
+    .order('title', { ascending: true })
+    .order('id', { ascending: true })
+    .limit(BUILDING_PROPERTIES_LIMIT + 1)
+  if (error) throw error
+
+  const rows = (data ?? []) as { id: string; title: string; status: PropertyStatus; price_monthly: number }[]
+  return {
+    rows: rows.slice(0, BUILDING_PROPERTIES_LIMIT).map((p) => ({
+      id: p.id,
+      title: p.title,
+      status: p.status,
+      priceMonthly: Number(p.price_monthly),
+    })),
+    capped: rows.length > BUILDING_PROPERTIES_LIMIT,
+  }
 }
 
 export class UnknownBuildingError extends Error {}

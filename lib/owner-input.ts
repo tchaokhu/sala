@@ -2,10 +2,10 @@
 // reason: this is the judgement, and it should be testable without a database.
 //
 // An Owner is the person who owns a Property and entrusts it to the Org
-// (CONTEXT.md). Two fields are not negotiable — `owners.name` carries a
-// non-empty CHECK and `owners.phone` is NOT NULL — and both are refused here,
-// with a message, rather than reaching Postgres and coming back as text nobody
-// outside this repo can act on.
+// (CONTEXT.md). Only the name is needed — `owners.name` carries a non-empty
+// CHECK, refused here with a message rather than reaching Postgres. The phone
+// is optional (user, 2026-10-02): `owners.phone` is NOT NULL, so a blank one
+// is stored as '', the way a Building's blank district is.
 //
 // No `source`: the column exists, nothing sets it, and it has no established
 // meaning. A form field for it would invent one.
@@ -38,8 +38,7 @@ export function parseOwnerForm(form: { get(name: string): unknown }): Parsed<Own
   if (!name) return { ok: false, message: 'Enter the Owner name first' }
 
   const phone = cleanText(form.get('phone'), 40)
-  if (!phone) return { ok: false, message: 'Enter a phone number — it is how an Owner is reached, and how two Owners with the same name are told apart' }
-  if (!isPhone(phone)) {
+  if (phone && !isPhone(phone)) {
     return {
       ok: false,
       message: 'The phone number must be digits, 6 to 15 of them, optionally starting with + — for example 081 234 5678',

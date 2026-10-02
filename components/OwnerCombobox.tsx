@@ -30,7 +30,7 @@ export function OwnerCombobox({
     <Combobox
       // The box reads "name — phone" once picked: the pair that tells two
       // people with one name apart. The search matches the number too.
-      items={options.map((o) => ({ id: o.id, label: o.name, sub: o.phone, display: label(o) }))}
+      items={options.map((o) => ({ id: o.id, label: o.name, sub: o.phone || undefined, display: label(o) }))}
       idName="owner_id"
       initialId={initial?.id}
       disabled={disabled}
@@ -51,7 +51,7 @@ export function OwnerCombobox({
   )
 }
 
-/** What sits in the box once one is picked. */
+/** What sits in the box once one is picked. The phone is optional. */
 function label(owner: OwnerOption): string {
-  return `${owner.name} — ${owner.phone}`
+  return owner.phone ? `${owner.name} — ${owner.phone}` : owner.name
 }

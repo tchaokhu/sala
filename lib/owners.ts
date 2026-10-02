@@ -5,20 +5,21 @@
 // kind of thing to a Property: an org-scoped record the Property points at by
 // id, picked on the Property form and managed on a page of its own.
 //
-// Three readers with different jobs:
+// Readers with different jobs:
 //   * `listOwnerOptions` fills the picker on the Property form. Name and phone,
 //     because two Owners called สมชาย are told apart by the number beside them
-//     and nothing else.
+//     when there is one.
 //   * `listOwners` is the management page: the same people plus how many
 //     Properties each one holds, counted in Postgres (CLAUDE.md) rather than by
 //     downloading Properties and grouping them here.
+//   * `getOwner` is one Owner's own page.
 //   * `ownerBelongsToOrg` is the check every write does before it stores an
 //     owner_id that arrived in a form.
 //
-// All three are org-scoped through `requireMember`'s Org id, with RLS behind
-// that. Nothing here writes: unlike Buildings, the Property form cannot create
-// an Owner — `owners.phone` is NOT NULL, and a name typed into a combobox
-// cannot produce a legal row.
+// All are org-scoped through `requireMember`'s Org id, with RLS behind that.
+// Nothing here writes. The Property form does not create an Owner from a typed
+// name the way it does a Building: a person is added, with whatever contact
+// there is, on the Owners page.
 
 import { createClient } from './supabase-server'
 import { decodeCursor, encodeCursor } from './cursor'
@@ -32,7 +33,8 @@ import { keysetFilter } from './properties'
 export const OPTIONS_LIMIT = 500
 export const OWNERS_PAGE_SIZE = 25
 
-/** What the Property form's picker renders: "name — phone". */
+/** What the Property form's picker renders: "name — phone", or the name alone
+ *  when there is no phone (it is optional; blank is ''). */
 export interface OwnerOption {
   id: string
   name: string
@@ -146,6 +148,39 @@ export async function listOwners(
       propertyCount: o.properties?.[0]?.count ?? 0,
     })),
     nextCursor,
+  }
+}
+
+/** One Owner in full, for their page. Null when it is not this Org's. */
+export async function getOwner(orgId: string, ownerId: string): Promise<OwnerRow | null> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('owners')
+    .select('id, name, phone, email, line_id, facebook_url, note, properties(count)')
+    .eq('id', ownerId)
+    .eq('org_id', orgId)
+    .maybeSingle()
+  if (error) throw error
+  if (!data) return null
+  const o = data as {
+    id: string
+    name: string
+    phone: string
+    email: string | null
+    line_id: string | null
+    facebook_url: string | null
+    note: string | null
+    properties: { count: number }[] | null
+  }
+  return {
+    id: o.id,
+    name: o.name,
+    phone: o.phone,
+    email: o.email,
+    lineId: o.line_id,
+    facebookUrl: o.facebook_url,
+    note: o.note,
+    propertyCount: o.properties?.[0]?.count ?? 0,
   }
 }
 

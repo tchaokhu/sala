@@ -116,11 +116,18 @@ export default async function PropertyViewPage({
           <h2 className="font-semibold">Owner</h2>
           {property.owner ? (
             <>
-              <p className="text-sm">{property.owner.name}</p>
-              <p className="flex items-center gap-1.5 text-sm text-muted">
-                <Phone size={14} aria-hidden />
-                {property.owner.phone}
-              </p>
+              <Link
+                href={`/o/${slug}/owners/${property.owner.id}`}
+                className="w-fit text-sm underline-offset-4 hover:underline"
+              >
+                {property.owner.name}
+              </Link>
+              {property.owner.phone && (
+                <p className="tabular flex items-center gap-1.5 text-sm text-muted">
+                  <Phone size={14} aria-hidden />
+                  {property.owner.phone}
+                </p>
+              )}
             </>
           ) : (
             <p className="text-sm text-muted">No Owner on file.</p>

@@ -31,3 +31,6 @@ export const HEAD_CELL = 'px-4 py-3 font-semibold'
 
 /** A table's header row, also drawn by the skeletons that stand in for one. */
 export const TABLE_HEAD_ROW = 'border-b border-border bg-bg/60 text-left text-[11px] tracking-wide text-muted'
+
+/** A View / Edit / Settle action in a table's Manage cell. */
+export const ROW_LINK = 'inline-flex items-center gap-1.5 whitespace-nowrap text-muted transition-colors hover:text-ink'

@@ -21,7 +21,7 @@ import {
 import { deleteRentalDocument, uploadRentalDocuments } from './document-actions'
 import { ConfirmAction } from '@/components/ConfirmAction'
 import { TableFrame } from '@/components/TableFrame'
-import { HEAD_CELL, PANEL } from '@/components/styles'
+import { HEAD_CELL, PANEL, ROW_LINK } from '@/components/styles'
 
 export interface ShownDocument {
   id: string
@@ -40,8 +40,6 @@ export interface EarlierDocument extends ShownDocument {
   rentalEndDate: string
 }
 
-
-const ROW_LINK = 'inline-flex items-center gap-1.5 whitespace-nowrap text-muted transition-colors hover:text-ink'
 
 
 /** React resets a form once its `action=` settles; submitting by hand keeps

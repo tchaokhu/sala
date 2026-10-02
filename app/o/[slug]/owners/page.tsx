@@ -1,8 +1,6 @@
-// The Owners page — the people an Org's Properties belong to.
-//
-// This is where the Property form's Owner picker gets its names, and the only
-// place an Owner can be created: `owners.phone` is NOT NULL, so a name typed
-// into that picker could never make a legal row.
+// The Owners list — the people an Org's Properties belong to, one short row
+// each, laid out like the Buildings list. Everything else about a person — the
+// note, the Properties by name, editing — is on their own page.
 //
 // Search and cursor live in the URL, like the Buildings and Property lists, so
 // the page is shareable and the back button works. The search matches the phone
@@ -13,27 +11,32 @@ import Link from 'next/link'
 import {
   ChevronRight,
   ChevronsLeft,
+  Eye,
   Facebook,
   Mail,
   MessageCircle,
-  Phone,
+  Pencil,
+  Plus,
   Search,
+  Trash2,
 } from 'lucide-react'
 import { requireMember } from '@/lib/supabase-server'
 import { listOwners, OWNERS_PAGE_SIZE } from '@/lib/owners'
 import { PageHeader } from '@/components/PageHeader'
-import { PANEL, SEARCH_INPUT } from '@/components/styles'
-import { CreateOwnerForm } from './owner-forms'
+import { PagerLink } from '@/components/ListControls'
+import { TableFrame } from '@/components/TableFrame'
+import { HEAD_CELL, ROW_LINK, SEARCH_INPUT } from '@/components/styles'
+import { DeleteOwnerForm } from './owner-forms'
 
 export default async function OwnersPage({
   params,
   searchParams,
 }: {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{ q?: string; cursor?: string }>
+  searchParams: Promise<{ q?: string; cursor?: string; deleted?: string }>
 }) {
   const { slug } = await params
-  const { q, cursor } = await searchParams
+  const { q, cursor, deleted } = await searchParams
 
   const org = await requireMember(slug)
   const page = await listOwners(org.id, { search: q, cursor })
@@ -46,9 +49,26 @@ export default async function OwnersPage({
       <PageHeader
         title="Owners"
         summary="The people who own the Properties on your books, and how to reach them"
+        actions={
+          <Link
+            href={`${base}/new`}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-accent bg-accent px-3 py-2 text-sm font-medium text-on-accent transition-opacity hover:opacity-90"
+          >
+            <Plus size={16} aria-hidden />
+            Add Owner
+          </Link>
+        }
       />
 
-      <CreateOwnerForm slug={slug} />
+      {deleted && (
+        <p
+          role="status"
+          className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-muted"
+        >
+          <Trash2 size={16} aria-hidden />
+          Owner deleted. The Properties they owned are still here, with no Owner on file.
+        </p>
+      )}
 
       {/* A form, not a controlled input: the search term is a location. */}
       <form action={base} className="flex flex-wrap items-center gap-2">
@@ -84,67 +104,88 @@ export default async function OwnersPage({
         <div className="rounded-xl border border-dashed border-border bg-surface p-8 text-center">
           <p className="font-semibold">{search ? 'No Owners found' : 'No Owners yet'}</p>
           <p className="mt-1 text-sm text-muted">
-            {search ? 'Try another name or number, or clear the search' : 'Add the first Owner in the form above'}
+            {search ? (
+              'Try another name or number, or clear the search'
+            ) : (
+              <>
+                <Link href={`${base}/new`} className="text-accent underline-offset-4 hover:underline">
+                  Add the first Owner
+                </Link>
+                , then pick them on a Property
+              </>
+            )}
           </p>
         </div>
       ) : (
-        <ul className="flex flex-col gap-3">
-          {page.rows.map((owner) => (
-            <li
-              key={owner.id}
-              className={`flex flex-col gap-3 ${PANEL}`}
+        <TableFrame
+          minWidth="min-w-[44rem]"
+          head={
+            <>
+              <th scope="col" className={HEAD_CELL}>Owner</th>
+              <th scope="col" className={HEAD_CELL}>Phone</th>
+              <th scope="col" className={HEAD_CELL}>Contact</th>
+              <th scope="col" className={`${HEAD_CELL} text-right`}>Properties</th>
+              <th scope="col" className={`${HEAD_CELL} text-right`}>Manage</th>
+            </>
+          }
+        >
+          {page.rows.map((o) => (
+            <tr
+              key={o.id}
+              className="h-14 border-b border-border transition-colors last:border-0 hover:bg-bg/60"
             >
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-semibold">{owner.name}</p>
-                  <p className="tabular mt-0.5 flex items-center gap-1.5 text-sm text-muted">
-                    <Phone size={14} aria-hidden />
-                    {owner.phone}
-                  </p>
+              <td className="px-4 py-2">
+                <Link href={`${base}/${o.id}`} className="font-medium underline-offset-4 hover:underline">
+                  {o.name}
+                </Link>
+              </td>
+              <td className="tabular whitespace-nowrap px-4 py-2 text-muted">{o.phone || '—'}</td>
+              <td className="px-4 py-2 text-muted">
+                {/* A word beside each icon, so "has LINE" reads without hovering. */}
+                <span className="flex items-center gap-3">
+                  {o.email && (
+                    <span className="inline-flex items-center gap-1" title={o.email}>
+                      <Mail size={14} aria-hidden />
+                      Email
+                    </span>
+                  )}
+                  {o.lineId && (
+                    <span className="inline-flex items-center gap-1" title={o.lineId}>
+                      <MessageCircle size={14} aria-hidden />
+                      LINE
+                    </span>
+                  )}
+                  {o.facebookUrl && (
+                    <a
+                      href={o.facebookUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 transition-colors hover:text-ink"
+                    >
+                      <Facebook size={14} aria-hidden />
+                      Facebook
+                    </a>
+                  )}
+                  {!o.email && !o.lineId && !o.facebookUrl && '—'}
+                </span>
+              </td>
+              <td className="tabular px-4 py-2 text-right font-medium">{o.propertyCount}</td>
+              <td className="px-4 py-2 text-right">
+                <div className="flex items-center justify-end gap-4">
+                  <Link href={`${base}/${o.id}`} className={ROW_LINK}>
+                    <Eye size={14} aria-hidden />
+                    View
+                  </Link>
+                  <Link href={`${base}/${o.id}?edit=1`} className={ROW_LINK}>
+                    <Pencil size={14} aria-hidden />
+                    Edit
+                  </Link>
+                  <DeleteOwnerForm slug={slug} owner={o} compact />
                 </div>
-                <p className="tabular shrink-0 text-sm text-muted">
-                  <span className="font-semibold text-ink">{owner.propertyCount}</span>{' '}
-                  {owner.propertyCount === 1 ? 'Property' : 'Properties'}
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted">
-                {owner.email && (
-                  <span className="flex min-w-0 items-center gap-1.5">
-                    <Mail size={14} aria-hidden className="shrink-0" />
-                    <span className="truncate">{owner.email}</span>
-                  </span>
-                )}
-                {owner.lineId && (
-                  <span className="flex min-w-0 items-center gap-1.5">
-                    <MessageCircle size={14} aria-hidden className="shrink-0" />
-                    <span className="truncate">{owner.lineId}</span>
-                  </span>
-                )}
-                {owner.facebookUrl && (
-                  <a
-                    href={owner.facebookUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex min-w-0 items-center gap-1.5 transition-colors hover:text-ink"
-                  >
-                    <Facebook size={14} aria-hidden className="shrink-0" />
-                    <span className="truncate underline-offset-4 hover:underline">Facebook</span>
-                  </a>
-                )}
-                {!owner.email && !owner.lineId && !owner.facebookUrl && (
-                  <span>No other contact on file</span>
-                )}
-              </div>
-
-              {owner.note && (
-                <p className="border-t border-border pt-3 text-sm whitespace-pre-line text-muted">
-                  {owner.note}
-                </p>
-              )}
-            </li>
+              </td>
+            </tr>
           ))}
-        </ul>
+        </TableFrame>
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted">
@@ -175,41 +216,5 @@ export default async function OwnersPage({
         </div>
       </div>
     </div>
-  )
-}
-
-function PagerLink({
-  href,
-  disabled,
-  icon: Icon,
-  label,
-  iconSide = 'left',
-}: {
-  href: string
-  disabled: boolean
-  icon: typeof ChevronRight
-  label: string
-  iconSide?: 'left' | 'right'
-}) {
-  const shape =
-    'inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 whitespace-nowrap'
-  const icon = <Icon size={16} aria-hidden />
-
-  if (disabled) {
-    return (
-      <span aria-disabled className={`${shape} opacity-40`}>
-        {iconSide === 'left' && icon}
-        {label}
-        {iconSide === 'right' && icon}
-      </span>
-    )
-  }
-
-  return (
-    <Link href={href} className={`${shape} transition-colors hover:text-ink`}>
-      {iconSide === 'left' && icon}
-      {label}
-      {iconSide === 'right' && icon}
-    </Link>
   )
 }

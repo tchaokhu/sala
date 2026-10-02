@@ -217,16 +217,26 @@ export interface BuildingProperty {
 }
 
 /** The Properties in one Building, for its page. Bounded; `capped` says so. */
-export async function listBuildingProperties(
+export function listBuildingProperties(orgId: string, buildingId: string) {
+  return listPropertiesWhere(orgId, 'building_id', buildingId)
+}
+
+/** The Properties one Owner owns, for the Owner's page — the same read. */
+export function listOwnerProperties(orgId: string, ownerId: string) {
+  return listPropertiesWhere(orgId, 'owner_id', ownerId)
+}
+
+async function listPropertiesWhere(
   orgId: string,
-  buildingId: string,
+  column: 'building_id' | 'owner_id',
+  id: string,
 ): Promise<{ rows: BuildingProperty[]; capped: boolean }> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('properties')
     .select('id, title, room_number, floor, status, price_monthly, owners(name)')
     .eq('org_id', orgId)
-    .eq('building_id', buildingId)
+    .eq(column, id)
     .order('title', { ascending: true })
     .order('id', { ascending: true })
     .limit(BUILDING_PROPERTIES_LIMIT + 1)

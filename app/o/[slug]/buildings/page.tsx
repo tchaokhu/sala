@@ -15,11 +15,9 @@ import { requireMember } from '@/lib/supabase-server'
 import { BUILDINGS_PAGE_SIZE, listBuildings } from '@/lib/buildings'
 import { PageHeader } from '@/components/PageHeader'
 import { PagerLink } from '@/components/ListControls'
-import { HEAD_CELL, SEARCH_INPUT } from '@/components/styles'
+import { HEAD_CELL, ROW_LINK, SEARCH_INPUT } from '@/components/styles'
 import { DeleteBuildingForm } from './building-forms'
 import { TableFrame } from '@/components/TableFrame'
-
-const ROW_LINK = 'inline-flex items-center gap-1.5 whitespace-nowrap text-muted transition-colors hover:text-ink'
 
 export default async function BuildingsPage({
   params,

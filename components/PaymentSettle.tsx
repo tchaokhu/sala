@@ -18,7 +18,7 @@ import type { RentalPayment } from '@/lib/rentals'
 import { clearSettlement, correctSettlement, settlePayment } from '@/app/o/[slug]/payments/actions'
 import { PAYMENT_METHOD_LABELS } from './StatusPill'
 import { WARN_BUTTON } from '@/components/styles'
-import { PANEL } from './styles'
+import { PANEL, ROW_LINK } from './styles'
 
 export type SettleablePayment = Pick<
   RentalPayment,
@@ -26,8 +26,6 @@ export type SettleablePayment = Pick<
 > & { outstanding: number }
 
 type Mode = 'settle' | 'correct'
-
-const ROW_BUTTON = 'inline-flex items-center gap-1.5 whitespace-nowrap text-muted transition-colors hover:text-ink'
 
 /** React resets a form once its `action=` settles; submitting by hand keeps
  *  what was typed on screen after a refusal. */
@@ -73,13 +71,13 @@ export function PaymentSettle({
     <div className="flex flex-wrap items-center justify-end gap-3">
       {done && <Notice result={done} />}
       {payment.outstanding > 0 && (
-        <button type="button" onClick={() => open('settle')} className={ROW_BUTTON}>
+        <button type="button" onClick={() => open('settle')} className={ROW_LINK}>
           <HandCoins size={14} aria-hidden />
           Settle
         </button>
       )}
       {recorded && (
-        <button type="button" onClick={() => open('correct')} className={ROW_BUTTON}>
+        <button type="button" onClick={() => open('correct')} className={ROW_LINK}>
           <Pencil size={14} aria-hidden />
           Correct
         </button>

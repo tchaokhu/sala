@@ -6,6 +6,7 @@ import { createClient, requireMember } from '@/lib/supabase-server'
 import { cleanText } from '@/lib/validate'
 import { parseOwnerForm } from '@/lib/owner-input'
 import type { ActionResult } from '@/lib/action-result'
+import { flash } from '@/lib/flash'
 
 // Managing Owners, the way Buildings are managed. An ordinary Member write:
 // Membership first, and the Org it writes into comes from that gate rather than
@@ -42,7 +43,8 @@ export async function createOwner(formData: FormData): Promise<ActionResult> {
 
   revalidate(slug)
   // Outside any try: redirect() works by throwing.
-  redirect(`/o/${slug}/owners/${(data as { id: string }).id}?created=1`)
+  await flash('Owner added', parsed.values.name)
+  redirect(`/o/${slug}/owners/${(data as { id: string }).id}`)
 }
 
 export async function updateOwner(formData: FormData): Promise<ActionResult> {
@@ -65,7 +67,7 @@ export async function updateOwner(formData: FormData): Promise<ActionResult> {
 
   revalidate(slug)
   revalidatePath(`/o/${slug}/owners/${id}`)
-  return { ok: true, message: 'Saved' }
+  return { ok: true, message: 'Owner saved', detail: parsed.values.name }
 }
 
 /**
@@ -81,10 +83,17 @@ export async function deleteOwner(formData: FormData): Promise<ActionResult> {
   const org = await requireMember(slug)
   const supabase = await createClient()
 
-  const { error } = await supabase.from('owners').delete().eq('id', id).eq('org_id', org.id)
+  const { data, error } = await supabase
+    .from('owners')
+    .delete()
+    .eq('id', id)
+    .eq('org_id', org.id)
+    .select('name')
+    .maybeSingle()
   if (error) return failed('Deleting the Owner', error)
 
   revalidate(slug)
   // Their own page is gone, so the answer is said on the list.
-  redirect(`/o/${slug}/owners?deleted=1`)
+  await flash('Owner deleted', (data as { name: string } | null)?.name)
+  redirect(`/o/${slug}/owners`)
 }

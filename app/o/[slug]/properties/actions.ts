@@ -16,6 +16,7 @@ import { resolveBuilding, UnknownBuildingError } from '@/lib/buildings'
 import { ownerBelongsToOrg } from '@/lib/owners'
 import { BUCKET, discard } from '@/lib/property-storage'
 import type { ActionResult } from '@/lib/action-result'
+import { flash } from '@/lib/flash'
 
 // Creating a Property. The first write in the product that moves bytes as well
 // as rows — see docs/adr/0007-property-photos-upload-through-the-server-action.md.
@@ -135,5 +136,9 @@ export async function createProperty(formData: FormData): Promise<ActionResult> 
   revalidatePath(`/o/${slug}`)
   // Throws NEXT_REDIRECT, so it goes after everything that can fail and outside
   // any try — a catch here would swallow the navigation.
-  redirect(`/o/${slug}/properties?created=${id}&photos=${paths.length}`)
+  await flash(
+    'Property added',
+    paths.length ? `${row.title} · ${paths.length} ${paths.length === 1 ? 'photo' : 'photos'}` : row.title,
+  )
+  redirect(`/o/${slug}/properties`)
 }

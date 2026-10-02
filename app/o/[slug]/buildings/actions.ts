@@ -8,6 +8,7 @@ import { parseBuildingForm } from '@/lib/building-input'
 import { resolveAddress } from '@/lib/thai-places'
 import { resolveMapUrl } from '@/lib/google-map-resolve'
 import type { ActionResult } from '@/lib/action-result'
+import { flash } from '@/lib/flash'
 
 // Managing Buildings. Ordinary Member writes: each one establishes Membership
 // first and the Org comes from that gate, never from the form (ADR 0002). The
@@ -54,7 +55,8 @@ export async function createBuilding(formData: FormData): Promise<ActionResult> 
   // The Property form reads the same list.
   revalidatePath(`/o/${slug}/properties/new`)
   // Outside any try: redirect() works by throwing.
-  redirect(`/o/${slug}/buildings/${(data as { id: string }).id}?created=1`)
+  await flash('Building added', parsed.values.name)
+  redirect(`/o/${slug}/buildings/${(data as { id: string }).id}`)
 }
 
 export async function updateBuilding(formData: FormData): Promise<ActionResult> {
@@ -85,7 +87,7 @@ export async function updateBuilding(formData: FormData): Promise<ActionResult> 
   revalidatePath(`/o/${slug}/buildings`)
   revalidatePath(`/o/${slug}/buildings/${id}`)
   revalidatePath(`/o/${slug}/properties/new`)
-  return { ok: true, message: 'Saved' }
+  return { ok: true, message: 'Building saved', detail: parsed.values.name }
 }
 
 /**
@@ -104,11 +106,18 @@ export async function deleteBuilding(formData: FormData): Promise<ActionResult> 
   const org = await requireMember(slug)
   const supabase = await createClient()
 
-  const { error } = await supabase.from('buildings').delete().eq('id', id).eq('org_id', org.id)
+  const { data, error } = await supabase
+    .from('buildings')
+    .delete()
+    .eq('id', id)
+    .eq('org_id', org.id)
+    .select('name')
+    .maybeSingle()
   if (error) return failed('Deleting the Building', error)
 
   revalidatePath(`/o/${slug}/buildings`)
   revalidatePath(`/o/${slug}/properties/new`)
   // Its own page is gone, so the answer is said on the list.
-  redirect(`/o/${slug}/buildings?deleted=1`)
+  await flash('Building deleted', (data as { name: string } | null)?.name)
+  redirect(`/o/${slug}/buildings`)
 }

@@ -11,6 +11,7 @@
 
 import { useActionState } from 'react'
 import type { ActionResult } from '@/lib/action-result'
+import { useFeedback } from './Feedback'
 import { PANEL } from './styles'
 
 // The class strings live in ./styles so Server Components can read them too;
@@ -18,20 +19,34 @@ import { PANEL } from './styles'
 export { BUTTON, INPUT, PRIMARY_BUTTON } from './styles'
 
 /** `useActionState` with the signature every action here has: FormData in, an
- *  ActionResult out, and nothing carried over from the previous attempt. */
-export function useFormAction(action: (formData: FormData) => Promise<ActionResult>) {
-  return useActionState(
-    async (_previous: ActionResult | null, formData: FormData) => action(formData),
-    null,
-  )
+ *  ActionResult out, and nothing carried over from the previous attempt. While
+ *  it runs the page shows the Sala loader; a success is said in a toast
+ *  (components/Feedback.tsx). `busyLabel` is what a screen reader hears. */
+export function useFormAction(
+  action: (formData: FormData) => Promise<ActionResult>,
+  busyLabel = 'Saving',
+) {
+  const feedback = useFeedback()
+  return useActionState(async (_previous: ActionResult | null, formData: FormData) => {
+    feedback?.begin(busyLabel)
+    try {
+      const result = await action(formData)
+      // A redirecting action resolves with nothing; its toast comes by cookie.
+      if (result?.ok) feedback?.toast({ message: result.message, detail: result.detail })
+      return result
+    } finally {
+      feedback?.end()
+    }
+  }, null)
 }
 
-/** What the action said. `role="status"` so a screen reader hears it without
- *  the focus moving, and the tone is semantic — never the accent. */
+/** A refusal, beside the form it refuses, where what to fix can be read.
+ *  `role="status"` so a screen reader hears it without the focus moving. A
+ *  success is not drawn here — it is the toast's (components/Feedback.tsx). */
 export function Notice({ result }: { result: ActionResult | null }) {
-  if (!result) return null
+  if (!result || result.ok) return null
   return (
-    <p role="status" className={`text-sm ${result.ok ? 'text-ok' : 'text-warn'}`}>
+    <p role="status" className="text-sm text-warn">
       {result.message}
     </p>
   )

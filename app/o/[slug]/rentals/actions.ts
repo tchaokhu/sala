@@ -10,6 +10,7 @@ import { parseEndRentalForm, parseRenewForm, parseRentalForm } from '@/lib/renta
 import { getRental } from '@/lib/rentals'
 import { tenantBelongsToOrg } from '@/lib/tenants'
 import type { ActionResult } from '@/lib/action-result'
+import { flash } from '@/lib/flash'
 
 // Every Rental transition — create, end, renew, delete. Membership first and the
 // Org from that gate, never from the form (ADR 0002); then one call to the
@@ -55,6 +56,12 @@ function scheduleJson(terms: ScheduleTerms, opts: { depositHeld?: boolean; paidT
     settled_date: p.settled_date,
     settled_amount: p.settled_amount,
   }))
+}
+
+/** The toast's second line for a new schedule. */
+function scheduled(schedule: { settled_amount: number | null }[]): string {
+  const due = schedule.filter((p) => !p.settled_amount).length
+  return due === 0 ? 'No Payments to follow' : `${due} ${due === 1 ? 'Payment' : 'Payments'} scheduled`
 }
 
 function revalidateRental(slug: string, propertyId: string, rentalIds: string[]) {
@@ -145,6 +152,7 @@ export async function createRental(formData: FormData): Promise<ActionResult> {
 
   const id = data as string
   revalidateRental(slug, v.property_id, [])
+  await flash('Rental added', scheduled(schedule))
   // Throws NEXT_REDIRECT, so it stays outside any try.
   redirect(`/o/${slug}/rentals/${id}`)
 }
@@ -190,10 +198,11 @@ export async function endRental(formData: FormData): Promise<ActionResult> {
   const on = formatDateThai(v.ended_on)
   return {
     ok: true,
-    message:
+    message: 'Rental ended',
+    detail:
       deleted === 0
-        ? `Rental ended on ${on}. No unpaid Payments were due after it.`
-        : `Rental ended on ${on}. ${deleted} unpaid ${deleted === 1 ? 'Payment' : 'Payments'} due after it ${deleted === 1 ? 'was' : 'were'} deleted.`,
+        ? `On ${on} · no unpaid Payments were due after it`
+        : `On ${on} · ${deleted} future ${deleted === 1 ? 'Payment' : 'Payments'} removed`,
   }
 }
 
@@ -250,6 +259,7 @@ export async function renewRental(formData: FormData): Promise<ActionResult> {
 
   const next = data as string
   revalidateRental(slug, current.propertyId, [id])
+  await flash('Rental renewed', scheduled(schedule))
   redirect(`/o/${slug}/rentals/${next}`)
 }
 
@@ -286,5 +296,6 @@ export async function deleteRental(formData: FormData): Promise<ActionResult> {
   }
 
   revalidateRental(slug, data as string, [id])
-  redirect(`/o/${slug}/rentals?deleted=1`)
+  await flash('Rental deleted')
+  redirect(`/o/${slug}/rentals`)
 }

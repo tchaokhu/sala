@@ -7,5 +7,8 @@
  *  that are nobody's business — a caller who is not a Superadmin — still throw.
  */
 export type ActionResult =
-  | { ok: true; message: string }
+  /** Success is said in a toast: `message` is the headline — "<Thing> <past
+   *  verb>", "Building saved" — and `detail` the specific name or number that
+   *  says which one, "Lumpini Park Rama 9". No "successfully", no "!". */
+  | { ok: true; message: string; detail?: string }
   | { ok: false; message: string }

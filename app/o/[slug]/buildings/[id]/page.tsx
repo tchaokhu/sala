@@ -5,7 +5,7 @@
 
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Check, CheckCircle2, Eye, MapPin, Pencil } from 'lucide-react'
+import { Check, Eye, MapPin, Pencil } from 'lucide-react'
 import { requireMember } from '@/lib/supabase-server'
 import { BUILDING_PROPERTIES_LIMIT, getBuilding, listBuildingProperties } from '@/lib/buildings'
 import { formatBaht } from '@/lib/format'
@@ -18,16 +18,15 @@ import { DeleteBuildingForm, EditBuildingForm } from '../building-forms'
 import { TableFrame } from '@/components/TableFrame'
 import { HEAD_CELL, PANEL } from '@/components/styles'
 
-
 export default async function BuildingPage({
   params,
   searchParams,
 }: {
   params: Promise<{ slug: string; id: string }>
-  searchParams: Promise<{ created?: string; edit?: string }>
+  searchParams: Promise<{ edit?: string }>
 }) {
   const { slug, id } = await params
-  const { created, edit } = await searchParams
+  const { edit } = await searchParams
   const editing = edit === '1'
 
   const org = await requireMember(slug)
@@ -66,16 +65,6 @@ export default async function BuildingPage({
           }
         />
       </div>
-
-      {created && (
-        <p
-          role="status"
-          className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-muted"
-        >
-          <CheckCircle2 size={16} aria-hidden className="text-ok" />
-          Building added. Properties can now be named after it.
-        </p>
-      )}
 
       {editing && (
         <>

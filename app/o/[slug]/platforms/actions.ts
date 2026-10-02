@@ -52,7 +52,7 @@ export async function createPlatform(formData: FormData): Promise<ActionResult> 
   if (error) return failed('Adding the channel', error)
 
   refreshed(slug)
-  return { ok: true, message: `Added ${parsed.values.name}` }
+  return { ok: true, message: 'Channel added', detail: parsed.values.name }
 }
 
 export async function updatePlatform(formData: FormData): Promise<ActionResult> {
@@ -80,7 +80,7 @@ export async function updatePlatform(formData: FormData): Promise<ActionResult> 
   if (error) return failed('Saving the channel', error)
 
   refreshed(slug)
-  return { ok: true, message: 'Saved' }
+  return { ok: true, message: 'Channel saved', detail: parsed.values.name }
 }
 
 /**
@@ -109,8 +109,9 @@ export async function setPlatformActive(formData: FormData): Promise<ActionResul
   refreshed(slug)
   return {
     ok: true,
-    message: active
-      ? 'Channel is back on the Property form.'
-      : 'Channel retired. Rooms already posted there still show it.',
+    message: active ? 'Channel restored' : 'Channel retired',
+    detail: active
+      ? 'It is back on the Property form'
+      : 'Rooms already posted there still show it',
   }
 }

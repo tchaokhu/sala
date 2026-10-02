@@ -9,7 +9,7 @@
 // button works, and none of it needs client-side state.
 
 import Link from 'next/link'
-import { Check, ChevronRight, ChevronsLeft, Plus, Trash2 } from 'lucide-react'
+import { ChevronRight, ChevronsLeft, Plus } from 'lucide-react'
 import { requireMember } from '@/lib/supabase-server'
 import {
   getPropertyCounts,
@@ -32,14 +32,11 @@ export default async function PropertiesPage({
   searchParams: Promise<{
     status?: string
     cursor?: string
-    created?: string
-    photos?: string
-    deleted?: string
     posted?: string
   }>
 }) {
   const { slug } = await params
-  const { status: rawStatus, cursor, created, photos, deleted, posted } = await searchParams
+  const { status: rawStatus, cursor, posted } = await searchParams
 
   // Anything unrecognised in the query string is dropped rather than sent to
   // the database — the same reflex as never taking the Org from a request.
@@ -75,10 +72,6 @@ export default async function PropertiesPage({
   // What the number on screen is a fraction of: the filtered count when a
   // filter is on, not the Org's whole holding.
   const matching = postedNowhere ? counts.postedNowhere : status ? counts[status] : counts.total
-  // Both of these come from the query string, so neither is rendered back: the
-  // id only decides whether the banner appears, and the count is read as a
-  // number or ignored.
-  const photoCount = /^\d{1,2}$/.test(photos ?? '') ? Number(photos) : null
 
   return (
     <div className="flex flex-col gap-6">
@@ -99,32 +92,6 @@ export default async function PropertiesPage({
           </Link>
         }
       />
-
-      {/* The action finished somewhere other than the screen it ran on, so the
-          list is where it gets confirmed — and it says how many photos landed,
-          because nothing on this page shows them yet. */}
-      {created && (
-        <p
-          role="status"
-          className="flex items-center gap-2 rounded-lg border border-ok/40 bg-ok/10 px-3 py-2 text-sm text-ok"
-        >
-          <Check size={16} aria-hidden />
-          Property added
-          {photoCount !== null && photoCount > 0 && `, with ${photoCount} ${photoCount === 1 ? 'photo' : 'photos'}`}
-        </p>
-      )}
-
-      {/* Same reason: the edit page the delete ran on no longer exists, so this
-          is the only screen left to say it happened. */}
-      {deleted && (
-        <p
-          role="status"
-          className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-muted"
-        >
-          <Trash2 size={16} aria-hidden />
-          Property deleted
-        </p>
-      )}
 
       {/* Links, not buttons: the filter is a location. */}
       <nav aria-label="Filter by status" className="flex flex-wrap gap-2">

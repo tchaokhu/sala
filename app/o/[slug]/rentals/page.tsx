@@ -2,7 +2,7 @@
 // bounded keyset page. Filter and cursor live in the URL, as on Properties.
 
 import Link from 'next/link'
-import { ChevronRight, ChevronsLeft, Plus, Trash2 } from 'lucide-react'
+import { ChevronRight, ChevronsLeft, Plus } from 'lucide-react'
 import { requireMember } from '@/lib/supabase-server'
 import { todayBangkok } from '@/lib/dates'
 import {
@@ -32,10 +32,10 @@ export default async function RentalsPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{ filter?: string; cursor?: string; deleted?: string }>
+  searchParams: Promise<{ filter?: string; cursor?: string }>
 }) {
   const { slug } = await params
-  const { filter: rawFilter, cursor, deleted } = await searchParams
+  const { filter: rawFilter, cursor } = await searchParams
   const filter: RentalFilter | null = isRentalFilter(rawFilter) ? rawFilter : null
 
   const org = await requireMember(slug)
@@ -82,16 +82,6 @@ export default async function RentalsPage({
           </Link>
         }
       />
-
-      {deleted && (
-        <p
-          role="status"
-          className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-muted"
-        >
-          <Trash2 size={16} aria-hidden />
-          Rental deleted. Its Property is Available again.
-        </p>
-      )}
 
       <nav aria-label="Filter Rentals" className="flex flex-wrap gap-2">
         <FilterChip href={link()} active={filter === null} label="All" count={total} />

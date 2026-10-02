@@ -132,7 +132,7 @@ export async function uploadRentalDocuments(formData: FormData): Promise<ActionR
 
   revalidateDocuments(slug)
   const n = rows.length
-  return { ok: true, message: `${n} ${n === 1 ? 'document' : 'documents'} uploaded.` }
+  return { ok: true, message: `${n} ${n === 1 ? 'document' : 'documents'} uploaded` }
 }
 
 /** Fields: `slug`, `document_id`. */
@@ -167,5 +167,5 @@ export async function deleteRentalDocument(formData: FormData): Promise<ActionRe
   }
 
   revalidateDocuments(slug)
-  return { ok: true, message: 'Document deleted.' }
+  return { ok: true, message: 'Document deleted' }
 }

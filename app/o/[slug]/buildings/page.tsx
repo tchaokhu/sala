@@ -10,7 +10,15 @@
 // shareable and the back button works.
 
 import Link from 'next/link'
-import { ChevronRight, ChevronsLeft, Eye, MapPin, Pencil, Plus, Search, Trash2 } from 'lucide-react'
+import {
+  ChevronRight,
+  ChevronsLeft,
+  Eye,
+  MapPin,
+  Pencil,
+  Plus,
+  Search,
+} from 'lucide-react'
 import { requireMember } from '@/lib/supabase-server'
 import { BUILDINGS_PAGE_SIZE, listBuildings } from '@/lib/buildings'
 import { PageHeader } from '@/components/PageHeader'
@@ -24,10 +32,10 @@ export default async function BuildingsPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{ q?: string; cursor?: string; deleted?: string }>
+  searchParams: Promise<{ q?: string; cursor?: string }>
 }) {
   const { slug } = await params
-  const { q, cursor, deleted } = await searchParams
+  const { q, cursor } = await searchParams
 
   const org = await requireMember(slug)
   const page = await listBuildings(org.id, { search: q, cursor })
@@ -50,16 +58,6 @@ export default async function BuildingsPage({
           </Link>
         }
       />
-
-      {deleted && (
-        <p
-          role="status"
-          className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-muted"
-        >
-          <Trash2 size={16} aria-hidden />
-          Building deleted. The Properties that were in it are still here.
-        </p>
-      )}
 
       {/* A form, not a controlled input: the search term is a location. */}
       <form action={base} className="flex flex-wrap items-center gap-2">

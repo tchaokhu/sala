@@ -116,9 +116,10 @@ export async function addMember(formData: FormData): Promise<ActionResult> {
   revalidatePath('/admin')
   return {
     ok: true,
-    message: invited
-      ? `Added ${email} and sent an invitation email. If it does not arrive, they can ask for a link themselves from the login page.`
-      : `Added ${email}. This account already existed, so they can log in straight away.`,
+    message: 'Member added',
+    detail: invited
+      ? `${email} · invitation sent. If it does not arrive, they can ask for a link from the login page.`
+      : `${email} · the account already existed, so they can log in straight away`,
   }
 }
 
@@ -150,7 +151,7 @@ export async function setMemberRole(formData: FormData): Promise<ActionResult> {
   }
 
   revalidatePath(`/admin/orgs/${slug}`)
-  return { ok: true, message: role === 'admin' ? 'Now an Admin.' : 'Now a Member.' }
+  return { ok: true, message: 'Role saved', detail: role === 'admin' ? 'Now an Admin' : 'Now a Member' }
 }
 
 export async function setMemberDisplayName(formData: FormData): Promise<ActionResult> {
@@ -180,7 +181,8 @@ export async function setMemberDisplayName(formData: FormData): Promise<ActionRe
   revalidatePath(`/admin/orgs/${slug}`)
   return {
     ok: true,
-    message: name ? `Renamed to ${name}.` : 'Name cleared — the email shows instead.',
+    message: 'Name saved',
+    detail: name || 'Cleared — the email shows instead',
   }
 }
 
@@ -213,7 +215,7 @@ export async function removeMember(formData: FormData): Promise<ActionResult> {
 
   revalidatePath(`/admin/orgs/${slug}`)
   revalidatePath('/admin')
-  return { ok: true, message: 'Removed from the Org. The account itself still exists.' }
+  return { ok: true, message: 'Member removed', detail: 'The account itself still exists' }
 }
 
 // ─── The Org life cycle ──────────────────────────────────────────────────────
@@ -299,9 +301,10 @@ export async function createOrg(formData: FormData): Promise<ActionResult> {
   revalidatePath(`/admin/orgs/${slug}`)
   return {
     ok: true,
-    message: invited
-      ? `Created ${name} at /o/${slug} and sent ${email} an invitation email. If it does not arrive, they can ask for a link themselves from the login page.`
-      : `Created ${name} at /o/${slug} with ${email} as its Admin. This account already existed, so they can log in straight away.`,
+    message: 'Org created',
+    detail: invited
+      ? `${name} at /o/${slug} · invitation sent to ${email}. If it does not arrive, they can ask for a link from the login page.`
+      : `${name} at /o/${slug} · ${email} is its Admin and can log in straight away`,
   }
 }
 
@@ -349,9 +352,10 @@ export async function softDeleteOrg(formData: FormData): Promise<ActionResult> {
   if (slug) revalidatePath(`/admin/orgs/${slug}`)
   return {
     ok: true,
-    message:
-      `${org.name} is closed to its Members from now on. You can restore it for ` +
-      `${ORG_RECOVERY_DAYS} days; after that it is purged along with everything in it.`,
+    message: 'Org closed',
+    detail:
+      `${org.name} is closed to its Members. It can be restored for ${ORG_RECOVERY_DAYS} days; ` +
+      'after that it is purged with everything in it.',
   }
 }
 
@@ -390,7 +394,7 @@ export async function restoreOrg(formData: FormData): Promise<ActionResult> {
 
   revalidatePath('/admin')
   if (slug) revalidatePath(`/admin/orgs/${slug}`)
-  return { ok: true, message: `${org.name} is back. Its Members can reach it again, with nothing lost.` }
+  return { ok: true, message: 'Org restored', detail: `${org.name} · its Members can reach it again, with nothing lost` }
 }
 
 /** Refuses the change that would leave an Org with no admin. Such an Org still

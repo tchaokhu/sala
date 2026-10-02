@@ -52,16 +52,13 @@ export function PaymentSettle({
 }) {
   const [mode, setMode] = useState<Mode | null>(null)
   const [pending, setPending] = useState(false)
-  const [done, setDone] = useState<ActionResult | null>(null)
-
   function open(next: Mode) {
-    setDone(null)
     setMode(next)
   }
 
-  function finished(result: ActionResult) {
+  /** The toast says what was recorded (useFormAction); this only closes. */
+  function finished() {
     setPending(false)
-    setDone(result)
     setMode(null)
   }
 
@@ -69,7 +66,6 @@ export function PaymentSettle({
 
   return (
     <div className="flex flex-wrap items-center justify-end gap-3">
-      {done && <Notice result={done} />}
       {payment.outstanding > 0 && (
         <button type="button" onClick={() => open('settle')} className={ROW_LINK}>
           <HandCoins size={14} aria-hidden />

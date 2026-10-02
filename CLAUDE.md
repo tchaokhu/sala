@@ -160,6 +160,12 @@ Sala is operated, not read. People scan it for the thing that needs attention.
 - **Every delete asks in a dialog.** Use `components/ConfirmAction.tsx` — one
   pattern for the whole app, portalled so a sticky table cell cannot paint over
   it, with Cancel focused. No inline two-click deletes, no `confirm()`.
+- **Success is a toast, failure stays by the form.** Forms call actions through
+  `useFormAction`, which shows the Sala loader while one runs and a toast when
+  it succeeds (`components/Feedback.tsx`); an action that ends in `redirect()`
+  calls `flash()` first (`lib/flash.ts`). Toast copy: `<Thing> <past verb>` as
+  `message`, the specific name or number as `detail` — "Building deleted" /
+  "Lumpini Park Rama 9". No "successfully", no "!".
 - **Errors say what to do next.** No apologies, no raw Postgres text. A failed
   upload says the file was too large and what the limit is.
 - **Both themes get built.** Light and dark are designed together, not inverted.

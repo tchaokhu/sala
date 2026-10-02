@@ -3,7 +3,15 @@
 
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Check, CheckCircle2, Eye, Facebook, Mail, MessageCircle, Pencil, Phone } from 'lucide-react'
+import {
+  Check,
+  Eye,
+  Facebook,
+  Mail,
+  MessageCircle,
+  Pencil,
+  Phone,
+} from 'lucide-react'
 import { requireMember } from '@/lib/supabase-server'
 import { getOwner } from '@/lib/owners'
 import { BUILDING_PROPERTIES_LIMIT, listOwnerProperties } from '@/lib/buildings'
@@ -20,10 +28,10 @@ export default async function OwnerPage({
   searchParams,
 }: {
   params: Promise<{ slug: string; id: string }>
-  searchParams: Promise<{ created?: string; edit?: string }>
+  searchParams: Promise<{ edit?: string }>
 }) {
   const { slug, id } = await params
-  const { created, edit } = await searchParams
+  const { edit } = await searchParams
   const editing = edit === '1'
 
   const org = await requireMember(slug)
@@ -58,16 +66,6 @@ export default async function OwnerPage({
           }
         />
       </div>
-
-      {created && (
-        <p
-          role="status"
-          className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-muted"
-        >
-          <CheckCircle2 size={16} aria-hidden className="text-ok" />
-          Owner added. They can now be picked on a Property.
-        </p>
-      )}
 
       {editing && (
         <>

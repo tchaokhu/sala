@@ -34,7 +34,8 @@ export async function renameSelf(formData: FormData): Promise<ActionResult> {
   revalidatePath(`/o/${slug}/settings`)
   return {
     ok: true,
-    message: name ? `Your name is now ${name}` : 'Name cleared — your email is shown instead',
+    message: 'Name saved',
+    detail: name || 'Cleared — your email is shown instead',
   }
 }
 
@@ -77,6 +78,7 @@ export async function changeOwnEmail(formData: FormData): Promise<ActionResult> 
 
   return {
     ok: true,
-    message: `A confirmation link has been sent to ${email}. Your email will not change until you confirm — Supabase sends the link to both the old address and the new one.`,
+    message: 'Check your inbox',
+    detail: `Confirm the change from the link sent to ${email} — and to your current address. Nothing changes until you do.`,
   }
 }

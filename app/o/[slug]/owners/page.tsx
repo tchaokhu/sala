@@ -18,7 +18,6 @@ import {
   Pencil,
   Plus,
   Search,
-  Trash2,
 } from 'lucide-react'
 import { requireMember } from '@/lib/supabase-server'
 import { listOwners, OWNERS_PAGE_SIZE } from '@/lib/owners'
@@ -33,10 +32,10 @@ export default async function OwnersPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{ q?: string; cursor?: string; deleted?: string }>
+  searchParams: Promise<{ q?: string; cursor?: string }>
 }) {
   const { slug } = await params
-  const { q, cursor, deleted } = await searchParams
+  const { q, cursor } = await searchParams
 
   const org = await requireMember(slug)
   const page = await listOwners(org.id, { search: q, cursor })
@@ -59,16 +58,6 @@ export default async function OwnersPage({
           </Link>
         }
       />
-
-      {deleted && (
-        <p
-          role="status"
-          className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-muted"
-        >
-          <Trash2 size={16} aria-hidden />
-          Owner deleted. The Properties they owned are still here, with no Owner on file.
-        </p>
-      )}
 
       {/* A form, not a controlled input: the search term is a location. */}
       <form action={base} className="flex flex-wrap items-center gap-2">

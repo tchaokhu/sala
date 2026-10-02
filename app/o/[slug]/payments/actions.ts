@@ -86,10 +86,11 @@ export async function settlePayment(formData: FormData): Promise<ActionResult> {
   const added = v.settled_amount - (payment.settled_amount ?? 0)
   return {
     ok: true,
-    message:
+    message: 'Payment recorded',
+    detail:
       left > 0
-        ? `Recorded ${formatBaht(added)} on ${formatDateThai(v.settled_date)}. ${formatBaht(left)} still to go.`
-        : `Settled in full on ${formatDateThai(v.settled_date)}.`,
+        ? `${formatBaht(added)} on ${formatDateThai(v.settled_date)} · ${formatBaht(left)} still to go`
+        : `${formatBaht(added)} on ${formatDateThai(v.settled_date)} · settled in full`,
   }
 }
 
@@ -112,7 +113,8 @@ export async function correctSettlement(formData: FormData): Promise<ActionResul
   revalidate(slug, payment.rental_id)
   return {
     ok: true,
-    message: `Corrected: ${formatBaht(v.settled_amount)} of ${formatBaht(payment.amount)} settled, as of ${formatDateThai(v.settled_date)}.`,
+    message: 'Correction saved',
+    detail: `${formatBaht(v.settled_amount)} of ${formatBaht(payment.amount)} settled on ${formatDateThai(v.settled_date)}`,
   }
 }
 
@@ -137,6 +139,7 @@ export async function clearSettlement(formData: FormData): Promise<ActionResult>
   revalidate(slug, payment.rental_id)
   return {
     ok: true,
-    message: `Cleared ${formatBaht(payment.settled_amount)} recorded on ${formatDateThai(payment.settled_date)}.`,
+    message: 'Settlement cleared',
+    detail: `${formatBaht(payment.amount)} is owed again`,
   }
 }

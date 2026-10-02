@@ -10,8 +10,8 @@
 //
 // It submits through onSubmit + startTransition rather than `action=`, so React
 // does not reset the form under it (see PostingChecklist). A successful answer
-// closes the dialog and is shown beside the trigger; an action that redirects
-// simply navigates away.
+// closes the dialog and is said in a toast; an action that redirects navigates
+// away and leaves its toast behind (lib/flash.ts).
 
 import { startTransition, useEffect, useRef, useState } from 'react'
 import { Dialog } from '@/components/Dialog'
@@ -46,7 +46,7 @@ export function ConfirmAction({
   confirmLabel?: string
   pendingLabel?: string
 }) {
-  const [result, run, pending] = useFormAction(action)
+  const [result, run, pending] = useFormAction(action, pendingLabel.replace(/…$/, ''))
   const [open, setOpen] = useState(false)
   // The answer on screen when the dialog was opened. A new successful answer
   // closes it; a refusal keeps it open, where it can be read.
@@ -74,7 +74,6 @@ export function ConfirmAction({
         >
           {trigger}
         </button>
-        {!shown && result?.ok && <Notice result={result} />}
       </span>
 
       <Dialog open={shown} onClose={() => setOpen(false)} label={title} role="alertdialog" busy={pending}>
@@ -105,7 +104,7 @@ export function ConfirmAction({
               {pending ? pendingLabel : confirmLabel}
             </button>
           </div>
-          {result && !result.ok && <Notice result={result} />}
+          <Notice result={result} />
         </form>
       </Dialog>
     </>

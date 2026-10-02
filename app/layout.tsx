@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Sarabun, Geist_Mono } from 'next/font/google'
 import './globals.css'
+import { FeedbackProvider } from '@/components/Feedback'
 
 // Sarabun carries the UI; Geist Mono is the utility face for ids and column
 // labels. The Thai subset stays loaded even though the interface is English —
@@ -56,7 +57,7 @@ export default function RootLayout({
         className="min-h-full flex flex-col font-sans"
         suppressHydrationWarning
       >
-        {children}
+        <FeedbackProvider>{children}</FeedbackProvider>
       </body>
     </html>
   )

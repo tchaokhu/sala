@@ -17,6 +17,7 @@ import { BUCKET, discard } from '@/lib/property-storage'
 import { getPropertyForEdit } from '@/lib/properties'
 import { parsePostingsField, savePostings, UnknownPlatformError } from '@/lib/postings'
 import type { ActionResult } from '@/lib/action-result'
+import { flash } from '@/lib/flash'
 
 // Editing and removing a Property — see
 // docs/adr/0009-property-edit-and-delete-do-not-invent-a-lie.md.
@@ -162,7 +163,7 @@ export async function updateProperty(formData: FormData): Promise<ActionResult> 
   revalidatePath(`/o/${slug}/properties/${id}/edit`)
   revalidatePath(`/o/${slug}/rentals/new`)
   revalidatePath(`/o/${slug}`)
-  return { ok: true, message: 'Saved' }
+  return { ok: true, message: 'Property saved' }
 }
 
 /**
@@ -192,7 +193,7 @@ export async function deleteProperty(formData: FormData): Promise<ActionResult> 
     .delete()
     .eq('id', id)
     .eq('org_id', org.id)
-    .select('images')
+    .select('images, title')
     .maybeSingle()
 
   if (error) {
@@ -217,7 +218,8 @@ export async function deleteProperty(formData: FormData): Promise<ActionResult> 
   revalidatePath(`/o/${slug}`)
   // Throws NEXT_REDIRECT, so it stays outside any try — a catch here would
   // swallow the navigation. The edit page this was posted from is gone.
-  redirect(`/o/${slug}/properties?deleted=1`)
+  await flash('Property deleted', (data as { title: string }).title)
+  redirect(`/o/${slug}/properties`)
 }
 
 /**
@@ -248,5 +250,5 @@ export async function updatePostings(formData: FormData): Promise<ActionResult> 
   revalidatePath(`/o/${slug}/properties`)
   revalidatePath(`/o/${slug}/properties/${id}`)
   revalidatePath(`/o/${slug}/properties/${id}/edit`)
-  return { ok: true, message: 'Saved' }
+  return { ok: true, message: 'Postings saved' }
 }

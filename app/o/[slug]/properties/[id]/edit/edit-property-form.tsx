@@ -47,6 +47,7 @@ import {
   validatePropertyImageEdit,
 } from '@/lib/property-input'
 import { updateProperty } from '../actions'
+import { GenerateDescription } from '@/components/GenerateDescription'
 
 export function EditPropertyForm({
   slug,
@@ -336,7 +337,11 @@ export function EditPropertyForm({
             />
           </Field>
 
-          <Field label="Description" wide>
+          <Field
+            label="Description"
+            wide
+            action={<GenerateDescription buildingName={building?.name ?? null} disabled={pending} />}
+          >
             <textarea
               name="description"
               rows={4}

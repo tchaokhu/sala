@@ -44,6 +44,7 @@ import {
 } from '@/lib/property-input'
 import { STATUS_LABELS } from '@/components/StatusPill'
 import { createProperty } from '../actions'
+import { GenerateDescription } from '@/components/GenerateDescription'
 
 export function NewPropertyForm({
   slug,
@@ -243,7 +244,11 @@ export function NewPropertyForm({
             <input type="text" name="contact_line" maxLength={100} disabled={pending} className={INPUT} />
           </Field>
 
-          <Field label="Description" wide>
+          <Field
+            label="Description"
+            wide
+            action={<GenerateDescription buildingName={building?.name ?? null} disabled={pending} />}
+          >
             <textarea
               name="description"
               rows={4}

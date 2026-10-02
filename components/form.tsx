@@ -79,6 +79,7 @@ export function Field({
   hint,
   required,
   wide,
+  action,
   children,
 }: {
   label: string
@@ -88,10 +89,15 @@ export function Field({
    *  `col-span-full`, not a count: a count wider than a two-column grid adds
    *  an implicit column and squeezes the fields beside it. */
   wide?: boolean
+  /** A small button at the right of the label row ("Generate"). Drawn outside
+   *  the <label>: inside it, ahead of the input, it would become what clicking
+   *  the label's words presses. */
+  action?: React.ReactNode
   children: React.ReactNode
 }) {
-  return (
-    <label className={`flex flex-col gap-1.5 ${wide ? 'sm:col-span-full' : ''}`}>
+  const span = wide ? 'sm:col-span-full' : ''
+  const field = (
+    <label className={`flex flex-col gap-1.5 ${action ? '' : span}`}>
       <span className="text-sm font-medium">
         {label}
         {required && <span className="ml-1 text-warn">*</span>}
@@ -99,5 +105,12 @@ export function Field({
       {children}
       {hint && <span className="text-xs text-muted">{hint}</span>}
     </label>
+  )
+  if (!action) return field
+  return (
+    <div className={`relative ${span}`}>
+      {field}
+      <div className="absolute top-0 right-0">{action}</div>
+    </div>
   )
 }

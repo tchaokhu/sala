@@ -10,12 +10,19 @@ import { SalaMark } from './SalaMark'
  * It fades in after a beat, so a gate that resolves quickly shows nothing at
  * all rather than flashing the mark for one frame.
  */
-export function SalaLoader({ label = 'Loading' }: { label?: string }) {
+export function SalaLoader({
+  label = 'Loading',
+  immediate,
+}: {
+  label?: string
+  /** Skip the fade-in beat — for a caller that has already waited before showing it. */
+  immediate?: boolean
+}) {
   return (
     <div
       role="status"
       aria-live="polite"
-      className="sala-loader flex flex-1 flex-col items-center justify-center gap-4 p-6"
+      className={`${immediate ? '' : 'sala-loader '}flex flex-1 flex-col items-center justify-center gap-4 p-6`}
     >
       {/* The text below is what a screen reader announces; the mark is decor. */}
       <span aria-hidden>

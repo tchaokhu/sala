@@ -4,7 +4,7 @@
 //
 // While an action runs: the Sala mark building itself over a dimmed page, which
 // also stops a second click. Only after 300 ms — a fast save does not flash it —
-// and, once shown, for at least 400 ms so it never blinks.
+// and, once shown, for at least 800 ms so it reads as the mark, not a blink.
 //
 // When it succeeds: a toast, bottom right (bottom centre on a phone), with a ✓,
 // the headline and the second line that says which one. Gone after 4 s — 8 s
@@ -35,7 +35,8 @@ export function useFeedback() {
 }
 
 const SHOW_AFTER = 300
-const SHOW_AT_LEAST = 400
+// Long enough to see the mark draw its first tier, not a blink.
+const SHOW_AT_LEAST = 800
 const FLASH_COOKIE = 'sala_flash'
 
 export function FeedbackProvider({ children }: { children: React.ReactNode }) {
@@ -102,7 +103,7 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
         busy &&
         createPortal(
           <div className="fixed inset-0 z-[60] flex bg-black/50">
-            <SalaLoader label={busy} />
+            <SalaLoader label={busy} immediate />
           </div>,
           document.body,
         )}

@@ -8,31 +8,20 @@
 // bytes cross the network, and so the message a person reads is the same one
 // either way.
 //
-// Photos are previewed from object URLs, because nothing in Sala renders a
-// Property's images yet: the bucket is private and there is no detail page. Left
-// without a preview, somebody would upload five photos and have no way of seeing
-// that they were the right five.
+// Photos are chosen, ordered and previewed in PhotoPicker, the same one the edit
+// form uses; the order shown is the order saved, the first photo the cover.
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
-import { ImagePlus, MapPin, X } from 'lucide-react'
-import {
-  BUTTON,
-  Card,
-  Field,
-  INPUT,
-  Notice,
-  PRIMARY_BUTTON,
-  useFormAction,
-} from '@/components/form'
+import { MapPin } from 'lucide-react'
+import { Card, Field, INPUT, Notice, PRIMARY_BUTTON, useFormAction } from '@/components/form'
 import { BuildingCombobox } from '@/components/BuildingCombobox'
 import { OwnerCombobox } from '@/components/OwnerCombobox'
 import { MapPreview } from '@/components/MapPreview'
-import { PhotoLightbox, type PhotoPreview } from '@/components/PhotoLightbox'
+import { PhotoPicker } from '@/components/PhotoPicker'
 import type { BuildingOption } from '@/lib/buildings'
 import type { OwnerOption } from '@/lib/owners'
 import {
-  ACCEPTED_IMAGE_TYPES,
   CREATABLE_STATUSES,
   MAX_IMAGES,
   MAX_IMAGE_BYTES,
@@ -40,7 +29,6 @@ import {
   mb,
   PROPERTY_TYPES,
   PROPERTY_TYPE_LABELS,
-  validateImages,
 } from '@/lib/property-input'
 import { STATUS_LABELS } from '@/components/StatusPill'
 import { createProperty } from '../actions'
@@ -60,28 +48,8 @@ export function NewPropertyForm({
   ownersCapped: boolean
 }) {
   const [result, action, pending] = useFormAction(createProperty)
-  const [files, setFiles] = useState<File[]>([])
   const [building, setBuilding] = useState<BuildingOption | null>(null)
-  const [preview, setPreview] = useState<PhotoPreview | null>(null)
-  const imagesInputRef = useRef<HTMLInputElement>(null)
-
-  const previews = useMemo(() => files.map((file) => URL.createObjectURL(file)), [files])
-  useEffect(() => () => previews.forEach((url) => URL.revokeObjectURL(url)), [previews])
-
-  // The form posts the input's own FileList, not this state, so removing one
-  // photo means rebuilding that FileList too — a bare `files.filter` here
-  // would drop the preview but still upload the photo.
-  function removeFileAt(index: number) {
-    const transfer = new DataTransfer()
-    files.forEach((file, i) => {
-      if (i !== index) transfer.items.add(file)
-    })
-    if (imagesInputRef.current) imagesInputRef.current.files = transfer.files
-    setFiles(Array.from(transfer.files))
-  }
-
-  const imageCheck = validateImages(files)
-  const totalBytes = files.reduce((sum, f) => sum + f.size, 0)
+  const [photosOk, setPhotosOk] = useState(true)
 
   return (
     <form action={action} className="flex flex-col gap-6">
@@ -267,92 +235,15 @@ export function NewPropertyForm({
           MAX_IMAGES_TOTAL_BYTES,
         )} MB in total`}
       >
-        <div className="flex flex-col gap-3">
-          <label className={`${BUTTON} inline-flex w-fit cursor-pointer items-center gap-2`}>
-            <ImagePlus size={16} aria-hidden />
-            Choose photos
-            <input
-              ref={imagesInputRef}
-              type="file"
-              name="images"
-              multiple
-              accept={ACCEPTED_IMAGE_TYPES.join(',')}
-              disabled={pending}
-              className="sr-only"
-              onChange={(event) => setFiles(Array.from(event.target.files ?? []))}
-            />
-          </label>
-
-          {files.length > 0 && (
-            <>
-              <ul className="flex flex-wrap gap-2">
-                {previews.map((src, index) => (
-                  <li key={src} className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setPreview({ src, alt: `Photo ${index + 1}` })}
-                      className="block cursor-zoom-in"
-                    >
-                      {/* Local object URLs, never through next/image: there is
-                          no remote host to optimise and no size known in
-                          advance. */}
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={src}
-                        alt={`Photo ${index + 1}`}
-                        className="h-24 w-24 rounded-lg border border-border object-cover"
-                      />
-                    </button>
-                    <button
-                      type="button"
-                      disabled={pending}
-                      aria-label={`Remove photo ${index + 1}`}
-                      onClick={() => removeFileAt(index)}
-                      className="absolute -top-1.5 -right-1.5 grid h-6 w-6 place-items-center rounded-full border border-border bg-surface text-muted transition-colors hover:border-warn hover:text-warn disabled:opacity-60"
-                    >
-                      <X size={13} aria-hidden />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              <p className="flex items-center gap-3 text-sm text-muted">
-                <span className="tabular">
-                  {files.length} {files.length === 1 ? 'photo' : 'photos'} · {mb(totalBytes)} MB total
-                </span>
-                <button
-                  type="button"
-                  disabled={pending}
-                  // Clearing state alone would leave the input holding the files,
-                  // and the form posts the input, not the state.
-                  onClick={(event) => {
-                    const input = event.currentTarget.form?.elements.namedItem('images')
-                    if (input instanceof HTMLInputElement) input.value = ''
-                    setFiles([])
-                  }}
-                  className="inline-flex items-center gap-1 text-muted transition-colors hover:text-ink"
-                >
-                  <X size={14} aria-hidden />
-                  Remove all photos
-                </button>
-              </p>
-            </>
-          )}
-
-          {!imageCheck.ok && (
-            <p role="status" className="text-sm text-warn">
-              {imageCheck.message}
-            </p>
-          )}
-        </div>
+        <PhotoPicker pending={pending} onValidChange={setPhotosOk} />
       </Card>
 
       <div className="flex flex-wrap items-center gap-3">
-        <button type="submit" disabled={pending || !imageCheck.ok} className={PRIMARY_BUTTON}>
+        <button type="submit" disabled={pending || !photosOk} className={PRIMARY_BUTTON}>
           {pending ? 'Saving…' : 'Save Property'}
         </button>
         <Notice result={result} />
       </div>
-      <PhotoLightbox photo={preview} onClose={() => setPreview(null)} />
     </form>
   )
 }

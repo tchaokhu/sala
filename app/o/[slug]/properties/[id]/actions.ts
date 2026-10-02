@@ -7,6 +7,7 @@ import { cleanText } from '@/lib/validate'
 import {
   composePropertyTitle,
   imageExtension,
+  orderImages,
   parseBuildingChoice,
   parsePropertyEditForm,
   validatePropertyImageEdit,
@@ -103,6 +104,14 @@ export async function updateProperty(formData: FormData): Promise<ActionResult> 
     path: `${org.id}/${id}/${crypto.randomUUID()}.${imageExtension(file.type) as string}`,
   }))
 
+  // The order shown on the form, checked before a byte is uploaded.
+  const ordered = orderImages(
+    formData.getAll('image_order').filter((v): v is string => typeof v === 'string'),
+    kept,
+    targets.map((t) => t.path),
+  )
+  if (!ordered.ok) return ordered
+
   try {
     await Promise.all(
       targets.map(async ({ file, path }) => {
@@ -129,7 +138,7 @@ export async function updateProperty(formData: FormData): Promise<ActionResult> 
       // number or a different Building. The name still comes from the Building
       // row, never from the form (ADR 0008).
       title: composePropertyTitle(building.name, parsed.values.room_number),
-      images: [...kept, ...targets.map((t) => t.path)],
+      images: ordered.values,
     })
     .eq('id', id)
     .eq('org_id', org.id)

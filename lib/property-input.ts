@@ -342,6 +342,33 @@ export function validatePropertyImageEdit(
   return { ok: true, values: null }
 }
 
+/**
+ * The order of a Property's photos after an edit: `properties.images` is an
+ * ordered array and its first photo is the cover. The form posts `image_order`,
+ * one entry per photo in the order shown — `path:<stored path>` for a kept one,
+ * `new:<n>` for the n-th uploaded file.
+ *
+ * The request decides nothing on its own, as with `removed_images`: an entry
+ * naming a path this Property does not keep, an upload that does not exist, or
+ * anything twice is refused. A photo the order leaves out keeps today's place —
+ * kept ones first, then the new — so an old form that posts no order at all
+ * saves as it always did.
+ */
+export function orderImages(order: string[], kept: string[], uploaded: string[]): Parsed<string[]> {
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const entry of order) {
+    let path: string | undefined
+    if (entry.startsWith('path:')) path = kept.includes(entry.slice(5)) ? entry.slice(5) : undefined
+    else if (/^new:\d+$/.test(entry)) path = uploaded[Number(entry.slice(4))]
+    if (!path || seen.has(path)) return fail('The photo order did not match the photos. Reload the page and try again.')
+    seen.add(path)
+    out.push(path)
+  }
+  for (const path of [...kept, ...uploaded]) if (!seen.has(path)) out.push(path)
+  return { ok: true, values: out }
+}
+
 /** Bytes as the megabytes the message quotes. One decimal, so 5.5 does not read
  *  as 5 and leave someone re-uploading the same file. */
 export function mb(bytes: number): string {

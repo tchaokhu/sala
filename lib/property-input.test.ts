@@ -7,6 +7,7 @@ import {
   MAX_IMAGES,
   MAX_IMAGE_BYTES,
   MAX_IMAGES_TOTAL_BYTES,
+  orderImages,
   parseBuildingChoice,
   parsePropertyEditForm,
   parsePropertyForm,
@@ -347,5 +348,28 @@ describe('imageExtension', () => {
     expect(imageExtension('image/webp')).toBe('webp')
     expect(imageExtension('image/gif')).toBe('gif')
     expect(imageExtension('image/svg+xml')).toBeNull()
+  })
+})
+
+describe('orderImages', () => {
+  const kept = ['o/p/a.jpg', 'o/p/b.jpg']
+  const uploaded = ['o/p/x.jpg', 'o/p/y.jpg']
+
+  it('puts the photos in the order shown, new among kept', () => {
+    expect(orderImages(['new:1', 'path:o/p/b.jpg', 'new:0', 'path:o/p/a.jpg'], kept, uploaded)).toEqual({
+      ok: true,
+      values: ['o/p/y.jpg', 'o/p/b.jpg', 'o/p/x.jpg', 'o/p/a.jpg'],
+    })
+  })
+
+  it('keeps the old order for anything the order leaves out', () => {
+    expect(orderImages([], kept, uploaded)).toEqual({ ok: true, values: [...kept, ...uploaded] })
+    expect(orderImages(['new:0'], kept, uploaded)).toEqual({ ok: true, values: ['o/p/x.jpg', ...kept, 'o/p/y.jpg'] })
+  })
+
+  it('refuses a path not kept, an upload that is not there, or a repeat', () => {
+    expect(orderImages(['path:o/other/z.jpg'], kept, uploaded)).toMatchObject({ ok: false })
+    expect(orderImages(['new:5'], kept, uploaded)).toMatchObject({ ok: false })
+    expect(orderImages(['path:o/p/a.jpg', 'path:o/p/a.jpg'], kept, uploaded)).toMatchObject({ ok: false })
   })
 })

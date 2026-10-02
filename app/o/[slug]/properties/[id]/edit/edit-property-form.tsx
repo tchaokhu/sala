@@ -7,16 +7,17 @@
 // still lib/property-input.ts's, run here early on what the person has in front
 // of them and again by the action on what actually arrives.
 //
-// Photos come in two kinds and one submission. The ones already stored render
-// from signed URLs computed on the server (the bucket is private, ADR 0007), and
-// removing one only marks it: it stays in the grid, struck through, until save.
-// Nothing is destroyed by a click here — `removed_images` says what should go,
-// and the action removes the bytes only after the row has stopped naming them
-// (ADR 0009).
+// Photos come in two kinds and one submission, both in PhotoPicker. The ones
+// already stored render from signed URLs computed on the server (the bucket is
+// private, ADR 0007), and removing one only marks it: it stays in the grid,
+// struck through, until save. Nothing is destroyed by a click here —
+// `removed_images` says what should go, and the action removes the bytes only
+// after the row has stopped naming them (ADR 0009). New and stored photos share
+// one order, posted as `image_order` and checked by the action (orderImages).
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
-import { ImageOff, ImagePlus, MapPin, Undo2, X } from 'lucide-react'
+import { MapPin } from 'lucide-react'
 import {
   BUTTON,
   Card,
@@ -29,14 +30,13 @@ import {
 import { BuildingCombobox } from '@/components/BuildingCombobox'
 import { OwnerCombobox } from '@/components/OwnerCombobox'
 import { MapPreview } from '@/components/MapPreview'
-import { PhotoLightbox, type PhotoPreview } from '@/components/PhotoLightbox'
+import { PhotoPicker } from '@/components/PhotoPicker'
 import { STATUS_LABELS, StatusPill } from '@/components/StatusPill'
 import type { BuildingOption } from '@/lib/buildings'
 import type { OwnerOption } from '@/lib/owners'
 import type { PropertyEditRow } from '@/lib/properties'
 import type { PropertyImage } from '@/lib/property-storage'
 import {
-  ACCEPTED_IMAGE_TYPES,
   CREATABLE_STATUSES,
   MAX_IMAGES,
   MAX_IMAGE_BYTES,
@@ -44,7 +44,6 @@ import {
   mb,
   PROPERTY_TYPES,
   PROPERTY_TYPE_LABELS,
-  validatePropertyImageEdit,
 } from '@/lib/property-input'
 import { updateProperty } from '../actions'
 import { GenerateDescription } from '@/components/GenerateDescription'
@@ -68,54 +67,8 @@ export function EditPropertyForm({
   ownersCapped: boolean
 }) {
   const [result, action, pending] = useFormAction(updateProperty)
-  const [files, setFiles] = useState<File[]>([])
-  const [removed, setRemoved] = useState<ReadonlySet<string>>(new Set())
   const [building, setBuilding] = useState<BuildingOption | null>(property.building)
-  const [preview, setPreview] = useState<PhotoPreview | null>(null)
-  const imagesInputRef = useRef<HTMLInputElement>(null)
-
-  const previews = useMemo(() => files.map((file) => URL.createObjectURL(file)), [files])
-  useEffect(() => () => previews.forEach((url) => URL.revokeObjectURL(url)), [previews])
-
-  // The form posts the input's own FileList, not this state, so removing one
-  // new photo means rebuilding that FileList too — a bare `files.filter` here
-  // would drop the preview but still upload the photo.
-  function removeFileAt(index: number) {
-    const transfer = new DataTransfer()
-    files.forEach((file, i) => {
-      if (i !== index) transfer.items.add(file)
-    })
-    if (imagesInputRef.current) imagesInputRef.current.files = transfer.files
-    setFiles(Array.from(transfer.files))
-  }
-
-  // A saved edit stays on this page — updateProperty returns rather than
-  // redirecting — so the pending photo work has to be dropped once it has
-  // happened. The trigger is the stored photos themselves changing, which is
-  // exactly when it did: anything picked or marked here that the action accepted
-  // comes back as a different list. Left alone, the picker would still be
-  // holding files that are already uploaded and the next save would send them a
-  // second time. The <input> is keyed on the same string so the browser's own
-  // copy of the selection goes with it.
-  const storedKey = photos.map((photo) => photo.path).join('\n')
-  const [savedKey, setSavedKey] = useState(storedKey)
-  if (savedKey !== storedKey) {
-    setSavedKey(storedKey)
-    setFiles([])
-    setRemoved(new Set())
-  }
-
-  const keptCount = photos.length - removed.size
-  const imageCheck = validatePropertyImageEdit(keptCount, files)
-  const totalBytes = files.reduce((sum, f) => sum + f.size, 0)
-
-  function toggleRemoved(path: string) {
-    setRemoved((was) => {
-      const next = new Set(was)
-      if (!next.delete(path)) next.add(path)
-      return next
-    })
-  }
+  const [photosOk, setPhotosOk] = useState(true)
 
   return (
     <form action={action} className="flex flex-col gap-6">
@@ -361,167 +314,11 @@ export function EditPropertyForm({
           MAX_IMAGES_TOTAL_BYTES,
         )} MB per upload`}
       >
-        <div className="flex flex-col gap-3">
-          {photos.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <p className="text-sm font-medium">
-                Existing photos <span className="tabular text-muted">{keptCount} kept</span>
-              </p>
-              <ul className="flex flex-wrap gap-2">
-                {photos.map((photo, index) => {
-                  const marked = removed.has(photo.path)
-                  return (
-                    <li key={photo.path} className="relative">
-                      {/* Signed Supabase URLs, never through next/image: they
-                          expire, and optimising them would cache bytes the
-                          bucket is private to keep. */}
-                      {photo.url ? (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setPreview({ src: photo.url as string, alt: `Photo ${index + 1}` })
-                          }
-                          className="block cursor-zoom-in"
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={photo.url}
-                            alt={`Photo ${index + 1}`}
-                            className={
-                              'h-24 w-24 rounded-lg border object-cover transition-opacity ' +
-                              (marked ? 'border-warn/60 opacity-30' : 'border-border')
-                            }
-                          />
-                        </button>
-                      ) : (
-                        <span
-                          className={
-                            'grid h-24 w-24 place-items-center rounded-lg border border-dashed text-muted ' +
-                            (marked ? 'border-warn/60 opacity-30' : 'border-border')
-                          }
-                        >
-                          <ImageOff size={20} aria-hidden />
-                        </span>
-                      )}
-
-                      {marked && (
-                        <span className="absolute inset-x-0 bottom-0 rounded-b-lg bg-warn/90 py-0.5 text-center text-[11px] text-bg">
-                          Will be deleted
-                        </span>
-                      )}
-
-                      <button
-                        type="button"
-                        disabled={pending}
-                        aria-label={marked ? `Keep photo ${index + 1}` : `Remove photo ${index + 1}`}
-                        onClick={() => toggleRemoved(photo.path)}
-                        className={
-                          'absolute -top-1.5 -right-1.5 grid h-6 w-6 place-items-center rounded-full border bg-surface transition-colors disabled:opacity-60 ' +
-                          (marked
-                            ? 'border-border text-muted hover:text-ink'
-                            : 'border-border text-muted hover:border-warn hover:text-warn')
-                        }
-                      >
-                        {marked ? <Undo2 size={13} aria-hidden /> : <X size={13} aria-hidden />}
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
-
-              {/* One per marked photo. The action intersects these with the
-                  row's own images, so a path that is not on this Property is
-                  dropped rather than passed to Storage. */}
-              {[...removed].map((path) => (
-                <input key={path} type="hidden" name="removed_images" value={path} />
-              ))}
-
-              {removed.size > 0 && (
-                <p className="text-sm text-muted">
-                  The marked photos are deleted when you save — press the undo button on a photo to keep it.
-                </p>
-              )}
-            </div>
-          )}
-
-          <label className={`${BUTTON} inline-flex w-fit cursor-pointer items-center gap-2`}>
-            <ImagePlus size={16} aria-hidden />
-            Add photos
-            <input
-              key={storedKey}
-              ref={imagesInputRef}
-              type="file"
-              name="images"
-              multiple
-              accept={ACCEPTED_IMAGE_TYPES.join(',')}
-              disabled={pending}
-              className="sr-only"
-              onChange={(event) => setFiles(Array.from(event.target.files ?? []))}
-            />
-          </label>
-
-          {files.length > 0 && (
-            <>
-              <ul className="flex flex-wrap gap-2">
-                {previews.map((src, index) => (
-                  <li key={src} className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setPreview({ src, alt: `New photo ${index + 1}` })}
-                      className="block cursor-zoom-in"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={src}
-                        alt={`New photo ${index + 1}`}
-                        className="h-24 w-24 rounded-lg border border-border object-cover"
-                      />
-                    </button>
-                    <button
-                      type="button"
-                      disabled={pending}
-                      aria-label={`Remove new photo ${index + 1}`}
-                      onClick={() => removeFileAt(index)}
-                      className="absolute -top-1.5 -right-1.5 grid h-6 w-6 place-items-center rounded-full border border-border bg-surface text-muted transition-colors hover:border-warn hover:text-warn disabled:opacity-60"
-                    >
-                      <X size={13} aria-hidden />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              <p className="flex items-center gap-3 text-sm text-muted">
-                <span className="tabular">
-                  {files.length} new {files.length === 1 ? 'photo' : 'photos'} · {mb(totalBytes)} MB total
-                </span>
-                <button
-                  type="button"
-                  disabled={pending}
-                  // Clearing state alone would leave the input holding the files,
-                  // and the form posts the input, not the state.
-                  onClick={(event) => {
-                    const input = event.currentTarget.form?.elements.namedItem('images')
-                    if (input instanceof HTMLInputElement) input.value = ''
-                    setFiles([])
-                  }}
-                  className="inline-flex items-center gap-1 text-muted transition-colors hover:text-ink"
-                >
-                  <X size={14} aria-hidden />
-                  Remove all new photos
-                </button>
-              </p>
-            </>
-          )}
-
-          {!imageCheck.ok && (
-            <p role="status" className="text-sm text-warn">
-              {imageCheck.message}
-            </p>
-          )}
-        </div>
+        <PhotoPicker stored={photos} pending={pending} onValidChange={setPhotosOk} />
       </Card>
 
       <div className="flex flex-wrap items-center gap-3">
-        <button type="submit" disabled={pending || !imageCheck.ok} className={PRIMARY_BUTTON}>
+        <button type="submit" disabled={pending || !photosOk} className={PRIMARY_BUTTON}>
           {pending ? 'Saving…' : 'Save changes'}
         </button>
         <Link
@@ -532,7 +329,6 @@ export function EditPropertyForm({
         </Link>
         <Notice result={result} />
       </div>
-      <PhotoLightbox photo={preview} onClose={() => setPreview(null)} />
     </form>
   )
 }

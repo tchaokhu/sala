@@ -68,12 +68,14 @@ export function Field({
   label: string
   hint?: string
   required?: boolean
-  /** Spans the whole grid — for the fields nobody wants a narrow box for. */
+  /** Spans the whole grid — for the fields nobody wants a narrow box for.
+   *  `col-span-full`, not a count: a count wider than a two-column grid adds
+   *  an implicit column and squeezes the fields beside it. */
   wide?: boolean
   children: React.ReactNode
 }) {
   return (
-    <label className={`flex flex-col gap-1.5 ${wide ? 'sm:col-span-2 lg:col-span-3' : ''}`}>
+    <label className={`flex flex-col gap-1.5 ${wide ? 'sm:col-span-full' : ''}`}>
       <span className="text-sm font-medium">
         {label}
         {required && <span className="ml-1 text-warn">*</span>}

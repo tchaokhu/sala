@@ -13,9 +13,6 @@ describe('parseBuildingForm', () => {
     expect(result.values.name).toBe('ลุมพินี พาร์ค พระราม 9')
     expect(result.values.name_en).toBeNull()
     expect(result.values.google_map_url).toBeNull()
-    // NOT NULL with no default in the schema, so blank is '' rather than null.
-    expect(result.values.district).toBe('')
-    expect(result.values.province).toBe('')
   })
 
   it('refuses a nameless Building', () => {

@@ -15,12 +15,12 @@ export const MAX_LIST_ITEMS = 30
 export const MAX_LIST_ITEM = 100
 
 /** Named in the database's own columns, so the action hands it to `insert`
- *  without a second mapping to get wrong. */
+ *  without a second mapping to get wrong. The address is not here: it is
+ *  judged against the official list in lib/thai-places.ts, which is too big to
+ *  reach the browser this module also loads in (building-forms.tsx). */
 export interface BuildingValues {
   name: string
   name_en: string | null
-  district: string
-  province: string
   google_map_url: string | null
   facilities: string[]
   nearby: string[]
@@ -29,11 +29,6 @@ export interface BuildingValues {
 export function parseBuildingForm(form: { get(name: string): unknown }): Parsed<BuildingValues> {
   const name = cleanText(form.get('name'), MAX_BUILDING_NAME)
   if (!name) return { ok: false, message: 'Enter the Building name first' }
-
-  // The column is NOT NULL with no default, so blank is '' rather than null —
-  // and an empty district is an ordinary state, not a mistake.
-  const district = cleanText(form.get('district'), 100)
-  const province = cleanText(form.get('province'), 100)
 
   const rawMap = cleanText(form.get('google_map_url'), 2000)
   const google_map_url = rawMap ? normaliseMapUrl(rawMap) : null
@@ -54,8 +49,6 @@ export function parseBuildingForm(form: { get(name: string): unknown }): Parsed<
     values: {
       name,
       name_en: cleanText(form.get('name_en'), MAX_BUILDING_NAME) || null,
-      district,
-      province,
       google_map_url,
       facilities: facilities.values,
       nearby: nearby.values,

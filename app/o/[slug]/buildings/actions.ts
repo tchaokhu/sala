@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { createClient, requireMember } from '@/lib/supabase-server'
 import { cleanText } from '@/lib/validate'
 import { parseBuildingForm } from '@/lib/building-input'
+import { resolveAddress } from '@/lib/thai-places'
 import { resolveMapUrl } from '@/lib/google-map-resolve'
 import type { ActionResult } from '@/lib/action-result'
 
@@ -35,13 +36,15 @@ export async function createBuilding(formData: FormData): Promise<ActionResult> 
   const org = await requireMember(slug)
   const parsed = parseBuildingForm(formData)
   if (!parsed.ok) return parsed
+  const address = resolveAddress(formData)
+  if (!address.ok) return address
 
   const supabase = await createClient()
   const google_map_url = await resolveMapUrl(parsed.values.google_map_url)
 
   const { data, error } = await supabase
     .from('buildings')
-    .insert({ ...parsed.values, google_map_url, org_id: org.id })
+    .insert({ ...parsed.values, ...address.values, google_map_url, org_id: org.id })
     .select('id')
     .single()
   if (error?.code === '23505') return duplicate(parsed.values.name)
@@ -62,6 +65,8 @@ export async function updateBuilding(formData: FormData): Promise<ActionResult> 
   const org = await requireMember(slug)
   const parsed = parseBuildingForm(formData)
   if (!parsed.ok) return parsed
+  const address = resolveAddress(formData)
+  if (!address.ok) return address
 
   const supabase = await createClient()
   const google_map_url = await resolveMapUrl(parsed.values.google_map_url)
@@ -71,7 +76,7 @@ export async function updateBuilding(formData: FormData): Promise<ActionResult> 
   // on it alone.
   const { error } = await supabase
     .from('buildings')
-    .update({ ...parsed.values, google_map_url })
+    .update({ ...parsed.values, ...address.values, google_map_url })
     .eq('id', id)
     .eq('org_id', org.id)
   if (error?.code === '23505') return duplicate(parsed.values.name)

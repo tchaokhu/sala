@@ -13,6 +13,7 @@ import { BackLink } from '@/components/BackLink'
 import { PageHeader } from '@/components/PageHeader'
 import { MapPreview } from '@/components/MapPreview'
 import { StatusPill } from '@/components/StatusPill'
+import { addressInitial, provinceList } from '@/lib/thai-places'
 import { DeleteBuildingForm, EditBuildingForm } from '../building-forms'
 import { TableFrame } from '@/components/TableFrame'
 import { HEAD_CELL, PANEL } from '@/components/styles'
@@ -38,7 +39,13 @@ export default async function BuildingPage({
   ])
   if (!building) notFound()
 
-  const area = [building.district, building.province].filter(Boolean).join(' · ')
+  const area = [
+    building.subdistrict,
+    building.district,
+    [building.province, building.postcode].filter(Boolean).join(' '),
+  ]
+    .filter(Boolean)
+    .join(' · ')
   const here = `/o/${slug}/buildings/${id}`
 
   return (
@@ -72,7 +79,11 @@ export default async function BuildingPage({
 
       {editing && (
         <>
-          <EditBuildingForm slug={slug} building={building} />
+          <EditBuildingForm
+            slug={slug}
+            building={building}
+            address={{ provinces: provinceList(), initial: addressInitial(building) }}
+          />
           <section className={`flex flex-col gap-3 ${PANEL}`}>
             <div>
               <h2 className="font-semibold">Delete Building</h2>

@@ -156,6 +156,8 @@ export async function buildingName(orgId: string, buildingId: string): Promise<s
 }
 
 export interface BuildingDetail extends BuildingRow {
+  subdistrict: string
+  postcode: string
   facilities: string[]
   nearby: string[]
 }
@@ -165,7 +167,7 @@ export async function getBuilding(orgId: string, buildingId: string): Promise<Bu
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('buildings')
-    .select('id, name, name_en, district, province, google_map_url, facilities, nearby, properties(count)')
+    .select('id, name, name_en, district, province, subdistrict, postcode, google_map_url, facilities, nearby, properties(count)')
     .eq('id', buildingId)
     .eq('org_id', orgId)
     .maybeSingle()
@@ -178,6 +180,8 @@ export async function getBuilding(orgId: string, buildingId: string): Promise<Bu
     name_en: string | null
     district: string
     province: string
+    subdistrict: string
+    postcode: string
     google_map_url: string | null
     facilities: string[] | null
     nearby: string[] | null
@@ -189,6 +193,8 @@ export async function getBuilding(orgId: string, buildingId: string): Promise<Bu
     nameEn: b.name_en,
     district: b.district,
     province: b.province,
+    subdistrict: b.subdistrict,
+    postcode: b.postcode,
     googleMapUrl: b.google_map_url,
     facilities: b.facilities ?? [],
     nearby: b.nearby ?? [],

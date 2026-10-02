@@ -13,16 +13,24 @@ import type { BuildingDetail, BuildingRow } from '@/lib/buildings'
 import { MAX_LIST_ITEMS } from '@/lib/building-input'
 import { createBuilding, deleteBuilding, updateBuilding } from './actions'
 import { PANEL } from '@/components/styles'
+import { AddressFields } from '@/components/AddressFields'
+import type { AddressInitial, Place } from '@/lib/thai-places'
+
+/** The address pickers' lists, read on the server by the page. */
+export interface AddressProps {
+  provinces: Place[]
+  initial?: AddressInitial
+}
 
 const MAP_HINT = 'Paste the link from the share button in the Google Maps app. Short links (maps.app.goo.gl) work too.'
 
-export function CreateBuildingForm({ slug }: { slug: string }) {
+export function CreateBuildingForm({ slug, address }: { slug: string; address: AddressProps }) {
   const [result, action, pending] = useFormAction(createBuilding)
 
   return (
     <form action={action} className={`flex flex-col gap-4 ${PANEL}`}>
       <input type="hidden" name="slug" value={slug} />
-      <Fields pending={pending} />
+      <Fields pending={pending} address={address} />
 
       <div className="flex flex-wrap items-center gap-3">
         <button type="submit" disabled={pending} className={PRIMARY_BUTTON}>
@@ -34,14 +42,22 @@ export function CreateBuildingForm({ slug }: { slug: string }) {
   )
 }
 
-export function EditBuildingForm({ slug, building }: { slug: string; building: BuildingDetail }) {
+export function EditBuildingForm({
+  slug,
+  building,
+  address,
+}: {
+  slug: string
+  building: BuildingDetail
+  address: AddressProps
+}) {
   const [result, action, pending] = useFormAction(updateBuilding)
 
   return (
     <form action={action} className={`flex flex-col gap-4 ${PANEL}`}>
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="building_id" value={building.id} />
-      <Fields pending={pending} building={building} />
+      <Fields pending={pending} building={building} address={address} />
 
       <div className="flex flex-wrap items-center gap-3">
         <button type="submit" disabled={pending} className={PRIMARY_BUTTON}>
@@ -98,7 +114,15 @@ export function DeleteBuildingForm({
 }
 
 /** The same fields, for creating and for editing. */
-function Fields({ pending, building }: { pending: boolean; building?: BuildingDetail }) {
+function Fields({
+  pending,
+  building,
+  address,
+}: {
+  pending: boolean
+  building?: BuildingDetail
+  address: AddressProps
+}) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <Field label="Building name" required wide>
@@ -114,7 +138,7 @@ function Fields({ pending, building }: { pending: boolean; building?: BuildingDe
         />
       </Field>
 
-      <Field label="English name">
+      <Field label="English name" wide>
         <input
           type="text"
           name="name_en"
@@ -125,27 +149,7 @@ function Fields({ pending, building }: { pending: boolean; building?: BuildingDe
         />
       </Field>
 
-      <Field label="District">
-        <input
-          type="text"
-          name="district"
-          maxLength={100}
-          disabled={pending}
-          defaultValue={building?.district ?? ''}
-          className={INPUT}
-        />
-      </Field>
-
-      <Field label="Province">
-        <input
-          type="text"
-          name="province"
-          maxLength={100}
-          disabled={pending}
-          defaultValue={building?.province ?? ''}
-          className={INPUT}
-        />
-      </Field>
+      <AddressFields provinces={address.provinces} initial={address.initial} disabled={pending} />
 
       <Field label="Google Maps link" wide>
         <input

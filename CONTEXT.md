@@ -60,8 +60,9 @@ room is an ordinary Rental, and it is `rented_by_us` that records who closed it
 _Avoid_: Ownership, source, listing type
 
 **Building**:
-The named development a Property sits in, carrying the map pin, the facilities
-and the nearby landmarks shared by every Property inside it. Each Org keeps its
+The named development a Property sits in, carrying the map pin, the address
+(province, district, subdistrict and postcode, picked from the official list),
+the facilities and the nearby landmarks shared by every Property inside it. Each Org keeps its
 own Building records even when two Orgs describe the same real-world building.
 A Property with no Building is one the ETL brought in; everything created in
 Sala has one.

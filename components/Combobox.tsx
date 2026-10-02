@@ -79,6 +79,10 @@ export function Combobox({
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
+  const chosenRef = useRef(chosen)
+  useEffect(() => {
+    chosenRef.current = chosen
+  }, [chosen])
   const listId = useId()
 
   const matches = useMemo(() => {
@@ -151,8 +155,15 @@ export function Combobox({
           className={`${INPUT} w-full ${showClear ? 'pr-16' : 'pr-9'}`}
           onChange={(event) => retype(event.target.value)}
           onFocus={() => setOpen(true)}
-          // A click on an option must land before the list closes.
-          onBlur={() => window.setTimeout(() => setOpen(false), 120)}
+          // A click on an option must land before the list closes. A picker
+          // that cannot create puts back what is chosen, or nothing: text it
+          // never posts must not sit there looking like an answer.
+          onBlur={() =>
+            window.setTimeout(() => {
+              setOpen(false)
+              if (!createNote) setQuery(chosenRef.current ? boxText(chosenRef.current) : '')
+            }, 120)
+          }
           onKeyDown={(event) => {
             if (event.key === 'ArrowDown') {
               event.preventDefault()

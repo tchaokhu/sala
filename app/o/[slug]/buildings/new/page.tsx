@@ -4,6 +4,7 @@
 import { requireMember } from '@/lib/supabase-server'
 import { BackLink } from '@/components/BackLink'
 import { PageHeader } from '@/components/PageHeader'
+import { provinceList } from '@/lib/thai-places'
 import { CreateBuildingForm } from '../building-forms'
 
 export default async function NewBuildingPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -20,7 +21,7 @@ export default async function NewBuildingPage({ params }: { params: Promise<{ sl
         />
       </div>
 
-      <CreateBuildingForm slug={slug} />
+      <CreateBuildingForm slug={slug} address={{ provinces: provinceList() }} />
     </div>
   )
 }

@@ -7,7 +7,7 @@
 // The form stays on the page: adding Owners is a run of them, and being thrown
 // somewhere else after each one is the wrong end of the job.
 
-import { INPUT, Notice, PRIMARY_BUTTON, useFormAction } from '@/components/form'
+import { Field, INPUT, Notice, PRIMARY_BUTTON, useFormAction } from '@/components/form'
 import { createOwner } from './actions'
 
 export function CreateOwnerForm({ slug }: { slug: string }) {
@@ -28,10 +28,7 @@ export function CreateOwnerForm({ slug }: { slug: string }) {
       <input type="hidden" name="slug" value={slug} />
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium">
-            Name<span className="ml-1 text-warn">*</span>
-          </span>
+        <Field label="Name" required>
           <input
             type="text"
             name="name"
@@ -41,12 +38,9 @@ export function CreateOwnerForm({ slug }: { slug: string }) {
             placeholder="e.g. Somchai Rattanakul"
             className={INPUT}
           />
-        </label>
+        </Field>
 
-        <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium">
-            Phone<span className="ml-1 text-warn">*</span>
-          </span>
+        <Field label="Phone" required>
           <input
             type="tel"
             name="phone"
@@ -56,20 +50,17 @@ export function CreateOwnerForm({ slug }: { slug: string }) {
             placeholder="081 234 5678"
             className={`${INPUT} tabular`}
           />
-        </label>
+        </Field>
 
-        <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium">Email</span>
+        <Field label="Email">
           <input type="email" name="email" maxLength={200} disabled={pending} className={INPUT} />
-        </label>
+        </Field>
 
-        <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium">LINE ID</span>
+        <Field label="LINE ID">
           <input type="text" name="line_id" maxLength={100} disabled={pending} className={INPUT} />
-        </label>
+        </Field>
 
-        <label className="flex flex-col gap-1.5 sm:col-span-2">
-          <span className="text-sm font-medium">Facebook link</span>
+        <Field label="Facebook link" wide>
           <input
             type="url"
             name="facebook_url"
@@ -78,10 +69,9 @@ export function CreateOwnerForm({ slug }: { slug: string }) {
             placeholder="https://facebook.com/…"
             className={INPUT}
           />
-        </label>
+        </Field>
 
-        <label className="flex flex-col gap-1.5 sm:col-span-2">
-          <span className="text-sm font-medium">Note</span>
+        <Field label="Note" wide>
           <textarea
             name="note"
             rows={3}
@@ -90,7 +80,7 @@ export function CreateOwnerForm({ slug }: { slug: string }) {
             placeholder="How they prefer to be contacted, who else to call"
             className={INPUT}
           />
-        </label>
+        </Field>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">

@@ -1,9 +1,8 @@
-import Link from 'next/link'
-import { ChevronLeft } from 'lucide-react'
 import { requireMember } from '@/lib/supabase-server'
 import { todayBangkok } from '@/lib/dates'
 import { getOrgTracksRent, listRentableProperties } from '@/lib/rentals'
 import { listTenantOptions } from '@/lib/tenants'
+import { BackLink } from '@/components/BackLink'
 import { PageHeader } from '@/components/PageHeader'
 import { NewRentalForm } from './new-rental-form'
 
@@ -31,13 +30,7 @@ export default async function NewRentalPage({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
-        <Link
-          href={`/o/${slug}/rentals`}
-          className="inline-flex w-fit items-center gap-1.5 text-sm text-muted transition-colors hover:text-ink"
-        >
-          <ChevronLeft size={16} aria-hidden />
-          Back to the Rentals list
-        </Link>
+        <BackLink href={`/o/${slug}/rentals`}>Back to the Rentals list</BackLink>
         <PageHeader
           title="Add Rental"
           summary="Pick the Property and the Tenant, set the term and the money — the Payments follow from them"

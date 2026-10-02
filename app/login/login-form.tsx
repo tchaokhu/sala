@@ -7,6 +7,7 @@ import {
 } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase-browser'
 import type { LinkError } from '@/lib/auth-redirect'
+import { Field } from '@/components/form'
 
 export type { LinkError }
 
@@ -104,8 +105,7 @@ export function LoginForm({ next, linkError }: { next?: string; linkError?: Link
       </div>
 
       <form onSubmit={onSubmit} className="flex flex-col gap-3">
-        <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium">Email</span>
+        <Field label="Email">
           <input
             type="email"
             name="email"
@@ -117,7 +117,7 @@ export function LoginForm({ next, linkError }: { next?: string; linkError?: Link
             placeholder="you@agency.co.th"
             className="rounded-lg border border-border bg-surface px-3 py-2 text-ink outline-none focus:border-accent focus:ring-1 focus:ring-accent disabled:opacity-60"
           />
-        </label>
+        </Field>
 
         {state.kind === 'error' && (
           <p className="text-sm text-warn">{state.message}</p>

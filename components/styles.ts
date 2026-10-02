@@ -18,3 +18,7 @@ export const BUTTON =
  *  which is the accent and never a status (CLAUDE.md). */
 export const PRIMARY_BUTTON =
   'rounded-lg border border-accent bg-accent px-3 py-2 text-sm font-medium text-on-accent transition-opacity hover:opacity-90 disabled:opacity-60'
+
+/** The button that destroys or undoes — warn, never the accent. */
+export const WARN_BUTTON =
+  'rounded-lg border border-warn px-3 py-2 text-sm font-medium text-warn transition-colors hover:bg-warn/10 disabled:opacity-60'

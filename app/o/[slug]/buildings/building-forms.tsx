@@ -7,7 +7,7 @@
 // number (CLAUDE.md).
 
 import { Trash2 } from 'lucide-react'
-import { INPUT, Notice, PRIMARY_BUTTON, useFormAction } from '@/components/form'
+import { Field, INPUT, Notice, PRIMARY_BUTTON, useFormAction } from '@/components/form'
 import { ConfirmAction } from '@/components/ConfirmAction'
 import type { BuildingDetail, BuildingRow } from '@/lib/buildings'
 import { MAX_LIST_ITEMS } from '@/lib/building-input'
@@ -100,10 +100,7 @@ export function DeleteBuildingForm({
 function Fields({ pending, building }: { pending: boolean; building?: BuildingDetail }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      <label className="flex flex-col gap-1.5 sm:col-span-2">
-        <span className="text-sm font-medium">
-          Building name<span className="ml-1 text-warn">*</span>
-        </span>
+      <Field label="Building name" required wide>
         <input
           type="text"
           name="name"
@@ -114,10 +111,9 @@ function Fields({ pending, building }: { pending: boolean; building?: BuildingDe
           placeholder="e.g. Lumpini Park Rama 9"
           className={INPUT}
         />
-      </label>
+      </Field>
 
-      <label className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium">English name</span>
+      <Field label="English name">
         <input
           type="text"
           name="name_en"
@@ -126,10 +122,9 @@ function Fields({ pending, building }: { pending: boolean; building?: BuildingDe
           defaultValue={building?.nameEn ?? ''}
           className={INPUT}
         />
-      </label>
+      </Field>
 
-      <label className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium">District</span>
+      <Field label="District">
         <input
           type="text"
           name="district"
@@ -138,10 +133,9 @@ function Fields({ pending, building }: { pending: boolean; building?: BuildingDe
           defaultValue={building?.district ?? ''}
           className={INPUT}
         />
-      </label>
+      </Field>
 
-      <label className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium">Province</span>
+      <Field label="Province">
         <input
           type="text"
           name="province"
@@ -150,10 +144,9 @@ function Fields({ pending, building }: { pending: boolean; building?: BuildingDe
           defaultValue={building?.province ?? ''}
           className={INPUT}
         />
-      </label>
+      </Field>
 
-      <label className="flex flex-col gap-1.5 sm:col-span-2">
-        <span className="text-sm font-medium">Google Maps link</span>
+      <Field label="Google Maps link" wide>
         <input
           type="url"
           name="google_map_url"
@@ -164,7 +157,7 @@ function Fields({ pending, building }: { pending: boolean; building?: BuildingDe
           className={INPUT}
         />
         <span className="text-xs text-muted">{MAP_HINT}</span>
-      </label>
+      </Field>
 
       <ListField label="Facilities" name="facilities" pending={pending} items={building?.facilities} placeholder={'Swimming pool\nFitness\nCo-working space'} />
       <ListField label="Nearby" name="nearby" pending={pending} items={building?.nearby} placeholder={'BTS Phra Ram 9\nCentral Rama 9'} />
@@ -187,8 +180,7 @@ function ListField({
   placeholder: string
 }) {
   return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-sm font-medium">{label}</span>
+    <Field label={label}>
       <textarea
         name={name}
         rows={6}
@@ -200,6 +192,6 @@ function ListField({
       <span className="text-xs text-muted">
         One per line, up to {MAX_LIST_ITEMS}
       </span>
-    </label>
+    </Field>
   )
 }

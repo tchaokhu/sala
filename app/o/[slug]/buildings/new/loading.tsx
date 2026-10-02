@@ -2,7 +2,8 @@
 // its fields, then the Save button.
 
 import { PageHeader } from '@/components/PageHeader'
-import { BackLinkSkeleton } from '@/components/FormSkeleton'
+import { BackLink } from '@/components/BackLink'
+import { Bar } from '@/components/Skeleton'
 
 // Name; English name, District; Province; Maps link; Facilities, Nearby.
 const FIELDS = ['sm:col-span-2', '', '', '', 'sm:col-span-2', 'list', 'list']
@@ -11,7 +12,7 @@ export default function NewBuildingLoading() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
-        <BackLinkSkeleton label="Back to the Buildings list" />
+        <BackLink>Back to the Buildings list</BackLink>
         <PageHeader
           title="Add Building"
           summary="The Building name becomes the Property name — “Lumpini Park Rama 9 12/34”, for example"
@@ -22,12 +23,12 @@ export default function NewBuildingLoading() {
         <div className="grid gap-4 sm:grid-cols-2">
           {FIELDS.map((field, i) => (
             <div key={i} className={`flex flex-col gap-1.5 ${field}`}>
-              <span className="block h-3 w-28 animate-pulse rounded bg-border" />
-              <span className={`block w-full animate-pulse rounded-lg bg-border ${field === 'list' ? 'h-32' : 'h-9'}`} />
+              <Bar className="h-3 w-28" />
+              <Bar className={`w-full rounded-lg ${field === 'list' ? 'h-32' : 'h-9'}`} />
             </div>
           ))}
         </div>
-        <span className="block h-9 w-32 animate-pulse rounded-lg bg-border" aria-hidden />
+        <Bar className="h-9 w-32 rounded-lg" />
       </div>
 
       <span className="sr-only">Loading the form</span>

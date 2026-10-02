@@ -21,6 +21,7 @@ import type { ActionResult } from '@/lib/action-result'
 import type { RentalPayment } from '@/lib/rentals'
 import { clearSettlement, correctSettlement, settlePayment } from '@/app/o/[slug]/payments/actions'
 import { PAYMENT_METHOD_LABELS } from './StatusPill'
+import { WARN_BUTTON } from '@/components/styles'
 
 export type SettleablePayment = Pick<
   RentalPayment,
@@ -28,9 +29,6 @@ export type SettleablePayment = Pick<
 > & { outstanding: number }
 
 type Mode = 'settle' | 'correct'
-
-const WARN_BUTTON =
-  'rounded-lg border border-warn px-3 py-2 text-sm font-medium text-warn transition-colors hover:bg-warn/10 disabled:opacity-60'
 
 const ROW_BUTTON = 'inline-flex items-center gap-1.5 whitespace-nowrap text-muted transition-colors hover:text-ink'
 

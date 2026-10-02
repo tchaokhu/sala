@@ -11,7 +11,7 @@
 // which says what actually happens to the rooms already posted there.
 
 import { Pencil } from 'lucide-react'
-import { BUTTON, INPUT, Notice, PRIMARY_BUTTON, useFormAction } from '@/components/form'
+import { BUTTON, Field, INPUT, Notice, PRIMARY_BUTTON, useFormAction } from '@/components/form'
 import type { PlatformRow } from '@/lib/platforms'
 import { createPlatform, setPlatformActive, updatePlatform } from './actions'
 
@@ -109,10 +109,7 @@ function RetireForm({ slug, platform }: { slug: string; platform: PlatformRow })
 function Fields({ pending, platform }: { pending: boolean; platform?: PlatformRow }) {
   return (
     <div className="grid gap-4 sm:grid-cols-[1fr_8rem_auto]">
-      <label className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium">
-          Name<span className="ml-1 text-warn">*</span>
-        </span>
+      <Field label="Name" required>
         <input
           name="name"
           defaultValue={platform?.name ?? ''}
@@ -121,10 +118,9 @@ function Fields({ pending, platform }: { pending: boolean; platform?: PlatformRo
           disabled={pending}
           className={INPUT}
         />
-      </label>
+      </Field>
 
-      <label className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium">Order</span>
+      <Field label="Order">
         <input
           name="sort_order"
           type="number"
@@ -135,7 +131,7 @@ function Fields({ pending, platform }: { pending: boolean; platform?: PlatformRo
           className={`${INPUT} tabular`}
         />
         <span className="text-xs text-muted">Lowest first</span>
-      </label>
+      </Field>
 
       <label className="flex items-center gap-2 self-end pb-2 text-sm font-medium">
         <input

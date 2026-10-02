@@ -2,17 +2,18 @@
 // its summary line, three Cards the height of Building and Room, Size and Photos,
 // and the delete section under them — so nothing moves when the row lands.
 
+import { BackLink } from '@/components/BackLink'
 import { PageHeader } from '@/components/PageHeader'
-import { CardSkeleton, FormButtonsSkeleton } from '@/components/FormSkeleton'
+import { Bar, CardSkeleton, FormButtonsSkeleton } from '@/components/Skeleton'
 
 export default function EditPropertyLoading() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
-        <span className="block h-5 w-36 animate-pulse rounded bg-border" aria-hidden />
+        <BackLink>Back to the Properties list</BackLink>
         <PageHeader
           title="Edit Property"
-          summary={<span className="block h-4 w-56 animate-pulse rounded bg-border" aria-hidden />}
+          summary={<Bar className="h-4 w-56" />}
         />
       </div>
 
@@ -24,9 +25,9 @@ export default function EditPropertyLoading() {
         <FormButtonsSkeleton />
 
         <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
-          <span className="block h-4 w-24 animate-pulse rounded bg-border" />
-          <span className="block h-3 w-72 animate-pulse rounded bg-border" />
-          <span className="block h-5 w-28 animate-pulse rounded bg-border" />
+          <Bar className="h-4 w-24" />
+          <Bar className="h-3 w-72" />
+          <Bar className="h-5 w-28" />
         </div>
       </div>
 

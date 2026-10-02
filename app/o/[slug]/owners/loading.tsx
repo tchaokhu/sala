@@ -2,13 +2,14 @@
 // and its summary line sit where they will sit when the rows land.
 
 import { PageHeader } from '@/components/PageHeader'
+import { Bar } from '@/components/Skeleton'
 
 export default function OwnersLoading() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Owners"
-        summary={<span className="block h-4 w-72 animate-pulse rounded bg-border" aria-hidden />}
+        summary={<Bar className="h-4 w-72" />}
       />
 
       <div className="h-96 animate-pulse rounded-xl border border-border bg-surface" aria-hidden />
@@ -16,9 +17,9 @@ export default function OwnersLoading() {
       <div className="flex flex-col gap-3" aria-hidden>
         {[0, 1, 2].map((i) => (
           <div key={i} className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
-            <span className="block h-4 w-52 animate-pulse rounded bg-border" />
-            <span className="block h-3 w-32 animate-pulse rounded bg-border" />
-            <span className="block h-3 w-64 animate-pulse rounded bg-border" />
+            <Bar className="h-4 w-52" />
+            <Bar className="h-3 w-32" />
+            <Bar className="h-3 w-64" />
           </div>
         ))}
       </div>

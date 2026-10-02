@@ -6,9 +6,7 @@
 // somebody else comes back as null, which is the same notFound() as a row that
 // never existed: a probe learns nothing from the difference.
 
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ChevronLeft } from 'lucide-react'
 import { requireMember } from '@/lib/supabase-server'
 import { listBuildingOptions } from '@/lib/buildings'
 import { listOwnerOptions } from '@/lib/owners'
@@ -17,6 +15,7 @@ import { listPostingsForProperty } from '@/lib/postings'
 import { todayBangkok } from '@/lib/dates'
 import { getPropertyForEdit } from '@/lib/properties'
 import { signedPropertyImageUrls } from '@/lib/property-storage'
+import { BackLink } from '@/components/BackLink'
 import { PageHeader } from '@/components/PageHeader'
 import { PostingChecklist } from '@/components/PostingChecklist'
 import { EditPropertyForm } from './edit-property-form'
@@ -51,13 +50,7 @@ export default async function EditPropertyPage({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
-        <Link
-          href={`/o/${slug}/properties`}
-          className="inline-flex w-fit items-center gap-1.5 text-sm text-muted transition-colors hover:text-ink"
-        >
-          <ChevronLeft size={16} aria-hidden />
-          Back to the Properties list
-        </Link>
+        <BackLink href={`/o/${slug}/properties`}>Back to the Properties list</BackLink>
         <PageHeader title="Edit Property" summary={property.title} />
       </div>
 

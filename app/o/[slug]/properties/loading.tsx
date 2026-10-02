@@ -3,18 +3,19 @@
 
 import { PropertyTableSkeleton } from '@/components/PropertyTable'
 import { PageHeader } from '@/components/PageHeader'
+import { Bar } from '@/components/Skeleton'
 
 export default function PropertiesLoading() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Properties"
-        summary={<span className="block h-4 w-40 animate-pulse rounded bg-border" aria-hidden />}
+        summary={<Bar className="h-4 w-40" />}
       />
 
       <div className="flex flex-wrap gap-2" aria-hidden>
         {[0, 1, 2, 3].map((i) => (
-          <span key={i} className="block h-8 w-24 animate-pulse rounded-full bg-border" />
+          <Bar key={i} className="h-8 w-24 rounded-full" />
         ))}
       </div>
 

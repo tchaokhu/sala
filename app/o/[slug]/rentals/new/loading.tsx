@@ -2,13 +2,14 @@
 // Property, Tenant, Term, Money, then the buttons.
 
 import { PageHeader } from '@/components/PageHeader'
-import { BackLinkSkeleton, CardSkeleton, FormButtonsSkeleton } from '@/components/FormSkeleton'
+import { BackLink } from '@/components/BackLink'
+import { CardSkeleton, FormButtonsSkeleton } from '@/components/Skeleton'
 
 export default function NewRentalLoading() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
-        <BackLinkSkeleton label="Back to the Rentals list" />
+        <BackLink>Back to the Rentals list</BackLink>
         <PageHeader
           title="Add Rental"
           summary="Pick the Property and the Tenant, set the term and the money — the Payments follow from them"

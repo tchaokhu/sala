@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Circle } from 'lucide-react'
-import { BUTTON, INPUT, Notice, PRIMARY_BUTTON, useFormAction } from '@/components/form'
+import { BUTTON, Field, INPUT, Notice, PRIMARY_BUTTON, useFormAction } from '@/components/form'
 import { ConfirmAction } from '@/components/ConfirmAction'
 import {
   addMember,
@@ -64,13 +64,12 @@ export function AddMemberForm({
           />
         </label>
 
-        <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium">Role</span>
+        <Field label="Role">
           <select name="role" defaultValue="member" disabled={pending} className={INPUT}>
             <option value="member">Member</option>
             <option value="admin">Admin</option>
           </select>
-        </label>
+        </Field>
       </div>
 
       <div className="flex items-center gap-3">
@@ -175,8 +174,7 @@ function RenameForm({
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="user_id" value={member.user_id} />
 
-      <label className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium">Display name</span>
+      <Field label="Display name">
         <div className="flex gap-2">
           <input
             type="text"
@@ -191,7 +189,7 @@ function RenameForm({
             {pending ? 'Saving…' : 'Save'}
           </button>
         </div>
-      </label>
+      </Field>
       <Notice result={result} />
     </form>
   )

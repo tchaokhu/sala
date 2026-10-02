@@ -3,13 +3,15 @@
 // it gets a block of its own height rather than being left out and shoving the
 // page around on arrival.
 
+import { Bar } from '@/components/Skeleton'
+
 export default function AdminLoading() {
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-xl font-bold">Orgs</h1>
         <p className="mt-1 flex h-5 items-center text-sm">
-          <span className="block h-4 w-64 animate-pulse rounded bg-border" aria-hidden />
+          <Bar className="h-4 w-64" />
         </p>
       </div>
 
@@ -20,10 +22,10 @@ export default function AdminLoading() {
             className="flex items-center justify-between gap-4 rounded-lg border border-border bg-surface px-4 py-3"
           >
             <div className="flex flex-col gap-1.5">
-              <span className="block h-4 w-32 animate-pulse rounded bg-border" />
-              <span className="block h-3 w-20 animate-pulse rounded bg-border" />
+              <Bar className="h-4 w-32" />
+              <Bar className="h-3 w-20" />
             </div>
-            <span className="block h-4 w-16 animate-pulse rounded bg-border" />
+            <Bar className="h-4 w-16" />
           </li>
         ))}
       </ul>
@@ -33,18 +35,18 @@ export default function AdminLoading() {
         aria-hidden
       >
         <div className="flex flex-col gap-1.5">
-          <span className="block h-5 w-32 animate-pulse rounded bg-border" />
-          <span className="block h-4 w-full max-w-lg animate-pulse rounded bg-border" />
+          <Bar className="h-5 w-32" />
+          <Bar className="h-4 w-full max-w-lg" />
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           {[0, 1, 2, 3].map((i) => (
             <div key={i} className="flex flex-col gap-1.5">
-              <span className="block h-4 w-24 animate-pulse rounded bg-border" />
-              <span className="block h-[38px] w-full animate-pulse rounded-lg bg-border" />
+              <Bar className="h-4 w-24" />
+              <Bar className="h-[38px] w-full rounded-lg" />
             </div>
           ))}
         </div>
-        <span className="block h-[38px] w-28 animate-pulse rounded-lg bg-border" />
+        <Bar className="h-[38px] w-28 rounded-lg" />
       </div>
     </div>
   )

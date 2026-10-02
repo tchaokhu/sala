@@ -2,13 +2,14 @@
 // heading and its summary line sit where they will sit when the rows land.
 
 import { PageHeader } from '@/components/PageHeader'
+import { Bar } from '@/components/Skeleton'
 
 export default function PlatformsLoading() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Platforms"
-        summary={<span className="block h-4 w-80 animate-pulse rounded bg-border" aria-hidden />}
+        summary={<Bar className="h-4 w-80" />}
       />
 
       <div className="h-40 animate-pulse rounded-xl border border-border bg-surface" aria-hidden />
@@ -20,10 +21,10 @@ export default function PlatformsLoading() {
             className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4"
           >
             <div className="flex items-baseline justify-between gap-4">
-              <span className="block h-4 w-40 animate-pulse rounded bg-border" />
-              <span className="block h-4 w-24 animate-pulse rounded bg-border" />
+              <Bar className="h-4 w-40" />
+              <Bar className="h-4 w-24" />
             </div>
-            <span className="block h-3 w-56 animate-pulse rounded bg-border" />
+            <Bar className="h-3 w-56" />
           </div>
         ))}
       </div>

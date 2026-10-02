@@ -12,7 +12,7 @@
 // it without a browser.
 
 import { Building2 } from 'lucide-react'
-import { INPUT, Notice, PRIMARY_BUTTON, useFormAction } from '@/components/form'
+import { Field, INPUT, Notice, PRIMARY_BUTTON, useFormAction } from '@/components/form'
 import { MAX_ORG_NAME, MAX_SLUG, MIN_SLUG, SLUG_PATTERN } from '@/lib/org-input'
 import { createOrg } from './actions'
 
@@ -36,10 +36,7 @@ export function CreateOrgForm() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium">
-            Agency name<span className="ml-1 text-warn">*</span>
-          </span>
+        <Field label="Agency name" required>
           <input
             type="text"
             name="name"
@@ -49,12 +46,9 @@ export function CreateOrgForm() {
             placeholder="Bangkok Rentals"
             className={INPUT}
           />
-        </label>
+        </Field>
 
-        <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium">
-            URL<span className="ml-1 text-warn">*</span>
-          </span>
+        <Field label="URL" required>
           <input
             type="text"
             name="slug"
@@ -70,12 +64,9 @@ export function CreateOrgForm() {
             The <span className="font-mono">/o/…</span> part of every link its Members follow.
             Lowercase letters, digits and single dashes.
           </span>
-        </label>
+        </Field>
 
-        <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium">
-            First Admin&apos;s email<span className="ml-1 text-warn">*</span>
-          </span>
+        <Field label="First Admin's email" required>
           <input
             type="email"
             name="email"
@@ -88,10 +79,9 @@ export function CreateOrgForm() {
           <span className="text-xs text-muted">
             An Admin can add and remove the Org&apos;s other Members.
           </span>
-        </label>
+        </Field>
 
-        <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium">Display name</span>
+        <Field label="Display name">
           <input
             type="text"
             name="display_name"
@@ -100,7 +90,7 @@ export function CreateOrgForm() {
             placeholder="Optional — the email shows instead"
             className={INPUT}
           />
-        </label>
+        </Field>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">

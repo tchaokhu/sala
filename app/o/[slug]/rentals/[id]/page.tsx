@@ -3,7 +3,7 @@
 
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ChevronLeft, Home } from 'lucide-react'
+import { Home } from 'lucide-react'
 import { requireMember } from '@/lib/supabase-server'
 import { todayBangkok } from '@/lib/dates'
 import { formatBaht, formatDateThai } from '@/lib/format'
@@ -11,6 +11,8 @@ import { getPaymentStatus, outstanding } from '@/lib/payments'
 import { LET_ELSEWHERE_NAME } from '@/lib/rental-input'
 import { getRental, getRentalStatus, listPaymentsForRental } from '@/lib/rentals'
 import { listRentalDocuments, signedDocumentUrls, type RentalDocument } from '@/lib/rental-documents'
+import { BackLink } from '@/components/BackLink'
+import { Fact } from '@/components/Fact'
 import { PageHeader } from '@/components/PageHeader'
 import { BUTTON } from '@/components/styles'
 import { PaymentSettle } from '@/components/PaymentSettle'
@@ -56,13 +58,7 @@ export default async function RentalPage({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
-        <Link
-          href={`/o/${slug}/rentals`}
-          className="inline-flex w-fit items-center gap-1.5 text-sm text-muted transition-colors hover:text-ink"
-        >
-          <ChevronLeft size={16} aria-hidden />
-          Back to the Rentals list
-        </Link>
+        <BackLink href={`/o/${slug}/rentals`}>Back to the Rentals list</BackLink>
         <PageHeader
           title={rental.propertyTitle}
           summary={
@@ -251,11 +247,3 @@ function PaymentsTable({
   )
 }
 
-function Fact({ label, value, tabular }: { label: string; value: string; tabular?: boolean }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <span className="text-xs text-muted">{label}</span>
-      <span className={tabular ? 'tabular font-medium' : 'font-medium'}>{value}</span>
-    </div>
-  )
-}

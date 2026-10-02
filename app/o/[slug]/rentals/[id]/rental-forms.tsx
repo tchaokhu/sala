@@ -16,6 +16,7 @@ import { formatBaht, formatDateThai } from '@/lib/format'
 import { defaultEndDate, LET_ELSEWHERE_NAME, MAX_END_REASON, REFUND_DUE_DAYS } from '@/lib/rental-input'
 import type { RentalStatus } from '@/types'
 import { deleteRental, endRental, renewRental } from '../actions'
+import { WARN_BUTTON } from '@/components/styles'
 
 interface ManagedRental {
   id: string
@@ -31,9 +32,6 @@ interface ManagedRental {
 }
 
 type Unpaid = { due_date: string; settled_date: string | null }
-
-const WARN_BUTTON =
-  'rounded-lg border border-warn px-3 py-2 text-sm font-medium text-warn transition-colors hover:bg-warn/10 disabled:opacity-60'
 
 /** React resets a form once its `action=` settles; submitting by hand keeps
  *  what was typed, and the armed confirmation, on screen after a refusal. */

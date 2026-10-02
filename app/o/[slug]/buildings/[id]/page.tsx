@@ -5,10 +5,11 @@
 
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Check, CheckCircle2, ChevronLeft, Eye, MapPin, Pencil } from 'lucide-react'
+import { Check, CheckCircle2, Eye, MapPin, Pencil } from 'lucide-react'
 import { requireMember } from '@/lib/supabase-server'
 import { BUILDING_PROPERTIES_LIMIT, getBuilding, listBuildingProperties } from '@/lib/buildings'
 import { formatBaht } from '@/lib/format'
+import { BackLink } from '@/components/BackLink'
 import { PageHeader } from '@/components/PageHeader'
 import { MapPreview } from '@/components/MapPreview'
 import { StatusPill } from '@/components/StatusPill'
@@ -42,13 +43,7 @@ export default async function BuildingPage({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
-        <Link
-          href={`/o/${slug}/buildings`}
-          className="inline-flex w-fit items-center gap-1.5 text-sm text-muted transition-colors hover:text-ink"
-        >
-          <ChevronLeft size={16} aria-hidden />
-          Back to the Buildings list
-        </Link>
+        <BackLink href={`/o/${slug}/buildings`}>Back to the Buildings list</BackLink>
         <PageHeader
           title={building.name}
           summary={[building.nameEn, area].filter(Boolean).join(' · ') || 'No area set yet'}

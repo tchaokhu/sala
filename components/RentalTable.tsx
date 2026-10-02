@@ -6,6 +6,7 @@ import { getRentalStatus, type RentalListRow } from '@/lib/rentals'
 import { formatBaht, formatDateThai } from '@/lib/format'
 import { LET_ELSEWHERE_NAME } from '@/lib/rental-input'
 import { RentalStatePill, Tag } from './StatusPill'
+import { Bar } from '@/components/Skeleton'
 
 const HEAD_CELL = 'px-4 py-3 font-semibold'
 
@@ -106,7 +107,7 @@ export function RentalTableSkeleton({ rows = 8 }: { rows?: number }) {
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-surface">
       <div className="border-b border-border bg-bg/60 px-4 py-3">
-        <span className="block h-4 w-24 animate-pulse rounded bg-border" aria-hidden />
+        <Bar className="h-4 w-24" />
       </div>
       <div aria-hidden>
         {Array.from({ length: rows }, (_, i) => (
@@ -114,12 +115,12 @@ export function RentalTableSkeleton({ rows = 8 }: { rows?: number }) {
             key={i}
             className="flex h-14 items-center gap-4 border-b border-border px-4 last:border-0"
           >
-            <span className="block h-4 flex-1 animate-pulse rounded bg-border" />
-            <span className="block h-4 w-28 animate-pulse rounded bg-border" />
-            <span className="block h-4 w-44 animate-pulse rounded bg-border" />
-            <span className="block h-4 w-20 animate-pulse rounded bg-border" />
-            <span className="block h-5 w-20 animate-pulse rounded-full bg-border" />
-            <span className="block h-4 w-12 animate-pulse rounded bg-border" />
+            <Bar className="h-4 flex-1" />
+            <Bar className="h-4 w-28" />
+            <Bar className="h-4 w-44" />
+            <Bar className="h-4 w-20" />
+            <Bar className="h-5 w-20 rounded-full" />
+            <Bar className="h-4 w-12" />
           </div>
         ))}
       </div>

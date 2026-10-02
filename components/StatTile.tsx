@@ -5,6 +5,8 @@
 // (CLAUDE.md). The value is a slot rather than a prop because a count and a
 // baht amount are formatted differently and the tile does not care which it is.
 
+import { Bar } from './Skeleton'
+
 const TONE_CLASS = {
   plain: 'text-ink',
   ok: 'text-ok',
@@ -46,10 +48,7 @@ export function StatTile({
 export function StatTileSkeleton({ label }: { label: string }) {
   return (
     <StatTile label={label}>
-      <span
-        className="block h-6 w-16 animate-pulse rounded bg-border"
-        aria-hidden
-      />
+      <Bar className="h-6 w-16" />
       <span className="sr-only">Loading</span>
     </StatTile>
   )

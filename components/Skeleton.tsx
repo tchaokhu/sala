@@ -1,18 +1,16 @@
-// Bars in the shape of the form pieces in components/form.tsx, for the
-// loading.tsx of every page that is mostly a form. Header text that does not
-// depend on data is drawn for real by the loader itself, so it lands in place.
+// Skeleton pieces for loading.tsx files. Skeletons, not spinners, for content
+// whose shape is known (CLAUDE.md). Header text that does not depend on data is
+// drawn for real by the loader itself, so it lands in place.
 
-import { ChevronLeft } from 'lucide-react'
-
-/** The back link above a page heading, as text — a loader has no slug to link. */
-export function BackLinkSkeleton({ label }: { label: string }) {
-  return (
-    <span className="inline-flex w-fit items-center gap-1.5 text-sm text-muted">
-      <ChevronLeft size={16} aria-hidden />
-      {label}
-    </span>
-  )
+/** One pulsing bar. Size and placement come in `className` ("h-4 w-24");
+ *  corners default to `rounded` unless it names its own. Decorative — the
+ *  loader's sr-only line is what a screen reader hears. */
+export function Bar({ className }: { className: string }) {
+  const corners = /\brounded/.test(className) ? '' : 'rounded '
+  return <span aria-hidden className={`block animate-pulse bg-border ${corners}${className}`} />
 }
+
+/** The shapes of the form pieces in components/form.tsx. */
 
 /** A Card: its title (real text when it is static, else a bar) and note, then
  *  `fields` label-and-input pairs in a grid. */
@@ -35,15 +33,15 @@ export function CardSkeleton({
         {title ? (
           <h2 className="font-semibold">{title}</h2>
         ) : (
-          <span className={`block h-4 animate-pulse rounded bg-border ${titleWidth}`} aria-hidden />
+          <Bar className={`h-4 ${titleWidth}`} />
         )}
         {note && <p className="mt-1 text-sm text-muted">{note}</p>}
       </div>
       <div className={`grid gap-4 ${cols}`} aria-hidden>
         {Array.from({ length: fields }, (_, i) => (
           <div key={i} className="flex flex-col gap-1.5">
-            <span className="block h-3 w-24 animate-pulse rounded bg-border" />
-            <span className="block h-9 w-full animate-pulse rounded-lg bg-border" />
+            <Bar className="h-3 w-24" />
+            <Bar className="h-9 w-full rounded-lg" />
           </div>
         ))}
       </div>
@@ -55,8 +53,8 @@ export function CardSkeleton({
 export function FormButtonsSkeleton() {
   return (
     <div className="flex flex-wrap items-center gap-3" aria-hidden>
-      <span className="block h-9 w-32 animate-pulse rounded-lg bg-border" />
-      <span className="block h-9 w-20 animate-pulse rounded-lg bg-border" />
+      <Bar className="h-9 w-32 rounded-lg" />
+      <Bar className="h-9 w-20 rounded-lg" />
     </div>
   )
 }

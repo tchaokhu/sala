@@ -13,12 +13,14 @@
 
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ChevronLeft, KeyRound, MapPin, Pencil, Phone, ScrollText } from 'lucide-react'
+import { KeyRound, MapPin, Pencil, Phone, ScrollText } from 'lucide-react'
 import { requireMember } from '@/lib/supabase-server'
 import { getPropertyForEdit } from '@/lib/properties'
 import { signedPropertyImageUrls } from '@/lib/property-storage'
 import { formatBaht } from '@/lib/format'
 import { PROPERTY_TYPE_LABELS } from '@/lib/property-input'
+import { BackLink } from '@/components/BackLink'
+import { Fact } from '@/components/Fact'
 import { PageHeader } from '@/components/PageHeader'
 import { MapPreview } from '@/components/MapPreview'
 import { BUTTON, PRIMARY_BUTTON } from '@/components/styles'
@@ -41,13 +43,7 @@ export default async function PropertyViewPage({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
-        <Link
-          href={`/o/${slug}/properties`}
-          className="inline-flex w-fit items-center gap-1.5 text-sm text-muted transition-colors hover:text-ink"
-        >
-          <ChevronLeft size={16} aria-hidden />
-          Back to the Properties list
-        </Link>
+        <BackLink href={`/o/${slug}/properties`}>Back to the Properties list</BackLink>
         <PageHeader
           title={property.title}
           summary={<StatusPill status={property.status} />}
@@ -147,11 +143,3 @@ export default async function PropertyViewPage({
   )
 }
 
-function Fact({ label, value, tabular }: { label: string; value: string; tabular?: boolean }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <span className="text-xs text-muted">{label}</span>
-      <span className={tabular ? 'tabular font-medium' : 'font-medium'}>{value}</span>
-    </div>
-  )
-}

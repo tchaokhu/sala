@@ -21,9 +21,7 @@ import { startTransition, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { BUTTON, Notice, useFormAction } from '@/components/form'
 import type { ActionResult } from '@/lib/action-result'
-
-const WARN_BUTTON =
-  'rounded-lg border border-warn px-3 py-2 text-sm font-medium text-warn transition-colors hover:bg-warn/10 disabled:opacity-60'
+import { WARN_BUTTON } from '@/components/styles'
 
 export const DELETE_TRIGGER =
   'inline-flex w-fit items-center gap-1.5 whitespace-nowrap text-sm text-muted transition-colors hover:text-warn'

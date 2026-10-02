@@ -2,13 +2,14 @@
 // Building and Room, Owner, Size, Photos, then the buttons.
 
 import { PageHeader } from '@/components/PageHeader'
-import { BackLinkSkeleton, CardSkeleton, FormButtonsSkeleton } from '@/components/FormSkeleton'
+import { BackLink } from '@/components/BackLink'
+import { CardSkeleton, FormButtonsSkeleton } from '@/components/Skeleton'
 
 export default function NewPropertyLoading() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
-        <BackLinkSkeleton label="Back to the Properties list" />
+        <BackLink>Back to the Properties list</BackLink>
         <PageHeader
           title="Add Property"
           summary="Pick a Building, set the type and the rent — the rest can be filled in later"

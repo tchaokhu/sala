@@ -18,6 +18,7 @@ import { PROPERTY_TYPE_LABELS as TYPE_LABELS } from '@/lib/property-input'
 import { StatusPill } from './StatusPill'
 import { PropertyDeleteAction } from './PropertyDeleteAction'
 import type { PropertyListRow } from '@/lib/properties'
+import { Bar } from '@/components/Skeleton'
 
 const TYPE_ICONS: Record<PropertyListRow['propertyType'], LucideIcon> = {
   condo: Building2,
@@ -205,7 +206,7 @@ export function PropertyTableSkeleton({ rows = 8 }: { rows?: number }) {
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-surface">
       <div className="border-b border-border bg-bg/60 px-4 py-3">
-        <span className="block h-4 w-24 animate-pulse rounded bg-border" aria-hidden />
+        <Bar className="h-4 w-24" />
       </div>
       <div aria-hidden>
         {Array.from({ length: rows }, (_, i) => (
@@ -213,14 +214,14 @@ export function PropertyTableSkeleton({ rows = 8 }: { rows?: number }) {
             key={i}
             className="flex items-center gap-4 border-b border-border px-4 py-3 last:border-0"
           >
-            <span className="block h-9 w-9 shrink-0 animate-pulse rounded-lg bg-border" />
-            <span className="block h-4 flex-1 animate-pulse rounded bg-border" />
-            <span className="block h-4 w-16 animate-pulse rounded bg-border" />
-            <span className="block h-4 w-20 animate-pulse rounded bg-border" />
-            <span className="block h-5 w-16 animate-pulse rounded-full bg-border" />
-            <span className="block h-4 w-24 animate-pulse rounded bg-border" />
-            <span className="block h-5 w-20 animate-pulse rounded bg-border" />
-            <span className="block h-4 w-12 animate-pulse rounded bg-border" />
+            <Bar className="h-9 w-9 shrink-0 rounded-lg" />
+            <Bar className="h-4 flex-1" />
+            <Bar className="h-4 w-16" />
+            <Bar className="h-4 w-20" />
+            <Bar className="h-5 w-16 rounded-full" />
+            <Bar className="h-4 w-24" />
+            <Bar className="h-5 w-20" />
+            <Bar className="h-4 w-12" />
           </div>
         ))}
       </div>

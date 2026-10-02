@@ -25,8 +25,12 @@ export function PropertyCombobox({
     <Combobox
       items={options.map((o) => ({
         id: o.id,
-        label: o.title,
+        // English first when the Building has a name in it; the Thai title
+        // stays on the sub line and in the search.
+        label: o.titleEn || o.title,
+        terms: o.title,
         sub:
+          (o.titleEn ? `${o.title} · ` : '') +
           `${formatBaht(o.priceMonthly)}/month` +
           (o.ownerName ? ` · ${o.ownerName}` : '') +
           // The stale kind the ETL carried over: marked Rented with nothing

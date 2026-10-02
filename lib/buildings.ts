@@ -27,6 +27,8 @@ export const BUILDINGS_PAGE_SIZE = 25
 export interface BuildingOption {
   id: string
   name: string
+  /** Shown first in the picker when there is one (the English standard). */
+  nameEn: string | null
   district: string
   googleMapUrl: string | null
 }
@@ -37,7 +39,7 @@ export async function listBuildingOptions(
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('buildings')
-    .select('id, name, district, google_map_url')
+    .select('id, name, name_en, district, google_map_url')
     .eq('org_id', orgId)
     .order('name', { ascending: true })
     .limit(OPTIONS_LIMIT)
@@ -46,6 +48,7 @@ export async function listBuildingOptions(
   const rows = (data ?? []) as {
     id: string
     name: string
+    name_en: string | null
     district: string
     google_map_url: string | null
   }[]
@@ -54,6 +57,7 @@ export async function listBuildingOptions(
     options: rows.map((b) => ({
       id: b.id,
       name: b.name,
+      nameEn: b.name_en,
       district: b.district,
       googleMapUrl: b.google_map_url,
     })),

@@ -370,6 +370,9 @@ export const RENTABLE_LIMIT = 500
 export interface RentableProperty {
   id: string
   title: string
+  /** The Building's English name and the room — the picker's main line when
+   *  the Building has one (the English standard); null otherwise. */
+  titleEn: string | null
   /** The new-Rental form's default rent (decision 11). */
   priceMonthly: number
   /** `rented` here is the stale kind — no active Rental behind it — and the
@@ -390,7 +393,7 @@ export async function listRentableProperties(
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('properties')
-    .select('id, title, price_monthly, status, owners(name), rentals(id)')
+    .select('id, title, room_number, price_monthly, status, owners(name), buildings(name_en), rentals(id)')
     .eq('org_id', orgId)
     .eq('rentals.status', 'active')
     .is('rentals', null)
@@ -401,20 +404,28 @@ export async function listRentableProperties(
   const rows = (data ?? []) as unknown as {
     id: string
     title: string
+    room_number: string | null
     price_monthly: number
     status: RentableProperty['status']
     owners: { name: string } | { name: string }[] | null
+    buildings: { name_en: string | null } | { name_en: string | null }[] | null
   }[]
   return {
     options: rows.map((p) => ({
       id: p.id,
       title: p.title,
+      titleEn: titleEn(embeddedOne(p.buildings)?.name_en ?? null, p.room_number),
       priceMonthly: Number(p.price_monthly),
       status: p.status,
-      ownerName: (Array.isArray(p.owners) ? p.owners[0] : p.owners)?.name ?? null,
+      ownerName: embeddedOne(p.owners)?.name ?? null,
     })),
     capped: rows.length === RENTABLE_LIMIT,
   }
+}
+
+function titleEn(buildingEn: string | null, room: string | null): string | null {
+  if (!buildingEn?.trim()) return null
+  return [buildingEn.trim(), room?.trim()].filter(Boolean).join(' ')
 }
 
 /** The Org's default for `rent_tracked_by_us` on a new Rental (ADR 0011).

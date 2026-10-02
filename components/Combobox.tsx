@@ -11,8 +11,9 @@
 //   - the chosen item carries a ✓ and its id is posted in `idName`.
 //
 // Typing again clears the choice, so "I meant a different one" and "this one is
-// new" are the same gesture. Typing an item's exact label picks it, when exactly
-// one item has that label — so a name typed in full is not mistaken for a new one.
+// new" are the same gesture. Typing an item's exact name — its label, or the
+// other-language name in `terms` — picks it when exactly one item has it, so a
+// name typed in full is not mistaken for a new one.
 
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { Check, ChevronDown, Plus, X } from 'lucide-react'
@@ -26,7 +27,8 @@ export type ComboItem = {
   sub?: string
   /** What fills the box once picked, when it is not the label. */
   display?: string
-  /** Further text the search should match without showing it. */
+  /** Further text the search should match without showing it — the other
+   *  language's name, which typed in full also picks the item. */
   terms?: string
 }
 
@@ -106,7 +108,8 @@ export function Combobox({
     setQuery(value)
     setOpen(true)
     setActive(0)
-    const exact = items.filter((i) => i.label === value.trim())
+    const name = value.trim()
+    const exact = items.filter((i) => [i.label, i.display, i.terms].includes(name))
     if (exact.length === 1) {
       setChosen(exact[0])
       onChoose?.(exact[0].id)

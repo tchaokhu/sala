@@ -34,7 +34,14 @@ export function BuildingCombobox({
 }) {
   return (
     <Combobox
-      items={options.map((o) => ({ id: o.id, label: o.name, sub: o.district || undefined }))}
+      // English first when there is one; the Thai name stays on the sub line
+      // and in the search.
+      items={options.map((o) => ({
+        id: o.id,
+        label: o.nameEn || o.name,
+        sub: [o.nameEn ? o.name : '', o.district].filter(Boolean).join(' · ') || undefined,
+        terms: o.name,
+      }))}
       idName="building_id"
       textName="building_name"
       initialId={initial?.id}

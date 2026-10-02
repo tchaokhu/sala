@@ -265,7 +265,7 @@ export async function getPropertyForEdit(
     .select(
       'id, title, room_number, property_type, bedrooms, bathrooms, area_sqm, price_monthly, ' +
         'floor, description, contact_line, status, images, owner_id, ' +
-        'buildings(id, name, district, google_map_url), owners(id, name, phone), rentals(id)',
+        'buildings(id, name, name_en, district, google_map_url), owners(id, name, phone), rentals(id)',
     )
     .eq('id', id)
     .eq('org_id', orgId)
@@ -298,7 +298,7 @@ export async function getPropertyForEdit(
     status: row.status,
     images: row.images ?? [],
     building: b
-      ? { id: b.id, name: b.name, district: b.district, googleMapUrl: b.google_map_url }
+      ? { id: b.id, name: b.name, nameEn: b.name_en, district: b.district, googleMapUrl: b.google_map_url }
       : null,
     owner: o ? { id: o.id, name: o.name, phone: o.phone } : null,
     activeRentalId: row.rentals?.[0]?.id ?? null,
@@ -321,8 +321,8 @@ interface PropertyEditRecord {
   images: string[] | null
   owner_id: string | null
   buildings:
-    | { id: string; name: string; district: string; google_map_url: string | null }
-    | { id: string; name: string; district: string; google_map_url: string | null }[]
+    | { id: string; name: string; name_en: string | null; district: string; google_map_url: string | null }
+    | { id: string; name: string; name_en: string | null; district: string; google_map_url: string | null }[]
     | null
   owners: EmbeddedOwner | EmbeddedOwner[] | null
   rentals: { id: string }[] | null

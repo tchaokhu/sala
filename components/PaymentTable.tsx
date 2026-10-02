@@ -8,8 +8,9 @@ import type { PaymentListRow } from '@/lib/payments-data'
 import { PaymentSettle } from './PaymentSettle'
 import { PAYMENT_TYPE_LABELS, PaymentStatusPill } from './StatusPill'
 import { Bar } from '@/components/Skeleton'
+import { TableFrame } from './TableFrame'
+import { HEAD_CELL } from './styles'
 
-const HEAD_CELL = 'px-4 py-3 font-semibold'
 
 export function PaymentTable({
   rows,
@@ -28,74 +29,72 @@ export function PaymentTable({
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-border bg-surface">
-      <table className="sticky-manage w-full min-w-[64rem] text-sm">
-        <thead>
-          <tr className="border-b border-border bg-bg/60 text-left text-[11px] tracking-wide text-muted">
-            <th scope="col" className={HEAD_CELL}>Due</th>
-            <th scope="col" className={HEAD_CELL}>Property</th>
-            <th scope="col" className={HEAD_CELL}>Who pays</th>
-            <th scope="col" className={HEAD_CELL}>Type</th>
-            <th scope="col" className={`${HEAD_CELL} text-right`}>Amount</th>
-            <th scope="col" className={`${HEAD_CELL} text-right`}>Outstanding</th>
-            <th scope="col" className={HEAD_CELL}>Status</th>
-            <th scope="col" className={`${HEAD_CELL} text-right`}>Manage</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => {
-            const type = PAYMENT_TYPE_LABELS[row.type]
-            return (
-              <tr
-                key={row.id}
-                className="h-14 border-b border-border transition-colors last:border-0 hover:bg-bg/60"
+    <TableFrame
+      minWidth="min-w-[64rem]"
+      head={
+        <>
+          <th scope="col" className={HEAD_CELL}>Due</th>
+          <th scope="col" className={HEAD_CELL}>Property</th>
+          <th scope="col" className={HEAD_CELL}>Who pays</th>
+          <th scope="col" className={HEAD_CELL}>Type</th>
+          <th scope="col" className={`${HEAD_CELL} text-right`}>Amount</th>
+          <th scope="col" className={`${HEAD_CELL} text-right`}>Outstanding</th>
+          <th scope="col" className={HEAD_CELL}>Status</th>
+          <th scope="col" className={`${HEAD_CELL} text-right`}>Manage</th>
+        </>
+      }
+    >
+      {rows.map((row) => {
+        const type = PAYMENT_TYPE_LABELS[row.type]
+        return (
+          <tr
+            key={row.id}
+            className="h-14 border-b border-border transition-colors last:border-0 hover:bg-bg/60"
+          >
+            <td className="tabular whitespace-nowrap px-4 py-3 text-muted">{formatDateThai(row.due_date)}</td>
+            <td className="px-4 py-3 font-medium">
+              <Link
+                href={`/o/${slug}/rentals/${row.rental_id}`}
+                className="underline-offset-4 hover:underline"
               >
-                <td className="tabular whitespace-nowrap px-4 py-3 text-muted">{formatDateThai(row.due_date)}</td>
-                <td className="px-4 py-3 font-medium">
-                  <Link
-                    href={`/o/${slug}/rentals/${row.rental_id}`}
-                    className="underline-offset-4 hover:underline"
-                  >
-                    {row.property_title}
-                  </Link>
-                </td>
-                <td className="px-4 py-3">
-                  {payerOf(row.type) === 'tenant' ? (
-                    <span className="block max-w-48 truncate">{row.tenant_name}</span>
-                  ) : (
-                    <span className="text-muted">Owner</span>
-                  )}
-                </td>
-                <td className="whitespace-nowrap px-4 py-3">{type}</td>
-                <td className="tabular whitespace-nowrap px-4 py-3 text-right">{formatBaht(row.amount)}</td>
-                <td className="tabular whitespace-nowrap px-4 py-3 text-right font-medium">
-                  {row.outstanding > 0 ? formatBaht(row.outstanding) : <span className="text-muted">—</span>}
-                </td>
-                <td className="px-4 py-3">
-                  <PaymentStatusPill status={getPaymentStatus(row, today)} />
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <PaymentSettle
-                    slug={slug}
-                    payment={{
-                      id: row.id,
-                      amount: row.amount,
-                      settled_amount: row.settled_amount,
-                      settled_date: row.settled_date,
-                      method: row.method,
-                      note: row.note,
-                      outstanding: row.outstanding,
-                    }}
-                    today={today}
-                    title={`${type} due ${formatDateThai(row.due_date)} · ${row.property_title}`}
-                  />
-                </td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-    </div>
+                {row.property_title}
+              </Link>
+            </td>
+            <td className="px-4 py-3">
+              {payerOf(row.type) === 'tenant' ? (
+                <span className="block max-w-48 truncate">{row.tenant_name}</span>
+              ) : (
+                <span className="text-muted">Owner</span>
+              )}
+            </td>
+            <td className="whitespace-nowrap px-4 py-3">{type}</td>
+            <td className="tabular whitespace-nowrap px-4 py-3 text-right">{formatBaht(row.amount)}</td>
+            <td className="tabular whitespace-nowrap px-4 py-3 text-right font-medium">
+              {row.outstanding > 0 ? formatBaht(row.outstanding) : <span className="text-muted">—</span>}
+            </td>
+            <td className="px-4 py-3">
+              <PaymentStatusPill status={getPaymentStatus(row, today)} />
+            </td>
+            <td className="px-4 py-3 text-right">
+              <PaymentSettle
+                slug={slug}
+                payment={{
+                  id: row.id,
+                  amount: row.amount,
+                  settled_amount: row.settled_amount,
+                  settled_date: row.settled_date,
+                  method: row.method,
+                  note: row.note,
+                  outstanding: row.outstanding,
+                }}
+                today={today}
+                title={`${type} due ${formatDateThai(row.due_date)} · ${row.property_title}`}
+              />
+            </td>
+          </tr>
+        )
+      })}
+    </TableFrame>
   )
 }
 

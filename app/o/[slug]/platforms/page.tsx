@@ -12,6 +12,7 @@ import { requireMember } from '@/lib/supabase-server'
 import { listPlatforms } from '@/lib/platforms'
 import { PageHeader } from '@/components/PageHeader'
 import { CreatePlatformForm, PlatformRowForms } from './platform-forms'
+import { PANEL } from '@/components/styles'
 
 export default async function PlatformsPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -42,7 +43,7 @@ export default async function PlatformsPage({ params }: { params: Promise<{ slug
           {platforms.map((platform) => (
             <div
               key={platform.id}
-              className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4"
+              className={`flex flex-col gap-3 ${PANEL}`}
             >
               <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                 <div className="flex items-center gap-2">

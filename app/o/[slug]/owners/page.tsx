@@ -22,7 +22,7 @@ import {
 import { requireMember } from '@/lib/supabase-server'
 import { listOwners, OWNERS_PAGE_SIZE } from '@/lib/owners'
 import { PageHeader } from '@/components/PageHeader'
-import { SEARCH_INPUT } from '@/components/styles'
+import { PANEL, SEARCH_INPUT } from '@/components/styles'
 import { CreateOwnerForm } from './owner-forms'
 
 export default async function OwnersPage({
@@ -92,7 +92,7 @@ export default async function OwnersPage({
           {page.rows.map((owner) => (
             <li
               key={owner.id}
-              className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4"
+              className={`flex flex-col gap-3 ${PANEL}`}
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">

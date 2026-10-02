@@ -3,6 +3,7 @@
 
 import { PageHeader } from '@/components/PageHeader'
 import { Bar } from '@/components/Skeleton'
+import { PANEL } from '@/components/styles'
 
 export default function PlatformsLoading() {
   return (
@@ -18,7 +19,7 @@ export default function PlatformsLoading() {
         {[0, 1, 2, 3].map((i) => (
           <div
             key={i}
-            className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4"
+            className={`flex flex-col gap-3 ${PANEL}`}
           >
             <div className="flex items-baseline justify-between gap-4">
               <Bar className="h-4 w-40" />

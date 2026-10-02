@@ -14,6 +14,7 @@ import { Pencil } from 'lucide-react'
 import { BUTTON, Field, INPUT, Notice, PRIMARY_BUTTON, useFormAction } from '@/components/form'
 import type { PlatformRow } from '@/lib/platforms'
 import { createPlatform, setPlatformActive, updatePlatform } from './actions'
+import { PANEL } from '@/components/styles'
 
 export function CreatePlatformForm({ slug }: { slug: string }) {
   const [result, action, pending] = useFormAction(createPlatform)
@@ -21,7 +22,7 @@ export function CreatePlatformForm({ slug }: { slug: string }) {
   return (
     <form
       action={action}
-      className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-4"
+      className={`flex flex-col gap-4 ${PANEL}`}
     >
       <div>
         <h2 className="font-semibold">Add a channel</h2>

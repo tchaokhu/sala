@@ -6,6 +6,7 @@
 // baht amount are formatted differently and the tile does not care which it is.
 
 import { Bar } from './Skeleton'
+import { PANEL } from './styles'
 
 const TONE_CLASS = {
   plain: 'text-ink',
@@ -32,7 +33,7 @@ export function StatTile({
   children: React.ReactNode
 }) {
   return (
-    <div className="rounded-xl border border-border bg-surface p-4">
+    <div className={PANEL}>
       <p className="text-sm text-muted">{label}</p>
       <p className={`tabular mt-2 flex h-8 items-center text-2xl font-bold ${TONE_CLASS[tone]}`}>
         {children}

@@ -15,10 +15,10 @@ import { requireMember } from '@/lib/supabase-server'
 import { BUILDINGS_PAGE_SIZE, listBuildings } from '@/lib/buildings'
 import { PageHeader } from '@/components/PageHeader'
 import { PagerLink } from '@/components/ListControls'
-import { SEARCH_INPUT } from '@/components/styles'
+import { HEAD_CELL, SEARCH_INPUT } from '@/components/styles'
 import { DeleteBuildingForm } from './building-forms'
+import { TableFrame } from '@/components/TableFrame'
 
-const HEAD_CELL = 'px-4 py-3 font-semibold'
 const ROW_LINK = 'inline-flex items-center gap-1.5 whitespace-nowrap text-muted transition-colors hover:text-ink'
 
 export default async function BuildingsPage({
@@ -110,61 +110,59 @@ export default async function BuildingsPage({
           </p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-border bg-surface">
-          <table className="sticky-manage w-full min-w-[40rem] text-sm">
-            <thead>
-              <tr className="border-b border-border bg-bg/60 text-left text-[11px] tracking-wide text-muted">
-                <th scope="col" className={HEAD_CELL}>Building</th>
-                <th scope="col" className={HEAD_CELL}>Area</th>
-                <th scope="col" className={`${HEAD_CELL} text-right`}>Properties</th>
-                <th scope="col" className={HEAD_CELL}>Map</th>
-                <th scope="col" className={`${HEAD_CELL} text-right`}>Manage</th>
-              </tr>
-            </thead>
-            <tbody>
-              {page.rows.map((b) => (
-                <tr
-                  key={b.id}
-                  className="h-14 border-b border-border transition-colors last:border-0 hover:bg-bg/60"
-                >
-                  <td className="px-4 py-2">
-                    <Link href={`${base}/${b.id}`} className="font-medium underline-offset-4 hover:underline">
-                      {b.name}
-                    </Link>
-                    {b.nameEn && <span className="block text-xs text-muted">{b.nameEn}</span>}
-                  </td>
-                  <td className="px-4 py-2 text-muted">
-                    {[b.district, b.province].filter(Boolean).join(' · ') || '—'}
-                  </td>
-                  <td className="tabular px-4 py-2 text-right font-medium">{b.propertyCount}</td>
-                  <td className="px-4 py-2 text-muted">
-                    {b.googleMapUrl ? (
-                      <span className="inline-flex items-center gap-1">
-                        <MapPin size={14} aria-hidden />
-                        Pinned
-                      </span>
-                    ) : (
-                      'No map yet'
-                    )}
-                  </td>
-                  <td className="px-4 py-2 text-right">
-                    <div className="flex items-center justify-end gap-4">
-                      <Link href={`${base}/${b.id}`} className={ROW_LINK}>
-                        <Eye size={14} aria-hidden />
-                        View
-                      </Link>
-                      <Link href={`${base}/${b.id}?edit=1`} className={ROW_LINK}>
-                        <Pencil size={14} aria-hidden />
-                        Edit
-                      </Link>
-                      <DeleteBuildingForm slug={slug} building={b} compact />
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <TableFrame
+          minWidth="min-w-[40rem]"
+          head={
+            <>
+              <th scope="col" className={HEAD_CELL}>Building</th>
+              <th scope="col" className={HEAD_CELL}>Area</th>
+              <th scope="col" className={`${HEAD_CELL} text-right`}>Properties</th>
+              <th scope="col" className={HEAD_CELL}>Map</th>
+              <th scope="col" className={`${HEAD_CELL} text-right`}>Manage</th>
+            </>
+          }
+        >
+          {page.rows.map((b) => (
+            <tr
+              key={b.id}
+              className="h-14 border-b border-border transition-colors last:border-0 hover:bg-bg/60"
+            >
+              <td className="px-4 py-2">
+                <Link href={`${base}/${b.id}`} className="font-medium underline-offset-4 hover:underline">
+                  {b.name}
+                </Link>
+                {b.nameEn && <span className="block text-xs text-muted">{b.nameEn}</span>}
+              </td>
+              <td className="px-4 py-2 text-muted">
+                {[b.district, b.province].filter(Boolean).join(' · ') || '—'}
+              </td>
+              <td className="tabular px-4 py-2 text-right font-medium">{b.propertyCount}</td>
+              <td className="px-4 py-2 text-muted">
+                {b.googleMapUrl ? (
+                  <span className="inline-flex items-center gap-1">
+                    <MapPin size={14} aria-hidden />
+                    Pinned
+                  </span>
+                ) : (
+                  'No map yet'
+                )}
+              </td>
+              <td className="px-4 py-2 text-right">
+                <div className="flex items-center justify-end gap-4">
+                  <Link href={`${base}/${b.id}`} className={ROW_LINK}>
+                    <Eye size={14} aria-hidden />
+                    View
+                  </Link>
+                  <Link href={`${base}/${b.id}?edit=1`} className={ROW_LINK}>
+                    <Pencil size={14} aria-hidden />
+                    Edit
+                  </Link>
+                  <DeleteBuildingForm slug={slug} building={b} compact />
+                </div>
+              </td>
+            </tr>
+          ))}
+        </TableFrame>
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted">

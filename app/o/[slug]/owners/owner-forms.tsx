@@ -9,12 +9,13 @@
 
 import { Field, INPUT, Notice, PRIMARY_BUTTON, useFormAction } from '@/components/form'
 import { createOwner } from './actions'
+import { PANEL } from '@/components/styles'
 
 export function CreateOwnerForm({ slug }: { slug: string }) {
   const [result, action, pending] = useFormAction(createOwner)
 
   return (
-    <form action={action} className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-4">
+    <form action={action} className={`flex flex-col gap-4 ${PANEL}`}>
       <div>
         <h2 className="font-semibold">Add an Owner</h2>
         <p className="mt-1 text-sm text-muted">

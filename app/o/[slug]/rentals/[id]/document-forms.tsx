@@ -20,6 +20,8 @@ import {
 } from '@/lib/document-input'
 import { deleteRentalDocument, uploadRentalDocuments } from './document-actions'
 import { ConfirmAction } from '@/components/ConfirmAction'
+import { TableFrame } from '@/components/TableFrame'
+import { HEAD_CELL, PANEL } from '@/components/styles'
 
 export interface ShownDocument {
   id: string
@@ -41,7 +43,6 @@ export interface EarlierDocument extends ShownDocument {
 
 const ROW_LINK = 'inline-flex items-center gap-1.5 whitespace-nowrap text-muted transition-colors hover:text-ink'
 
-const HEAD_CELL = 'px-4 py-3 font-semibold'
 
 /** React resets a form once its `action=` settles; submitting by hand keeps
  *  the chosen kind, and the armed confirmation, on screen after a refusal. */
@@ -127,25 +128,23 @@ function DocumentsTable({
   earlier?: boolean
 }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-border bg-surface">
-      <table className="sticky-manage w-full min-w-[36rem] text-sm">
-        <thead>
-          <tr className="border-b border-border bg-bg/60 text-left text-[11px] tracking-wide text-muted">
-            <th scope="col" className={HEAD_CELL}>Kind</th>
-            <th scope="col" className={HEAD_CELL}>Name</th>
-            <th scope="col" className={`${HEAD_CELL} text-right`}>Size</th>
-            {earlier && <th scope="col" className={HEAD_CELL}>Rental</th>}
-            <th scope="col" className={HEAD_CELL}>Added</th>
-            <th scope="col" className={`${HEAD_CELL} text-right`}>Manage</th>
-          </tr>
-        </thead>
-        <tbody>
-          {docs.map((doc) => (
-            <DocumentRow key={doc.id} slug={slug} doc={doc} />
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <TableFrame
+      minWidth="min-w-[36rem]"
+      head={
+        <>
+          <th scope="col" className={HEAD_CELL}>Kind</th>
+          <th scope="col" className={HEAD_CELL}>Name</th>
+          <th scope="col" className={`${HEAD_CELL} text-right`}>Size</th>
+          {earlier && <th scope="col" className={HEAD_CELL}>Rental</th>}
+          <th scope="col" className={HEAD_CELL}>Added</th>
+          <th scope="col" className={`${HEAD_CELL} text-right`}>Manage</th>
+        </>
+      }
+    >
+      {docs.map((doc) => (
+        <DocumentRow key={doc.id} slug={slug} doc={doc} />
+      ))}
+    </TableFrame>
   )
 }
 
@@ -245,7 +244,7 @@ function UploadForm({
   return (
     <form
       onSubmit={submitWith(action)}
-      className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-4"
+      className={`flex flex-col gap-4 ${PANEL}`}
     >
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="rental_id" value={rentalId} />

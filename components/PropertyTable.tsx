@@ -19,6 +19,8 @@ import { StatusPill } from './StatusPill'
 import { PropertyDeleteAction } from './PropertyDeleteAction'
 import type { PropertyListRow } from '@/lib/properties'
 import { Bar } from '@/components/Skeleton'
+import { TableFrame } from './TableFrame'
+import { HEAD_CELL } from './styles'
 
 const TYPE_ICONS: Record<PropertyListRow['propertyType'], LucideIcon> = {
   condo: Building2,
@@ -46,7 +48,6 @@ function RentalEnd({ endDate }: { endDate: string }) {
   )
 }
 
-const HEAD_CELL = 'px-4 py-3 font-semibold'
 
 export function PropertyTable({
   rows,
@@ -80,123 +81,121 @@ export function PropertyTable({
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-border bg-surface">
-      <table className="sticky-manage w-full min-w-[68rem] text-sm">
-        <thead>
-          <tr className="border-b border-border bg-bg/60 text-left text-[11px] tracking-wide text-muted">
-            <th scope="col" className={HEAD_CELL}>Property</th>
-            <th scope="col" className={HEAD_CELL}>Type</th>
-            <th scope="col" className={HEAD_CELL}>Size</th>
-            <th scope="col" className={`${HEAD_CELL} text-right`}>Rent/month</th>
-            <th scope="col" className={HEAD_CELL}>Status</th>
-            <th scope="col" className={HEAD_CELL}>Current Tenant</th>
-            <th scope="col" className={HEAD_CELL}>Owner</th>
-            <th scope="col" className={HEAD_CELL}>Posted</th>
-            <th scope="col" className={`${HEAD_CELL} text-right`}>Manage</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => {
-            const TypeIcon = TYPE_ICONS[row.propertyType]
-            return (
-              <tr
-                key={row.id}
-                className="border-b border-border transition-colors last:border-0 hover:bg-bg/60"
-              >
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
+    <TableFrame
+      minWidth="min-w-[68rem]"
+      head={
+        <>
+          <th scope="col" className={HEAD_CELL}>Property</th>
+          <th scope="col" className={HEAD_CELL}>Type</th>
+          <th scope="col" className={HEAD_CELL}>Size</th>
+          <th scope="col" className={`${HEAD_CELL} text-right`}>Rent/month</th>
+          <th scope="col" className={HEAD_CELL}>Status</th>
+          <th scope="col" className={HEAD_CELL}>Current Tenant</th>
+          <th scope="col" className={HEAD_CELL}>Owner</th>
+          <th scope="col" className={HEAD_CELL}>Posted</th>
+          <th scope="col" className={`${HEAD_CELL} text-right`}>Manage</th>
+        </>
+      }
+    >
+      {rows.map((row) => {
+        const TypeIcon = TYPE_ICONS[row.propertyType]
+        return (
+          <tr
+            key={row.id}
+            className="border-b border-border transition-colors last:border-0 hover:bg-bg/60"
+          >
+            <td className="px-4 py-3">
+              <div className="flex items-center gap-3">
+                <span
+                  aria-hidden
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-accent/10 text-accent"
+                >
+                  <TypeIcon size={18} />
+                </span>
+                <span className="flex min-w-0 flex-col leading-tight">
+                  <span className="truncate font-medium">{row.title}</span>
+                  <span className="h-4 truncate text-xs text-muted">
+                    {row.roomNumber ? `Room ${row.roomNumber}` : ''}
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td className="px-4 py-3 text-muted">{TYPE_LABELS[row.propertyType]}</td>
+            <td className="tabular whitespace-nowrap px-4 py-3 text-muted">
+              {row.bedrooms} bed · {row.bathrooms} bath · {row.areaSqm} sq m
+            </td>
+            <td className="tabular whitespace-nowrap px-4 py-3 text-right font-medium">
+              {formatBaht(row.priceMonthly)}
+            </td>
+            <td className="px-4 py-3">
+              <StatusPill status={row.status} />
+            </td>
+            <td className="px-4 py-3">
+              {row.tenantName ? (
+                <div className="flex flex-col gap-0.5">
+                  <span>{row.tenantName}</span>
+                  {row.rentalEndDate && <RentalEnd endDate={row.rentalEndDate} />}
+                </div>
+              ) : (
+                <span className="text-muted">—</span>
+              )}
+            </td>
+            <td className="px-4 py-3">
+              {row.ownerName ? (
+                <span className="block max-w-40 truncate">{row.ownerName}</span>
+              ) : (
+                <span className="text-muted">—</span>
+              )}
+            </td>
+            <td className="px-4 py-3">
+              {/* A room advertised nowhere gets a chip of its own rather
+                  than an em dash: this is the state the list is scanned
+                  for, so it reads as form and not only as colour
+                  (CLAUDE.md). */}
+              {row.postedOn.length > 0 ? (
+                <div className="flex max-w-48 flex-wrap gap-1">
+                  {row.postedOn.map((name) => (
                     <span
-                      aria-hidden
-                      className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-accent/10 text-accent"
+                      key={name}
+                      className="rounded border border-border px-1.5 py-0.5 text-xs text-muted"
                     >
-                      <TypeIcon size={18} />
+                      {name}
                     </span>
-                    <span className="flex min-w-0 flex-col leading-tight">
-                      <span className="truncate font-medium">{row.title}</span>
-                      <span className="h-4 truncate text-xs text-muted">
-                        {row.roomNumber ? `Room ${row.roomNumber}` : ''}
-                      </span>
-                    </span>
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-muted">{TYPE_LABELS[row.propertyType]}</td>
-                <td className="tabular whitespace-nowrap px-4 py-3 text-muted">
-                  {row.bedrooms} bed · {row.bathrooms} bath · {row.areaSqm} sq m
-                </td>
-                <td className="tabular whitespace-nowrap px-4 py-3 text-right font-medium">
-                  {formatBaht(row.priceMonthly)}
-                </td>
-                <td className="px-4 py-3">
-                  <StatusPill status={row.status} />
-                </td>
-                <td className="px-4 py-3">
-                  {row.tenantName ? (
-                    <div className="flex flex-col gap-0.5">
-                      <span>{row.tenantName}</span>
-                      {row.rentalEndDate && <RentalEnd endDate={row.rentalEndDate} />}
-                    </div>
-                  ) : (
-                    <span className="text-muted">—</span>
-                  )}
-                </td>
-                <td className="px-4 py-3">
-                  {row.ownerName ? (
-                    <span className="block max-w-40 truncate">{row.ownerName}</span>
-                  ) : (
-                    <span className="text-muted">—</span>
-                  )}
-                </td>
-                <td className="px-4 py-3">
-                  {/* A room advertised nowhere gets a chip of its own rather
-                      than an em dash: this is the state the list is scanned
-                      for, so it reads as form and not only as colour
-                      (CLAUDE.md). */}
-                  {row.postedOn.length > 0 ? (
-                    <div className="flex max-w-48 flex-wrap gap-1">
-                      {row.postedOn.map((name) => (
-                        <span
-                          key={name}
-                          className="rounded border border-border px-1.5 py-0.5 text-xs text-muted"
-                        >
-                          {name}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="inline-block rounded border border-warn/40 bg-warn/10 px-1.5 py-0.5 text-xs font-medium text-warn">
-                      Nowhere
-                    </span>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-right">
-                  {/* Named for a screen reader, which hears a column of
-                      identical "View"/"Edit" links otherwise. */}
-                  <div className="flex items-center justify-end gap-3">
-                    <Link
-                      href={`/o/${slug}/properties/${row.id}`}
-                      aria-label={`View ${row.title}`}
-                      className="inline-flex items-center gap-1.5 whitespace-nowrap text-muted transition-colors hover:text-ink"
-                    >
-                      <Eye size={14} aria-hidden />
-                      View
-                    </Link>
-                    <Link
-                      href={`/o/${slug}/properties/${row.id}/edit`}
-                      aria-label={`Edit ${row.title}`}
-                      className="inline-flex items-center gap-1.5 whitespace-nowrap text-muted transition-colors hover:text-ink"
-                    >
-                      <Pencil size={14} aria-hidden />
-                      Edit
-                    </Link>
-                    <PropertyDeleteAction slug={slug} propertyId={row.id} title={row.title} />
-                  </div>
-                </td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-    </div>
+                  ))}
+                </div>
+              ) : (
+                <span className="inline-block rounded border border-warn/40 bg-warn/10 px-1.5 py-0.5 text-xs font-medium text-warn">
+                  Nowhere
+                </span>
+              )}
+            </td>
+            <td className="px-4 py-3 text-right">
+              {/* Named for a screen reader, which hears a column of
+                  identical "View"/"Edit" links otherwise. */}
+              <div className="flex items-center justify-end gap-3">
+                <Link
+                  href={`/o/${slug}/properties/${row.id}`}
+                  aria-label={`View ${row.title}`}
+                  className="inline-flex items-center gap-1.5 whitespace-nowrap text-muted transition-colors hover:text-ink"
+                >
+                  <Eye size={14} aria-hidden />
+                  View
+                </Link>
+                <Link
+                  href={`/o/${slug}/properties/${row.id}/edit`}
+                  aria-label={`Edit ${row.title}`}
+                  className="inline-flex items-center gap-1.5 whitespace-nowrap text-muted transition-colors hover:text-ink"
+                >
+                  <Pencil size={14} aria-hidden />
+                  Edit
+                </Link>
+                <PropertyDeleteAction slug={slug} propertyId={row.id} title={row.title} />
+              </div>
+            </td>
+          </tr>
+        )
+      })}
+    </TableFrame>
   )
 }
 

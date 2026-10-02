@@ -23,7 +23,7 @@ import { BackLink } from '@/components/BackLink'
 import { Fact } from '@/components/Fact'
 import { PageHeader } from '@/components/PageHeader'
 import { MapPreview } from '@/components/MapPreview'
-import { BUTTON, PRIMARY_BUTTON } from '@/components/styles'
+import { BUTTON, PANEL, PRIMARY_BUTTON } from '@/components/styles'
 import { StatusPill } from '@/components/StatusPill'
 import { PropertyPhotoGallery } from './photo-gallery'
 
@@ -78,7 +78,7 @@ export default async function PropertyViewPage({
         />
       </div>
 
-      <section className="grid gap-4 rounded-xl border border-border bg-surface p-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-4 ${PANEL}`}>
         <Fact label="Type" value={PROPERTY_TYPE_LABELS[property.propertyType]} />
         <Fact
           label="Size"
@@ -89,14 +89,14 @@ export default async function PropertyViewPage({
       </section>
 
       {property.description && (
-        <section className="rounded-xl border border-border bg-surface p-4">
+        <section className={PANEL}>
           <h2 className="font-semibold">Description</h2>
           <p className="mt-2 whitespace-pre-wrap text-sm text-muted">{property.description}</p>
         </section>
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
+        <section className={`flex flex-col gap-3 ${PANEL}`}>
           <h2 className="font-semibold">Building</h2>
           {property.building ? (
             <>
@@ -112,7 +112,7 @@ export default async function PropertyViewPage({
           )}
         </section>
 
-        <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
+        <section className={`flex flex-col gap-3 ${PANEL}`}>
           <h2 className="font-semibold">Owner</h2>
           {property.owner ? (
             <>
@@ -132,7 +132,7 @@ export default async function PropertyViewPage({
       </div>
 
       {photos.length > 0 && (
-        <section className="rounded-xl border border-border bg-surface p-4">
+        <section className={PANEL}>
           <h2 className="font-semibold">Photos</h2>
           <div className="mt-3">
             <PropertyPhotoGallery photos={photos} />

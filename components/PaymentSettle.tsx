@@ -1,18 +1,14 @@
 'use client'
 
 // Settle and Correct for one Payment row — the Payments list and the Rental
-// page both draw it (one component, two callers). The overlay is
-// PropertyDeleteAction's shape, so the app keeps one modal pattern. It is
-// portalled to <body> for ConfirmAction's reason: the triggers sit in a sticky
-// Manage cell, its own stacking context, and the rows below would paint over
-// a dialog drawn inside it.
+// page both draw it (one component, two callers), in the app's one Dialog.
 //
 // The action reads the Payment again under the Org and judges the form against
 // that row; what arrives here is only for the defaults and the sentence that
 // says what is already in.
 
 import { startTransition, useEffect, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { Dialog } from '@/components/Dialog'
 import { HandCoins, Pencil, Trash2 } from 'lucide-react'
 import { BUTTON, Field, INPUT, Notice, PRIMARY_BUTTON, useFormAction } from '@/components/form'
 import { formatBaht, formatDateThai } from '@/lib/format'
@@ -22,6 +18,7 @@ import type { RentalPayment } from '@/lib/rentals'
 import { clearSettlement, correctSettlement, settlePayment } from '@/app/o/[slug]/payments/actions'
 import { PAYMENT_METHOD_LABELS } from './StatusPill'
 import { WARN_BUTTON } from '@/components/styles'
+import { PANEL } from './styles'
 
 export type SettleablePayment = Pick<
   RentalPayment,
@@ -59,15 +56,6 @@ export function PaymentSettle({
   const [pending, setPending] = useState(false)
   const [done, setDone] = useState<ActionResult | null>(null)
 
-  useEffect(() => {
-    if (!mode) return
-    function onKey(event: KeyboardEvent) {
-      if (event.key === 'Escape' && !pending) setMode(null)
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [mode, pending])
-
   function open(next: Mode) {
     setDone(null)
     setMode(next)
@@ -97,67 +85,56 @@ export function PaymentSettle({
         </button>
       )}
 
-      {mode &&
-        createPortal(
-          <div className="fixed inset-0 z-50 text-left text-ink">
-            <button
-              type="button"
-              aria-label="Cancel"
-              disabled={pending}
-              onClick={() => setMode(null)}
-              className="absolute inset-0 bg-black/60"
-            />
-            <div
-              role="dialog"
-              aria-modal="true"
-              aria-label={`${mode === 'settle' ? 'Settle' : 'Correct'} ${title}`}
-              className="pointer-events-none absolute inset-0 grid place-items-center overflow-y-auto p-6"
-            >
-              <div className="pointer-events-auto flex w-full max-w-md flex-col gap-4 rounded-xl border border-border bg-surface p-4">
-                <div>
-                  <h2 className="font-semibold">
-                    {mode === 'settle' ? 'Settle' : 'Correct'} {title}
-                  </h2>
-                  <p className="mt-1 text-sm text-muted">
-                    {mode === 'settle' ? (
-                      recorded ? (
-                        <>
-                          <span className="tabular">{formatBaht(payment.settled_amount)}</span> of{' '}
-                          <span className="tabular">{formatBaht(payment.amount)}</span> settled;{' '}
-                          <span className="tabular font-semibold text-ink">{formatBaht(payment.outstanding)}</span> to
-                          go.
-                        </>
-                      ) : (
-                        <>
-                          <span className="tabular font-semibold text-ink">{formatBaht(payment.amount)}</span> owed.
-                        </>
-                      )
-                    ) : (
-                      <>
-                        What was recorded, to edit directly. The amount is the total settled so far, up to{' '}
-                        <span className="tabular">{formatBaht(payment.amount)}</span>.
-                      </>
-                    )}
-                  </p>
-                </div>
-                <SettlementForm
-                  key={mode}
-                  mode={mode}
-                  slug={slug}
-                  payment={payment}
-                  today={today}
-                  onPending={setPending}
-                  onDone={finished}
-                  onCancel={() => setMode(null)}
-                />
-                {mode === 'correct' && (
-                  <ClearSettlement slug={slug} payment={payment} onPending={setPending} onDone={finished} />
+      <Dialog
+        open={mode !== null}
+        onClose={() => setMode(null)}
+        label={`${mode === 'settle' ? 'Settle' : 'Correct'} ${title}`}
+        busy={pending}
+      >
+        {mode && (
+          <div className={`pointer-events-auto flex w-full max-w-md flex-col gap-4 ${PANEL}`}>
+            <div>
+              <h2 className="font-semibold">
+                {mode === 'settle' ? 'Settle' : 'Correct'} {title}
+              </h2>
+              <p className="mt-1 text-sm text-muted">
+                {mode === 'settle' ? (
+                  recorded ? (
+                    <>
+                      <span className="tabular">{formatBaht(payment.settled_amount)}</span> of{' '}
+                      <span className="tabular">{formatBaht(payment.amount)}</span> settled;{' '}
+                      <span className="tabular font-semibold text-ink">{formatBaht(payment.outstanding)}</span> to
+                      go.
+                    </>
+                  ) : (
+                    <>
+                      <span className="tabular font-semibold text-ink">{formatBaht(payment.amount)}</span> owed.
+                    </>
+                  )
+                ) : (
+                  <>
+                    What was recorded, to edit directly. The amount is the total settled so far, up to{' '}
+                    <span className="tabular">{formatBaht(payment.amount)}</span>.
+                  </>
                 )}
-              </div>
+              </p>
             </div>
-          </div>,
-          document.body,
+            <SettlementForm
+              key={mode}
+              mode={mode}
+              slug={slug}
+              payment={payment}
+              today={today}
+              onPending={setPending}
+              onDone={finished}
+              onCancel={() => setMode(null)}
+            />
+            {mode === 'correct' && (
+              <ClearSettlement slug={slug} payment={payment} onPending={setPending} onDone={finished} />
+            )}
+          </div>
         )}
+      </Dialog>
     </div>
   )
 }

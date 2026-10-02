@@ -16,6 +16,7 @@ import { INPUT, Notice, PRIMARY_BUTTON, useFormAction } from '@/components/form'
 import type { PlatformOption } from '@/lib/platforms'
 import type { PostingRow } from '@/lib/postings'
 import { updatePostings } from '@/app/o/[slug]/properties/[id]/actions'
+import { PANEL } from './styles'
 
 interface Ticked {
   postUrl: string
@@ -96,7 +97,7 @@ export function PostingChecklist({
         const formData = new FormData(e.currentTarget)
         startTransition(() => action(formData))
       }}
-      className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-4"
+      className={`flex flex-col gap-4 ${PANEL}`}
     >
       <div>
         <h2 className="font-semibold">Where this room is posted</h2>

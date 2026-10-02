@@ -8,17 +8,13 @@
 // Enter on an accidental open does nothing destructive. Escape and the backdrop
 // cancel too, unless the action is already running.
 //
-// The dialog is portalled to <body>: a trigger often sits in a table's sticky
-// Manage cell, and a sticky cell is its own stacking context, so a dialog drawn
-// inside it would be painted under the rows that follow.
-//
 // It submits through onSubmit + startTransition rather than `action=`, so React
 // does not reset the form under it (see PostingChecklist). A successful answer
 // closes the dialog and is shown beside the trigger; an action that redirects
 // simply navigates away.
 
 import { startTransition, useEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { Dialog } from '@/components/Dialog'
 import { BUTTON, Notice, useFormAction } from '@/components/form'
 import type { ActionResult } from '@/lib/action-result'
 import { WARN_BUTTON } from '@/components/styles'
@@ -64,14 +60,8 @@ export function ConfirmAction({
   }
 
   useEffect(() => {
-    if (!shown) return
-    cancelRef.current?.focus()
-    function onKey(event: KeyboardEvent) {
-      if (event.key === 'Escape' && !pending) setOpen(false)
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [shown, pending])
+    if (shown) cancelRef.current?.focus()
+  }, [shown])
 
   return (
     <>
@@ -87,56 +77,37 @@ export function ConfirmAction({
         {!shown && result?.ok && <Notice result={result} />}
       </span>
 
-      {shown &&
-        createPortal(
-          <div className="fixed inset-0 z-50">
+      <Dialog open={shown} onClose={() => setOpen(false)} label={title} role="alertdialog" busy={pending}>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            const formData = new FormData(e.currentTarget)
+            startTransition(() => run(formData))
+          }}
+          className="pointer-events-auto flex w-full max-w-md flex-col gap-3 rounded-xl border border-warn/40 bg-surface p-5 text-left text-ink"
+        >
+          <h2 className="font-semibold">{title}</h2>
+          <div className="flex flex-col gap-2 text-sm">{children}</div>
+          {Object.entries(fields).map(([name, value]) => (
+            <input key={name} type="hidden" name={name} value={value} />
+          ))}
+          <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
             <button
+              ref={cancelRef}
               type="button"
-              aria-label="Cancel"
-              tabIndex={-1}
               disabled={pending}
               onClick={() => setOpen(false)}
-              className="absolute inset-0 bg-black/60"
-            />
-            <div
-              role="alertdialog"
-              aria-modal="true"
-              aria-label={title}
-              className="pointer-events-none absolute inset-0 grid place-items-center p-6"
+              className={BUTTON}
             >
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  const formData = new FormData(e.currentTarget)
-                  startTransition(() => run(formData))
-                }}
-                className="pointer-events-auto flex w-full max-w-md flex-col gap-3 rounded-xl border border-warn/40 bg-surface p-5 text-left text-ink"
-              >
-                <h2 className="font-semibold">{title}</h2>
-                <div className="flex flex-col gap-2 text-sm">{children}</div>
-                {Object.entries(fields).map(([name, value]) => (
-                  <input key={name} type="hidden" name={name} value={value} />
-                ))}
-                <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
-                  <button
-                    ref={cancelRef}
-                    type="button"
-                    disabled={pending}
-                    onClick={() => setOpen(false)}
-                    className={BUTTON}
-                  >
-                    Cancel
-                  </button>
-                  <button type="submit" disabled={pending} className={WARN_BUTTON}>
-                    {pending ? pendingLabel : confirmLabel}
-                  </button>
-                </div>
-                {result && !result.ok && <Notice result={result} />}
-              </form>
-            </div>
-          </div>,
-          document.body,
-        )}
+              Cancel
+            </button>
+            <button type="submit" disabled={pending} className={WARN_BUTTON}>
+              {pending ? pendingLabel : confirmLabel}
+            </button>
+          </div>
+          {result && !result.ok && <Notice result={result} />}
+        </form>
+      </Dialog>
     </>
   )
 }

@@ -14,8 +14,9 @@ import { PageHeader } from '@/components/PageHeader'
 import { MapPreview } from '@/components/MapPreview'
 import { StatusPill } from '@/components/StatusPill'
 import { DeleteBuildingForm, EditBuildingForm } from '../building-forms'
+import { TableFrame } from '@/components/TableFrame'
+import { HEAD_CELL, PANEL } from '@/components/styles'
 
-const HEAD_CELL = 'px-4 py-3 font-semibold'
 
 export default async function BuildingPage({
   params,
@@ -72,7 +73,7 @@ export default async function BuildingPage({
       {editing && (
         <>
           <EditBuildingForm slug={slug} building={building} />
-          <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
+          <section className={`flex flex-col gap-3 ${PANEL}`}>
             <div>
               <h2 className="font-semibold">Delete Building</h2>
               <p className="mt-1 text-sm text-muted">
@@ -85,7 +86,7 @@ export default async function BuildingPage({
         </>
       )}
 
-      <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
+      <section className={`flex flex-col gap-3 ${PANEL}`}>
         <h2 className="font-semibold">Map</h2>
         {building.googleMapUrl ? (
           <MapPreview url={building.googleMapUrl} title={`Map of ${building.name}`} />
@@ -101,7 +102,7 @@ export default async function BuildingPage({
       </section>
 
       {(building.facilities.length > 0 || building.nearby.length > 0) && (
-        <section className="grid gap-4 rounded-xl border border-border bg-surface p-4 sm:grid-cols-2">
+        <section className={`grid gap-4 sm:grid-cols-2 ${PANEL}`}>
           <ChipList title="Facilities" items={building.facilities} />
           <ChipList title="Nearby" items={building.nearby} />
         </section>
@@ -123,49 +124,47 @@ export default async function BuildingPage({
             .
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-border bg-surface">
-            <table className="sticky-manage w-full min-w-[32rem] text-sm">
-              <thead>
-                <tr className="border-b border-border bg-bg/60 text-left text-[11px] tracking-wide text-muted">
-                  <th scope="col" className={HEAD_CELL}>Property</th>
-                  <th scope="col" className={`${HEAD_CELL} text-right`}>Rent/month</th>
-                  <th scope="col" className={HEAD_CELL}>Status</th>
-                  <th scope="col" className={`${HEAD_CELL} text-right`}>Manage</th>
-                </tr>
-              </thead>
-              <tbody>
-                {properties.rows.map((p) => (
-                  <tr key={p.id} className="h-12 border-b border-border last:border-0">
-                    <td className="px-4 py-2">
-                      <span className="font-medium">{p.title}</span>
-                      <span className="block text-xs text-muted">
-                        {[
-                          p.roomNumber && `Room ${p.roomNumber}`,
-                          p.floor != null && `Floor ${p.floor}`,
-                          p.ownerName,
-                        ]
-                          .filter(Boolean)
-                          .join(' · ') || 'No room number or Owner'}
-                      </span>
-                    </td>
-                    <td className="tabular whitespace-nowrap px-4 py-2 text-right">{formatBaht(p.priceMonthly)}</td>
-                    <td className="px-4 py-2">
-                      <StatusPill status={p.status} />
-                    </td>
-                    <td className="px-4 py-2 text-right">
-                      <Link
-                        href={`/o/${slug}/properties/${p.id}`}
-                        className="inline-flex items-center gap-1.5 whitespace-nowrap text-muted transition-colors hover:text-ink"
-                      >
-                        <Eye size={14} aria-hidden />
-                        View
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <TableFrame
+            minWidth="min-w-[32rem]"
+            head={
+              <>
+                <th scope="col" className={HEAD_CELL}>Property</th>
+                <th scope="col" className={`${HEAD_CELL} text-right`}>Rent/month</th>
+                <th scope="col" className={HEAD_CELL}>Status</th>
+                <th scope="col" className={`${HEAD_CELL} text-right`}>Manage</th>
+              </>
+            }
+          >
+            {properties.rows.map((p) => (
+              <tr key={p.id} className="h-12 border-b border-border last:border-0">
+                <td className="px-4 py-2">
+                  <span className="font-medium">{p.title}</span>
+                  <span className="block text-xs text-muted">
+                    {[
+                      p.roomNumber && `Room ${p.roomNumber}`,
+                      p.floor != null && `Floor ${p.floor}`,
+                      p.ownerName,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ') || 'No room number or Owner'}
+                  </span>
+                </td>
+                <td className="tabular whitespace-nowrap px-4 py-2 text-right">{formatBaht(p.priceMonthly)}</td>
+                <td className="px-4 py-2">
+                  <StatusPill status={p.status} />
+                </td>
+                <td className="px-4 py-2 text-right">
+                  <Link
+                    href={`/o/${slug}/properties/${p.id}`}
+                    className="inline-flex items-center gap-1.5 whitespace-nowrap text-muted transition-colors hover:text-ink"
+                  >
+                    <Eye size={14} aria-hidden />
+                    View
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </TableFrame>
         )}
         {properties.capped && (
           <p className="text-xs text-muted">

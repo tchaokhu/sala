@@ -7,8 +7,9 @@ import { formatBaht, formatDateThai } from '@/lib/format'
 import { LET_ELSEWHERE_NAME } from '@/lib/rental-input'
 import { RentalStatePill, Tag } from './StatusPill'
 import { Bar } from '@/components/Skeleton'
+import { TableFrame } from './TableFrame'
+import { HEAD_CELL } from './styles'
 
-const HEAD_CELL = 'px-4 py-3 font-semibold'
 
 export function RentalTable({
   rows,
@@ -37,69 +38,67 @@ export function RentalTable({
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-border bg-surface">
-      <table className="sticky-manage w-full min-w-[48rem] text-sm">
-        <thead>
-          <tr className="border-b border-border bg-bg/60 text-left text-[11px] tracking-wide text-muted">
-            <th scope="col" className={HEAD_CELL}>Property</th>
-            <th scope="col" className={HEAD_CELL}>Tenant</th>
-            <th scope="col" className={HEAD_CELL}>Term</th>
-            <th scope="col" className={`${HEAD_CELL} text-right`}>Rent/month</th>
-            <th scope="col" className={HEAD_CELL}>State</th>
-            <th scope="col" className={`${HEAD_CELL} text-right`}>Manage</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => {
-            const { state, daysLeft } = getRentalStatus(row.endDate, today)
-            return (
-              <tr
-                key={row.id}
-                className="h-14 border-b border-border transition-colors last:border-0 hover:bg-bg/60"
+    <TableFrame
+      minWidth="min-w-[48rem]"
+      head={
+        <>
+          <th scope="col" className={HEAD_CELL}>Property</th>
+          <th scope="col" className={HEAD_CELL}>Tenant</th>
+          <th scope="col" className={HEAD_CELL}>Term</th>
+          <th scope="col" className={`${HEAD_CELL} text-right`}>Rent/month</th>
+          <th scope="col" className={HEAD_CELL}>State</th>
+          <th scope="col" className={`${HEAD_CELL} text-right`}>Manage</th>
+        </>
+      }
+    >
+      {rows.map((row) => {
+        const { state, daysLeft } = getRentalStatus(row.endDate, today)
+        return (
+          <tr
+            key={row.id}
+            className="h-14 border-b border-border transition-colors last:border-0 hover:bg-bg/60"
+          >
+            <td className="px-4 py-3 font-medium">{row.propertyTitle}</td>
+            <td className="px-4 py-3">
+              {row.letElsewhere ? (
+                <span className="text-muted">—</span>
+              ) : (
+                <span className="block max-w-48 truncate">{row.tenantName}</span>
+              )}
+            </td>
+            <td className="tabular whitespace-nowrap px-4 py-3 text-muted">
+              {formatDateThai(row.startDate)} – {formatDateThai(row.endDate)}
+            </td>
+            <td className="tabular whitespace-nowrap px-4 py-3 text-right font-medium">
+              {row.letElsewhere ? <span className="text-muted">—</span> : formatBaht(row.monthlyRent)}
+            </td>
+            <td className="px-4 py-3">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <RentalStatePill status={row.status} state={state} daysLeft={daysLeft} />
+                {row.letElsewhere ? (
+                  <Tag>{LET_ELSEWHERE_NAME}</Tag>
+                ) : (
+                  !row.rentTrackedByUs && <Tag>Rent not followed</Tag>
+                )}
+                {row.status === 'active' && !row.letElsewhere && !row.hasContract && (
+                  <Tag tone="warn">No contract</Tag>
+                )}
+              </div>
+            </td>
+            <td className="px-4 py-3 text-right">
+              <Link
+                href={`/o/${slug}/rentals/${row.id}`}
+                aria-label={`View the Rental of ${row.propertyTitle}`}
+                className="inline-flex items-center gap-1.5 whitespace-nowrap text-muted transition-colors hover:text-ink"
               >
-                <td className="px-4 py-3 font-medium">{row.propertyTitle}</td>
-                <td className="px-4 py-3">
-                  {row.letElsewhere ? (
-                    <span className="text-muted">—</span>
-                  ) : (
-                    <span className="block max-w-48 truncate">{row.tenantName}</span>
-                  )}
-                </td>
-                <td className="tabular whitespace-nowrap px-4 py-3 text-muted">
-                  {formatDateThai(row.startDate)} – {formatDateThai(row.endDate)}
-                </td>
-                <td className="tabular whitespace-nowrap px-4 py-3 text-right font-medium">
-                  {row.letElsewhere ? <span className="text-muted">—</span> : formatBaht(row.monthlyRent)}
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <RentalStatePill status={row.status} state={state} daysLeft={daysLeft} />
-                    {row.letElsewhere ? (
-                      <Tag>{LET_ELSEWHERE_NAME}</Tag>
-                    ) : (
-                      !row.rentTrackedByUs && <Tag>Rent not followed</Tag>
-                    )}
-                    {row.status === 'active' && !row.letElsewhere && !row.hasContract && (
-                      <Tag tone="warn">No contract</Tag>
-                    )}
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <Link
-                    href={`/o/${slug}/rentals/${row.id}`}
-                    aria-label={`View the Rental of ${row.propertyTitle}`}
-                    className="inline-flex items-center gap-1.5 whitespace-nowrap text-muted transition-colors hover:text-ink"
-                  >
-                    <Eye size={14} aria-hidden />
-                    View
-                  </Link>
-                </td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-    </div>
+                <Eye size={14} aria-hidden />
+                View
+              </Link>
+            </td>
+          </tr>
+        )
+      })}
+    </TableFrame>
   )
 }
 

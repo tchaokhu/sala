@@ -11,6 +11,7 @@
 
 import { useActionState } from 'react'
 import type { ActionResult } from '@/lib/action-result'
+import { PANEL } from './styles'
 
 // The class strings live in ./styles so Server Components can read them too;
 // re-exported here so client components keep one import.
@@ -48,7 +49,7 @@ export function Card({
   children: React.ReactNode
 }) {
   return (
-    <section className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-4">
+    <section className={`flex flex-col gap-4 ${PANEL}`}>
       <div>
         <h2 className="font-semibold">{title}</h2>
         {note && <p className="mt-1 text-sm text-muted">{note}</p>}

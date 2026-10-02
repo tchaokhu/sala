@@ -4,6 +4,7 @@
 import { PageHeader } from '@/components/PageHeader'
 import { BackLink } from '@/components/BackLink'
 import { Bar } from '@/components/Skeleton'
+import { PANEL } from '@/components/styles'
 
 // Name; English name, District; Province; Maps link; Facilities, Nearby.
 const FIELDS = ['sm:col-span-2', '', '', '', 'sm:col-span-2', 'list', 'list']
@@ -19,7 +20,7 @@ export default function NewBuildingLoading() {
         />
       </div>
 
-      <div className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-4" aria-hidden>
+      <div className={`flex flex-col gap-4 ${PANEL}`} aria-hidden>
         <div className="grid gap-4 sm:grid-cols-2">
           {FIELDS.map((field, i) => (
             <div key={i} className={`flex flex-col gap-1.5 ${field}`}>

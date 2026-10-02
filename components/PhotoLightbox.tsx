@@ -4,8 +4,8 @@
 // previews and already-stored photos alike) — one component so the add and
 // edit forms cannot drift into two different previewing behaviours.
 
-import { useEffect } from 'react'
 import { X } from 'lucide-react'
+import { Dialog } from './Dialog'
 
 export type PhotoPreview = { src: string; alt: string }
 
@@ -16,31 +16,9 @@ export function PhotoLightbox({
   photo: PhotoPreview | null
   onClose: () => void
 }) {
-  useEffect(() => {
-    if (!photo) return
-    function onKey(event: KeyboardEvent) {
-      if (event.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [photo, onClose])
-
-  if (!photo) return null
-
   return (
-    <div className="fixed inset-0 z-50">
-      <button
-        type="button"
-        aria-label="Close preview"
-        onClick={onClose}
-        className="absolute inset-0 bg-black/60"
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={photo.alt}
-        className="pointer-events-none absolute inset-0 grid place-items-center p-6"
-      >
+    <Dialog open={!!photo} onClose={onClose} label={photo?.alt ?? ''} closeLabel="Close preview">
+      {photo && (
         <div className="pointer-events-auto relative max-h-full max-w-full">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -57,7 +35,7 @@ export function PhotoLightbox({
             <X size={16} aria-hidden />
           </button>
         </div>
-      </div>
-    </div>
+      )}
+    </Dialog>
   )
 }

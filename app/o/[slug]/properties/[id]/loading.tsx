@@ -3,6 +3,7 @@
 
 import { BackLink } from '@/components/BackLink'
 import { Bar } from '@/components/Skeleton'
+import { PANEL } from '@/components/styles'
 
 export default function PropertyLoading() {
   return (
@@ -22,7 +23,7 @@ export default function PropertyLoading() {
       </div>
 
       <div aria-hidden className="flex flex-col gap-6">
-        <div className="grid gap-4 rounded-xl border border-border bg-surface p-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-4 ${PANEL}`}>
           {Array.from({ length: 4 }, (_, i) => (
             <div key={i} className="flex flex-col gap-1">
               <Bar className="h-4 w-16" />
@@ -32,12 +33,12 @@ export default function PropertyLoading() {
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">
-          <div className="flex h-72 flex-col gap-3 rounded-xl border border-border bg-surface p-4">
+          <div className={`flex h-72 flex-col gap-3 ${PANEL}`}>
             <Bar className="h-5 w-20" />
             <Bar className="h-4 w-40" />
             <Bar className="flex-1 rounded-lg" />
           </div>
-          <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
+          <div className={`flex flex-col gap-3 ${PANEL}`}>
             <Bar className="h-5 w-16" />
             <Bar className="h-4 w-36" />
             <Bar className="h-4 w-28" />

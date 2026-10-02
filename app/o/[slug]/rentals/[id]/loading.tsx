@@ -4,6 +4,7 @@
 
 import { PageHeader } from '@/components/PageHeader'
 import { Bar } from '@/components/Skeleton'
+import { PANEL } from '@/components/styles'
 
 export default function RentalLoading() {
   return (
@@ -17,7 +18,7 @@ export default function RentalLoading() {
       </div>
 
       <div aria-hidden className="flex flex-col gap-6">
-        <div className="grid gap-4 rounded-xl border border-border bg-surface p-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-4 ${PANEL}`}>
           {Array.from({ length: 8 }, (_, i) => (
             <div key={i} className="flex flex-col gap-1">
               <Bar className="h-4 w-16" />
@@ -60,7 +61,7 @@ export default function RentalLoading() {
               <Bar className="h-4 w-40" />
             </div>
           </div>
-          <div className="flex h-44 flex-col gap-4 rounded-xl border border-border bg-surface p-4">
+          <div className={`flex h-44 flex-col gap-4 ${PANEL}`}>
             <Bar className="h-9 w-full rounded-lg" />
             <Bar className="h-4 w-2/3" />
             <Bar className="h-9 w-28 rounded-lg" />
@@ -69,7 +70,7 @@ export default function RentalLoading() {
 
         <div className="grid gap-4 lg:grid-cols-2">
           {[0, 1].map((i) => (
-            <div key={i} className="flex h-64 flex-col gap-4 rounded-xl border border-border bg-surface p-4">
+            <div key={i} className={`flex h-64 flex-col gap-4 ${PANEL}`}>
               <Bar className="h-5 w-24" />
               <Bar className="h-4 w-3/4" />
               <Bar className="h-9 w-full rounded-lg" />

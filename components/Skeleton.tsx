@@ -2,6 +2,8 @@
 // whose shape is known (CLAUDE.md). Header text that does not depend on data is
 // drawn for real by the loader itself, so it lands in place.
 
+import { PANEL } from './styles'
+
 /** One pulsing bar. Size and placement come in `className` ("h-4 w-24");
  *  corners default to `rounded` unless it names its own. Decorative — the
  *  loader's sr-only line is what a screen reader hears. */
@@ -28,7 +30,7 @@ export function CardSkeleton({
   cols?: string
 }) {
   return (
-    <div className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-4">
+    <div className={`flex flex-col gap-4 ${PANEL}`}>
       <div>
         {title ? (
           <h2 className="font-semibold">{title}</h2>

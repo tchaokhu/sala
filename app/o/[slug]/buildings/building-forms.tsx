@@ -12,6 +12,7 @@ import { ConfirmAction } from '@/components/ConfirmAction'
 import type { BuildingDetail, BuildingRow } from '@/lib/buildings'
 import { MAX_LIST_ITEMS } from '@/lib/building-input'
 import { createBuilding, deleteBuilding, updateBuilding } from './actions'
+import { PANEL } from '@/components/styles'
 
 const MAP_HINT = 'Paste the link from the share button in the Google Maps app. Short links (maps.app.goo.gl) work too.'
 
@@ -19,7 +20,7 @@ export function CreateBuildingForm({ slug }: { slug: string }) {
   const [result, action, pending] = useFormAction(createBuilding)
 
   return (
-    <form action={action} className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-4">
+    <form action={action} className={`flex flex-col gap-4 ${PANEL}`}>
       <input type="hidden" name="slug" value={slug} />
       <Fields pending={pending} />
 
@@ -37,7 +38,7 @@ export function EditBuildingForm({ slug, building }: { slug: string; building: B
   const [result, action, pending] = useFormAction(updateBuilding)
 
   return (
-    <form action={action} className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-4">
+    <form action={action} className={`flex flex-col gap-4 ${PANEL}`}>
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="building_id" value={building.id} />
       <Fields pending={pending} building={building} />

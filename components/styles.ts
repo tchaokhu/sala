@@ -22,3 +22,12 @@ export const PRIMARY_BUTTON =
 /** The button that destroys or undoes — warn, never the accent. */
 export const WARN_BUTTON =
   'rounded-lg border border-warn px-3 py-2 text-sm font-medium text-warn transition-colors hover:bg-warn/10 disabled:opacity-60'
+
+/** The box most content sits in. Callers add the layout: `${PANEL} flex flex-col gap-3`. */
+export const PANEL = 'rounded-xl border border-border bg-surface p-4'
+
+/** A table's header cell; TableFrame draws the row it sits in. */
+export const HEAD_CELL = 'px-4 py-3 font-semibold'
+
+/** A table's header row, also drawn by the skeletons that stand in for one. */
+export const TABLE_HEAD_ROW = 'border-b border-border bg-bg/60 text-left text-[11px] tracking-wide text-muted'

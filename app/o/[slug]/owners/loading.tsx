@@ -3,6 +3,7 @@
 
 import { PageHeader } from '@/components/PageHeader'
 import { Bar } from '@/components/Skeleton'
+import { PANEL } from '@/components/styles'
 
 export default function OwnersLoading() {
   return (
@@ -16,7 +17,7 @@ export default function OwnersLoading() {
 
       <div className="flex flex-col gap-3" aria-hidden>
         {[0, 1, 2].map((i) => (
-          <div key={i} className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
+          <div key={i} className={`flex flex-col gap-3 ${PANEL}`}>
             <Bar className="h-4 w-52" />
             <Bar className="h-3 w-32" />
             <Bar className="h-3 w-64" />

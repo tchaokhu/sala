@@ -5,6 +5,7 @@
 import { BackLink } from '@/components/BackLink'
 import { PageHeader } from '@/components/PageHeader'
 import { Bar, CardSkeleton, FormButtonsSkeleton } from '@/components/Skeleton'
+import { PANEL } from '@/components/styles'
 
 export default function EditPropertyLoading() {
   return (
@@ -24,7 +25,7 @@ export default function EditPropertyLoading() {
 
         <FormButtonsSkeleton />
 
-        <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
+        <div className={`flex flex-col gap-3 ${PANEL}`}>
           <Bar className="h-4 w-24" />
           <Bar className="h-3 w-72" />
           <Bar className="h-5 w-28" />

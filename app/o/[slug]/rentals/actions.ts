@@ -2,7 +2,7 @@
 
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
-import { createClient, requireMember } from '@/lib/supabase-server'
+import { createClient, currentUser, requireMember } from '@/lib/supabase-server'
 import { cleanText } from '@/lib/validate'
 import { formatDateThai } from '@/lib/format'
 import { buildPaymentSchedule, settleThrough, type ScheduleTerms } from '@/lib/payments'
@@ -11,6 +11,8 @@ import { getRental } from '@/lib/rentals'
 import { tenantBelongsToOrg } from '@/lib/tenants'
 import type { ActionResult } from '@/lib/action-result'
 import { flash } from '@/lib/flash'
+import { parseDocumentKind, validateDocuments } from '@/lib/document-input'
+import { attachDocuments } from '@/lib/rental-documents'
 
 // Every Rental transition — create, end, renew, delete. Membership first and the
 // Org from that gate, never from the form (ADR 0002); then one call to the
@@ -82,6 +84,18 @@ export async function createRental(formData: FormData): Promise<ActionResult> {
   if (!parsed.ok) return parsed
   const v = parsed.values
 
+  // Documents are optional here, and judged before anything is written: a file
+  // that would be refused should stop the Rental, not follow it.
+  const files = formData
+    .getAll('files')
+    .filter((entry): entry is File => entry instanceof File && entry.size > 0)
+  const kind = files.length ? parseDocumentKind(formData) : null
+  if (kind && !kind.ok) return kind
+  if (files.length) {
+    const valid = validateDocuments(files)
+    if (!valid.ok) return valid
+  }
+
   const supabase = await createClient()
 
   // Both ids arrived in the form; each is checked against the Org before the
@@ -151,7 +165,28 @@ export async function createRental(formData: FormData): Promise<ActionResult> {
 
   const id = data as string
   revalidateRental(slug, v.property_id, [])
-  await flash('Rental added', scheduled(schedule))
+
+  // After the Rental exists, since its id is in every key. Its rows are still
+  // written last (ADR 0007); a failure here leaves the Rental standing and says
+  // so, rather than undoing a Rental that was entered correctly.
+  let docs = ''
+  if (kind?.ok && files.length) {
+    const attached = await attachDocuments(supabase, {
+      orgId: org.id,
+      rentalId: id,
+      kind: kind.values,
+      files,
+      userId: (await currentUser())?.id ?? null,
+    })
+    if (!attached.ok) {
+      console.error('[rentals] documents on a new Rental:', attached.error)
+      await flash('Rental added', 'The documents did not upload — add them below under Documents')
+      redirect(`/o/${slug}/rentals/${id}`)
+    }
+    docs = ` · ${attached.count} ${attached.count === 1 ? 'document' : 'documents'}`
+  }
+
+  await flash('Rental added', scheduled(schedule) + docs)
   // Throws NEXT_REDIRECT, so it stays outside any try.
   redirect(`/o/${slug}/rentals/${id}`)
 }

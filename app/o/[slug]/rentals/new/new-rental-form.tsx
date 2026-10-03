@@ -20,6 +20,14 @@ import {
   MAX_TENANT_PHONE,
 } from '@/lib/rental-input'
 import type { RentableProperty } from '@/lib/rentals'
+import {
+  ACCEPTED_DOCUMENT_TYPES,
+  DOCUMENT_KIND_LABELS,
+  DOCUMENT_KINDS,
+  MAX_DOCUMENTS_TOTAL_BYTES,
+  validateDocuments,
+} from '@/lib/document-input'
+import { mb } from '@/lib/property-input'
 import type { TenantOption } from '@/lib/tenants'
 import { createRental } from '../actions'
 
@@ -55,6 +63,9 @@ export function NewRentalForm({
   const [commission, setCommission] = useState('')
   const [rentedByUs, setRentedByUs] = useState(true)
   const [rentTracked, setRentTracked] = useState(tracksRent)
+  const [files, setFiles] = useState<File[]>([])
+  // The action judges the files again; this only says so before the upload.
+  const docsCheck = files.length ? validateDocuments(files) : null
 
   const datesValid = isIsoDate(start) && isIsoDate(end) && end >= start
   const schedule =
@@ -287,6 +298,41 @@ export function NewRentalForm({
         </div>
       </Card>
 
+      {/* Optional: the same upload the Rental's own page has, done with the
+          Rental — so the signed contract is not a second trip. */}
+      <Card title="Documents" note="Optional — they can also be added on the Rental's page later">
+        <div className="grid gap-4 sm:grid-cols-[12rem_1fr]">
+          <Field label="Kind" hint="Every file here gets this kind">
+            <select name="kind" defaultValue="contract" disabled={pending} className={INPUT}>
+              {DOCUMENT_KINDS.map((k) => (
+                <option key={k} value={k}>
+                  {DOCUMENT_KIND_LABELS[k]}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field
+            label="Files"
+            hint={`PDF, Word, JPEG or PNG; up to ${mb(MAX_DOCUMENTS_TOTAL_BYTES)} MB in total`}
+          >
+            <input
+              type="file"
+              name="files"
+              multiple
+              accept={Object.keys(ACCEPTED_DOCUMENT_TYPES).join(',')}
+              disabled={pending}
+              onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
+              className={`${INPUT} file:mr-3 file:rounded file:border-0 file:bg-border file:px-2 file:py-1 file:text-sm file:text-ink`}
+            />
+          </Field>
+        </div>
+        {docsCheck && !docsCheck.ok && (
+          <p role="status" className="text-sm text-warn">
+            {docsCheck.message}
+          </p>
+        )}
+      </Card>
+
       <SchedulePreview
         rows={schedule}
         empty={
@@ -297,7 +343,7 @@ export function NewRentalForm({
       />
 
       <div className="flex flex-wrap items-center gap-3">
-        <button type="submit" disabled={pending} className={PRIMARY_BUTTON}>
+        <button type="submit" disabled={pending || (docsCheck !== null && !docsCheck.ok)} className={PRIMARY_BUTTON}>
           {pending ? 'Saving…' : 'Save Rental'}
         </button>
         <Notice result={result} />

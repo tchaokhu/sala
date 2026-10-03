@@ -9,7 +9,7 @@
 import 'server-only'
 import { createClient } from './supabase-server'
 import { SIGNED_URL_TTL_SECONDS } from './property-storage'
-import type { RentalDocumentKind } from './document-input'
+import { documentExtension, documentFileName, type RentalDocumentKind } from './document-input'
 
 export const DOCS_BUCKET = 'sala-docs'
 
@@ -61,7 +61,7 @@ interface DocumentRecord {
  * property_id, tenant_id and start_date, and PostgREST cannot correlate an
  * embed to its parent's columns. The second query reads own and earlier
  * together — `start_date <= this one's` includes the Rental itself — and they
- * are split here. A Rental let by another agent has no Tenant, so no chain.
+ * are split here.
  *
  * Another Org's Rental and a missing one both give empty lists.
  */
@@ -186,4 +186,60 @@ export async function discardDocuments(supabase: Client, paths: string[]): Promi
   } catch (err) {
     console.error('[rental-documents] could not remove orphaned uploads:', err)
   }
+}
+
+/**
+ * Upload Documents to a Rental and record them: ADR 0007 applied to
+ * `sala-docs` — every key minted first, the bytes up on the caller's session,
+ * the rows written last so none can point at bytes that never arrived, and
+ * every intended key swept if either step fails. The caller has already
+ * established Membership and that the Rental is the Org's; it says what went
+ * wrong, since only it knows how to put it to the person.
+ */
+export async function attachDocuments(
+  supabase: Client,
+  doc: { orgId: string; rentalId: string; kind: RentalDocumentKind; files: File[]; userId: string | null },
+): Promise<{ ok: true; count: number } | { ok: false; stage: 'upload' | 'save'; error: unknown }> {
+  // The key's extension comes from the validated mime type, never the filename.
+  const rows = doc.files.map((file) => {
+    const id = crypto.randomUUID()
+    return {
+      file,
+      row: {
+        id,
+        org_id: doc.orgId,
+        rental_id: doc.rentalId,
+        kind: doc.kind,
+        storage_path: `${doc.orgId}/rentals/${doc.rentalId}/${id}.${documentExtension(file.type)}`,
+        file_name: documentFileName(file.name, file.type),
+        mime_type: file.type,
+        size_bytes: file.size,
+        uploaded_by: doc.userId,
+      },
+    }
+  })
+  const paths = rows.map((r) => r.row.storage_path)
+
+  try {
+    await Promise.all(
+      rows.map(async ({ file, row }) => {
+        const { error } = await supabase.storage
+          .from(DOCS_BUCKET)
+          .upload(row.storage_path, file, { contentType: file.type, upsert: false })
+        if (error) throw error
+      }),
+    )
+  } catch (error) {
+    // Promise.all rejects on the first failure while others may still land, so
+    // the sweep names every intended key, not what resolved.
+    await discardDocuments(supabase, paths)
+    return { ok: false, stage: 'upload', error }
+  }
+
+  const { error } = await supabase.from('rental_documents').insert(rows.map((r) => r.row))
+  if (error) {
+    await discardDocuments(supabase, paths)
+    return { ok: false, stage: 'save', error }
+  }
+  return { ok: true, count: rows.length }
 }

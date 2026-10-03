@@ -3,13 +3,8 @@
 import { revalidatePath } from 'next/cache'
 import { createClient, currentUser, requireMember } from '@/lib/supabase-server'
 import { cleanText } from '@/lib/validate'
-import {
-  documentExtension,
-  documentFileName,
-  parseDocumentKind,
-  validateDocuments,
-} from '@/lib/document-input'
-import { DOCS_BUCKET, discardDocuments } from '@/lib/rental-documents'
+import { parseDocumentKind, validateDocuments } from '@/lib/document-input'
+import { attachDocuments, DOCS_BUCKET } from '@/lib/rental-documents'
 import type { ActionResult } from '@/lib/action-result'
 
 // Attaching and removing Rental Documents. ADR 0007 applied to `sala-docs`:
@@ -85,53 +80,21 @@ export async function uploadRentalDocuments(formData: FormData): Promise<ActionR
   }
   if (!found) return RENTAL_NOT_FOUND
 
-  // Minted here so every key is known before any row exists. The key's
-  // extension comes from the validated mime type, never from the filename.
-  const rows = files.map((file) => {
-    const id = crypto.randomUUID()
-    return {
-      file,
-      row: {
-        id,
-        org_id: org.id,
-        rental_id: rentalId,
-        kind: kind.values,
-        storage_path: `${org.id}/rentals/${rentalId}/${id}.${documentExtension(file.type)}`,
-        file_name: documentFileName(file.name, file.type),
-        mime_type: file.type,
-        size_bytes: file.size,
-        uploaded_by: userId,
-      },
-    }
+  const attached = await attachDocuments(supabase, {
+    orgId: org.id,
+    rentalId,
+    kind: kind.values,
+    files,
+    userId,
   })
-  const paths = rows.map((r) => r.row.storage_path)
-
-  try {
-    await Promise.all(
-      rows.map(async ({ file, row }) => {
-        const { error } = await supabase.storage
-          .from(DOCS_BUCKET)
-          .upload(row.storage_path, file, { contentType: file.type, upsert: false })
-        if (error) throw error
-      }),
-    )
-  } catch (err) {
-    // Promise.all rejects on the first failure while others may still land, so
-    // the sweep names every intended key, not what resolved.
-    await discardDocuments(supabase, paths)
-    return failed('Uploading the documents', err)
-  }
-
-  const { error } = await supabase.from('rental_documents').insert(rows.map((r) => r.row))
-  if (error) {
-    await discardDocuments(supabase, paths)
+  if (!attached.ok) {
     // The Rental was deleted between the check and the insert.
-    if (error.code === '23503') return RENTAL_NOT_FOUND
-    return failed('Saving the documents', error)
+    if (attached.stage === 'save' && (attached.error as { code?: string })?.code === '23503') return RENTAL_NOT_FOUND
+    return failed(attached.stage === 'upload' ? 'Uploading the documents' : 'Saving the documents', attached.error)
   }
 
   revalidateDocuments(slug)
-  const n = rows.length
+  const n = attached.count
   return { ok: true, message: `${n} ${n === 1 ? 'document' : 'documents'} uploaded` }
 }
 

@@ -48,6 +48,9 @@ One rentable thing an Org can offer — a condo unit, a house or a townhome —
 whether it sits on the Org's own books or was found elsewhere and can be shown
 without holding it. Which of the two it is, is its Mandate. Its name is its
 Building's name and its room number, put together rather than typed (ADR 0008).
+Its status is Available, Reserved, Rented — which only an active Rental of ours
+makes it — or Let elsewhere: another agent let it, with an optional date it is
+expected free (ADR 0016).
 _Avoid_: Room, unit, listing, asset
 
 **Mandate**:
@@ -82,8 +85,8 @@ Ending one removes the Payments due after the day it ends that nobody has
 settled; settled ones stay. Renewing ends one on its end date and starts the
 next the following day, same Property and Tenant. One with nothing settled and
 no Rental Document can be deleted outright, as a mistake rather than as history.
-A room let by another agent is a Rental too — no money on it, and recorded only
-so the room comes back up when it frees (ADR 0011, 0014).
+A room let by another agent is not a Rental: its Property is marked Let
+elsewhere (ADR 0016).
 _Avoid_: Lease, contract, booking, agreement
 
 **Tenant**:

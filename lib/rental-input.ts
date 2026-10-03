@@ -11,21 +11,6 @@ import { formatBaht } from './format'
 import { blankToNull, fail, MAX_PRICE, number, type FormLike, type Parsed } from './property-input'
 import { cleanText, isPhone } from './validate'
 
-/** How the new-Rental form's switch posts: a Rental of ours, or a room let by
- *  another agent — recorded only so it comes back up as it frees. */
-export const RENTAL_MODES = ['ours', 'elsewhere'] as const
-export type RentalMode = (typeof RENTAL_MODES)[number]
-
-/** The snapshot name a let-elsewhere Rental carries. Written by create_rental
- *  (0017), not by the form; here so the UI can say the same words. */
-export const LET_ELSEWHERE_NAME = 'Let by another agent'
-
-/** No column of its own (ADR 0011, amended): a Rental the agency neither let
- *  nor follows the rent of. If that ever stops being unambiguous, it becomes one. */
-export function isLetElsewhere(r: { rented_by_us: boolean; rent_tracked_by_us: boolean }): boolean {
-  return !r.rented_by_us && !r.rent_tracked_by_us
-}
-
 /** Decision 11's term: twelve months, ending the day before the anniversary. */
 export function defaultEndDate(start: string): string {
   return addDaysIso(addMonthsIso(start, 12), -1)
@@ -77,42 +62,24 @@ export function parseRentalForm(form: FormLike): Parsed<NewRentalInput> {
   const property_id = cleanText(form.get('property_id'), 40)
   if (!property_id) return fail('Choose the Property being let')
 
-  const rawMode = form.get('mode')
-  const mode: RentalMode = rawMode === 'elsewhere' ? 'elsewhere' : 'ours'
-
   const start = date(form.get('start_date'), 'Start date')
   if (!start.ok) return start
   const end = date(form.get('end_date'), 'End date')
   if (!end.ok) return end
   if (end.values < start.values) return fail('The end date must be on or after the start date')
 
-  // Let by another agent: no Tenant, no money, nothing followed. Forced rather
-  // than refused, because the form hides these fields and whatever they held
-  // before the switch was flipped is not an answer.
-  if (mode === 'elsewhere') {
-    return {
-      ok: true,
-      values: {
-        property_id,
-        tenant_id: null,
-        new_tenant: null,
-        start_date: start.values,
-        end_date: end.values,
-        monthly_rent: 0,
-        deposit: 0,
-        commission: 0,
-        rented_by_us: false,
-        rent_tracked_by_us: false,
-        paid_through: null,
-      },
-    }
-  }
-
   const tenant = parseTenantChoice(form)
   if (!tenant.ok) return tenant
 
   const rented_by_us = ticked(form.get('rented_by_us'))
   const rent_tracked_by_us = ticked(form.get('rent_tracked_by_us'))
+  // Neither let by us nor followed is a room another agent let — a Property
+  // status now, not a Rental (ADR 0016).
+  if (!rented_by_us && !rent_tracked_by_us) {
+    return fail(
+      'A Rental we neither let nor follow the rent of is another agent\'s — mark the Property "Let elsewhere" instead',
+    )
+  }
 
   const rent = number(form.get('monthly_rent'), {
     label: 'Rent per month',
@@ -269,11 +236,6 @@ export function parseRenewForm(
   if (!end.ok) return end
   if (end.values <= rental.endDate) return fail('The new end date must be after the current one')
 
-  // Renewing a let-elsewhere Rental moves its estimated end; there is still no
-  // money on it.
-  if (!rental.rentedByUs && !rental.rentTrackedByUs) {
-    return { ok: true, values: { start_date, end_date: end.values, monthly_rent: 0, commission: 0 } }
-  }
 
   const rent = number(form.get('monthly_rent'), {
     label: 'Rent per month',

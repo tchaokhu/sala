@@ -33,9 +33,8 @@ export function PropertyCombobox({
           (o.titleEn ? `${o.title} · ` : '') +
           `${formatBaht(o.priceMonthly)}/month` +
           (o.ownerName ? ` · ${o.ownerName}` : '') +
-          // The stale kind the ETL carried over: marked Rented with nothing
-          // behind it. Recording its Rental puts it right.
-          (o.status === 'rented' ? ' · marked Rented, no Rental recorded' : ''),
+          // Another agent's room until now; recording our Rental moves it on.
+          (o.status === 'let_elsewhere' ? ' · let elsewhere until now' : ''),
       }))}
       idName="property_id"
       initialId={initial?.id}

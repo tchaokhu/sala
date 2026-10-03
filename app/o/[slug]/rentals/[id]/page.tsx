@@ -8,7 +8,6 @@ import { requireMember } from '@/lib/supabase-server'
 import { todayBangkok } from '@/lib/dates'
 import { formatBaht, formatDateThai } from '@/lib/format'
 import { getPaymentStatus, outstanding } from '@/lib/payments'
-import { LET_ELSEWHERE_NAME } from '@/lib/rental-input'
 import { getRental, getRentalStatus, listPaymentsForRental } from '@/lib/rentals'
 import { listRentalDocuments, signedDocumentUrls, type RentalDocument } from '@/lib/rental-documents'
 import { BackLink } from '@/components/BackLink'
@@ -65,11 +64,7 @@ export default async function RentalPage({
           summary={
             <span className="flex items-center gap-1.5">
               <RentalStatePill status={rental.status} state={state} daysLeft={daysLeft} />
-              {rental.letElsewhere ? (
-                <Tag>{LET_ELSEWHERE_NAME}</Tag>
-              ) : (
-                !rental.rentTrackedByUs && <Tag>Rent not followed</Tag>
-              )}
+              {!rental.rentTrackedByUs && <Tag>Rent not followed</Tag>}
             </span>
           }
           actions={
@@ -85,7 +80,7 @@ export default async function RentalPage({
       </div>
 
       <section className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-4 ${PANEL}`}>
-        <Fact label="Tenant" value={rental.letElsewhere ? '—' : rental.tenantName} />
+        <Fact label="Tenant" value={rental.tenantName} />
         <Fact label="Phone" value={rental.tenantPhone ?? '—'} tabular />
         <Fact
           label="Term"
@@ -94,10 +89,10 @@ export default async function RentalPage({
         />
         <Fact
           label="Rent/month"
-          value={rental.letElsewhere ? '—' : formatBaht(rental.monthlyRent)}
+          value={formatBaht(rental.monthlyRent)}
           tabular
         />
-        <Fact label="Deposit" value={rental.letElsewhere ? '—' : formatBaht(rental.deposit)} tabular />
+        <Fact label="Deposit" value={formatBaht(rental.deposit)} tabular />
         <Fact
           label="Commission"
           value={rental.rentedByUs ? formatBaht(rental.commission) : '—'}
@@ -126,9 +121,7 @@ export default async function RentalPage({
         </h2>
         {payments.length === 0 ? (
           <p className="rounded-xl border border-dashed border-border bg-surface p-6 text-center text-sm text-muted">
-            {rental.letElsewhere
-              ? `No Payments: ${LET_ELSEWHERE_NAME.toLowerCase()}`
-              : 'No Payments on this Rental — the rent is not followed and there is no Deposit or Commission'}
+            No Payments on this Rental — the rent is not followed and there is no Deposit or Commission
           </p>
         ) : (
           <PaymentsTable slug={slug} payments={payments} today={today} />
@@ -144,7 +137,6 @@ export default async function RentalPage({
       <RentalDocuments
         slug={slug}
         rentalId={rental.id}
-        letElsewhere={rental.letElsewhere}
         own={documents.own.map(shown)}
         earlier={documents.earlier.map((d) => ({
           ...shown(d),
@@ -167,7 +159,6 @@ export default async function RentalPage({
           commission: rental.commission,
           rentedByUs: rental.rentedByUs,
           rentTrackedByUs: rental.rentTrackedByUs,
-          letElsewhere: rental.letElsewhere,
         }}
         payments={payments.map((p) => ({ due_date: p.due_date, settled_date: p.settled_date }))}
         today={today}

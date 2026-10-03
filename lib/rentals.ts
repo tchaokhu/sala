@@ -49,7 +49,6 @@ export const RENTALS_PAGE_SIZE = 25
  *  `org_rental_counts`, so a chip's number and the rows under it agree. */
 export const RENTAL_FILTERS = [
   'active',
-  'let_elsewhere',
   'ending_this_month',
   'past_end_date',
   'ended',
@@ -73,8 +72,6 @@ export interface RentalListRow {
   monthlyRent: number
   rentedByUs: boolean
   rentTrackedByUs: boolean
-  /** NOT rented_by_us AND NOT rent_tracked_by_us (ADR 0011, amended). */
-  letElsewhere: boolean
   status: RentalStatus
   /** A `contract` Rental Document is attached to this Rental itself — a
    *  predecessor's does not count, since a renewal signs a new one. */
@@ -157,10 +154,7 @@ export async function listRentals(
 
   switch (opts.filter) {
     case 'active':
-      query = query.eq('status', 'active').or('rented_by_us.is.true,rent_tracked_by_us.is.true')
-      break
-    case 'let_elsewhere':
-      query = query.eq('status', 'active').is('rented_by_us', false).is('rent_tracked_by_us', false)
+      query = query.eq('status', 'active')
       break
     case 'ending_this_month': {
       const { from, to } = monthBounds(today)
@@ -207,7 +201,6 @@ export async function listRentals(
         monthlyRent: Number(r.monthly_rent),
         rentedByUs: r.rented_by_us,
         rentTrackedByUs: r.rent_tracked_by_us,
-        letElsewhere: !r.rented_by_us && !r.rent_tracked_by_us,
         status: r.status,
         hasContract: (r.rental_documents?.length ?? 0) > 0,
       }
@@ -278,7 +271,6 @@ export async function getRental(orgId: string, id: string): Promise<RentalDetail
     commission: Number(r.commission),
     rentedByUs: r.rented_by_us,
     rentTrackedByUs: r.rent_tracked_by_us,
-    letElsewhere: !r.rented_by_us && !r.rent_tracked_by_us,
     status: r.status,
     endedAt: r.ended_at,
     endedReason: r.ended_reason,
@@ -332,10 +324,8 @@ export async function listPaymentsForRental(
 }
 
 export interface RentalCounts {
-  /** Excludes let-elsewhere: the agency's own tenancies. */
   active: number
-  letElsewhere: number
-  /** Every active Rental ending in today's calendar month, let-elsewhere too. */
+  /** Every active Rental ending in today's calendar month. */
   endingThisMonth: number
   /** Active, end date gone by — no expiry job yet (ADR 0012). */
   pastEndDate: number
@@ -357,7 +347,6 @@ export async function getRentalCounts(
   const row = data as Record<string, number | string>
   return {
     active: Number(row.active),
-    letElsewhere: Number(row.let_elsewhere),
     endingThisMonth: Number(row.ending_this_month),
     pastEndDate: Number(row.past_end_date),
     ended: Number(row.ended),
@@ -375,9 +364,9 @@ export interface RentableProperty {
   titleEn: string | null
   /** The new-Rental form's default rent (decision 11). */
   priceMonthly: number
-  /** `rented` here is the stale kind — no active Rental behind it — and the
-   *  form lets it be recorded properly. */
-  status: 'available' | 'reserved' | 'rented'
+  /** Never `rented` once 0023 has run — that now always has an active Rental.
+   *  `let_elsewhere` can be let by us too; recording the Rental moves it on. */
+  status: 'available' | 'reserved' | 'rented' | 'let_elsewhere'
   /** Tells apart rooms whose titles match — ETL rows often have no room number. */
   ownerName: string | null
 }

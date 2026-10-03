@@ -22,7 +22,6 @@ import { PhotoPicker } from '@/components/PhotoPicker'
 import type { BuildingOption } from '@/lib/buildings'
 import type { OwnerOption } from '@/lib/owners'
 import {
-  CREATABLE_STATUSES,
   MAX_IMAGES,
   MAX_IMAGE_BYTES,
   MAX_IMAGES_TOTAL_BYTES,
@@ -30,9 +29,9 @@ import {
   PROPERTY_TYPES,
   PROPERTY_TYPE_LABELS,
 } from '@/lib/property-input'
-import { STATUS_LABELS } from '@/components/StatusPill'
 import { createProperty } from '../actions'
 import { GenerateDescription } from '@/components/GenerateDescription'
+import { PropertyStatusField } from '@/components/PropertyStatusField'
 
 export function NewPropertyForm({
   slug,
@@ -110,15 +109,12 @@ export function NewPropertyForm({
             />
           </Field>
 
-          <Field label="Starting status" hint='A Property is only "Rented" once a Rental is created'>
-            <select name="status" disabled={pending} defaultValue="available" className={INPUT}>
-              {CREATABLE_STATUSES.map((status) => (
-                <option key={status} value={status}>
-                  {STATUS_LABELS[status]}
-                </option>
-              ))}
-            </select>
-          </Field>
+          <PropertyStatusField
+            label="Starting status"
+            hint='A Property is only "Rented" once a Rental is created'
+            initial="available"
+            disabled={pending}
+          />
 
         </div>
 

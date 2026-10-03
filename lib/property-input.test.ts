@@ -373,3 +373,36 @@ describe('orderImages', () => {
     expect(orderImages(['path:o/p/a.jpg', 'path:o/p/a.jpg'], kept, uploaded)).toMatchObject({ ok: false })
   })
 })
+
+describe('Let elsewhere (ADR 0016)', () => {
+  it('can be set at Add, with an optional Free from date', () => {
+    expect(parse({ ...MINIMUM, status: 'let_elsewhere', free_on: '2027-03-31' })).toMatchObject({
+      ok: true,
+      values: { status: 'let_elsewhere', free_on: '2027-03-31' },
+    })
+    expect(parse({ ...MINIMUM, status: 'let_elsewhere' })).toMatchObject({ ok: true, values: { free_on: null } })
+    expect(parse({ ...MINIMUM, status: 'let_elsewhere', free_on: 'soon' })).toMatchObject({ ok: false })
+  })
+
+  it('keeps Free from only while the room is let elsewhere', () => {
+    expect(parse({ ...MINIMUM, status: 'available', free_on: '2027-03-31' })).toMatchObject({
+      ok: true,
+      values: { status: 'available', free_on: null },
+    })
+  })
+
+  it('can be set and cleared at Edit, but not over an active Rental', () => {
+    expect(parsePropertyEditForm(form({ ...MINIMUM, status: 'let_elsewhere' }), 'available', false)).toMatchObject({
+      ok: true,
+      values: { status: 'let_elsewhere' },
+    })
+    expect(parsePropertyEditForm(form({ ...MINIMUM, status: 'available' }), 'let_elsewhere', false)).toMatchObject({
+      ok: true,
+      values: { status: 'available', free_on: null },
+    })
+    expect(parsePropertyEditForm(form({ ...MINIMUM, status: 'let_elsewhere' }), 'rented', true)).toMatchObject({
+      ok: true,
+      values: { status: 'rented' },
+    })
+  })
+})

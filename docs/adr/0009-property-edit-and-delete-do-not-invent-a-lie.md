@@ -60,6 +60,10 @@ and one that really is let can be recorded as a Rental. Edit still cannot *set*
 `rented`; only creating a Rental does. `getPropertyForEdit` reads the active
 Rental alongside the row, and `parsePropertyEditForm` locks on that.
 
+ADR 0016 (2026-10-03) adds `let_elsewhere`, set and cleared freely like
+`available` and `reserved`, and moves those thirteen to it — so `rented` with
+no active Rental no longer occurs.
+
 Delete is unchanged. An ended Rental still references its Property, so ending
 it does not make the Property deletable; a Rental entered by mistake can itself
 be deleted while nothing under it is settled, and then the Property can go.

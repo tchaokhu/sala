@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
   defaultEndDate,
-  isLetElsewhere,
   parseEndRentalForm,
   parseRenewForm,
   parseRentalForm,
@@ -75,10 +74,13 @@ describe('parseRentalForm', () => {
     expect(parseRentalForm(form({ ...rest, commission: '0' })).ok).toBe(true)
   })
 
-  it('reads both flags as unticked when absent', () => {
+  it('refuses both flags unticked — that is another agent\'s room, a Property status now', () => {
     const { rented_by_us: _a, rent_tracked_by_us: _b, ...rest } = OURS
     const result = parseRentalForm(form({ ...rest, commission: '' }))
-    expect(result).toMatchObject({ ok: true, values: { rented_by_us: false, rent_tracked_by_us: false, commission: 0 } })
+    expect(result).toMatchObject({ ok: false })
+    if (!result.ok) expect(result.message).toContain('Let elsewhere')
+    // Either one ticked is a Rental of ours.
+    expect(parseRentalForm(form({ ...rest, commission: '', rent_tracked_by_us: 'on' }))).toMatchObject({ ok: true })
   })
 
   it('refuses a followed rent of 0 — it would be a Payment of nothing', () => {
@@ -94,32 +96,6 @@ describe('parseRentalForm', () => {
     expect(parseRentalForm(form({ ...OURS, paid_through: '2027-02-28' }))).toMatchObject({ ok: true })
     expect(parseRentalForm(form({ ...OURS, paid_through: '2026-02-28' }))).toMatchObject({ ok: false })
     expect(parseRentalForm(form({ ...OURS, paid_through: '2027-03-01' }))).toMatchObject({ ok: false })
-  })
-
-  it('forces a let-elsewhere Rental to no Tenant, no money and no flags', () => {
-    const result = parseRentalForm(form({ ...OURS, mode: 'elsewhere', tenant_name: 'ignored', paid_through: '2026-06-01' }))
-    expect(result).toEqual({
-      ok: true,
-      values: {
-        property_id: 'p1',
-        tenant_id: null,
-        new_tenant: null,
-        start_date: '2026-03-01',
-        end_date: '2027-02-28',
-        monthly_rent: 0,
-        deposit: 0,
-        commission: 0,
-        rented_by_us: false,
-        rent_tracked_by_us: false,
-        paid_through: null,
-      },
-    })
-    if (result.ok) expect(isLetElsewhere(result.values)).toBe(true)
-  })
-
-  it('still needs the Property and both dates when let elsewhere', () => {
-    expect(parseRentalForm(form({ mode: 'elsewhere', start_date: '2026-03-01', end_date: '2027-02-28' }))).toMatchObject({ ok: false })
-    expect(parseRentalForm(form({ mode: 'elsewhere', property_id: 'p1', start_date: '2026-03-01' }))).toMatchObject({ ok: false })
   })
 })
 
@@ -187,10 +163,5 @@ describe('parseRenewForm', () => {
   it('refuses a Commission on a Rental we did not let', () => {
     expect(parseRenewForm(form({ end_date: '2028-02-29', monthly_rent: '8500', commission: '1' }), { ...rental, rentedByUs: false }))
       .toMatchObject({ ok: false })
-  })
-
-  it('carries no money on a let-elsewhere Rental', () => {
-    expect(parseRenewForm(form({ end_date: '2028-02-29', monthly_rent: '8500', commission: '100' }), { endDate: '2027-02-28', rentedByUs: false, rentTrackedByUs: false }))
-      .toEqual({ ok: true, values: { start_date: '2027-03-01', end_date: '2028-02-29', monthly_rent: 0, commission: 0 } })
   })
 })

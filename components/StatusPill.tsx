@@ -8,7 +8,9 @@
 // Read as an occupancy board, not as "is this property earning": Available is
 // the state an agent can act on (green — free to place a tenant), Reserved is
 // pending, and Rented is plain rather than green because it needs nothing from
-// anyone. It is deliberately NOT warn/red either — PropertyTable's RentalEnd
+// anyone. Let elsewhere is as plain — another agent's tenant, nothing for us to
+// do — but a ring with a bar rather than a filled disc, so it is not read as
+// a Rental of ours (ADR 0016). It is deliberately NOT warn/red either — PropertyTable's RentalEnd
 // already spends red on a lease that is actually overdue, in the very next
 // column, and every occupied row turning red would bury that signal.
 //
@@ -37,6 +39,12 @@ const STATUS: Record<PropertyStatus, { label: string; glyph: LucideIcon; filled?
     glyph: CircleDot,
     className: 'border-hold/40 text-hold',
   },
+  // Another agent let it; not on offer, and nothing of ours to manage.
+  let_elsewhere: {
+    label: 'Let elsewhere',
+    glyph: CircleMinus,
+    className: 'border-border text-muted',
+  },
   // Free to place a tenant into — the good, actionable state on this board.
   available: {
     label: 'Available',
@@ -61,6 +69,7 @@ export const STATUS_LABELS: Record<PropertyStatus, string> = {
   available: STATUS.available.label,
   reserved: STATUS.reserved.label,
   rented: STATUS.rented.label,
+  let_elsewhere: STATUS.let_elsewhere.label,
 }
 
 type Look = { label: string; glyph: LucideIcon; className: string; filled?: boolean }

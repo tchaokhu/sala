@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { Eye } from 'lucide-react'
 import { getRentalStatus, type RentalListRow } from '@/lib/rentals'
 import { formatBaht, formatDateThai } from '@/lib/format'
-import { LET_ELSEWHERE_NAME } from '@/lib/rental-input'
 import { RentalStatePill, Tag } from './StatusPill'
 import { Bar } from '@/components/Skeleton'
 import { TableFrame } from './TableFrame'
@@ -60,27 +59,19 @@ export function RentalTable({
           >
             <td className="px-4 py-3 font-medium">{row.propertyTitle}</td>
             <td className="px-4 py-3">
-              {row.letElsewhere ? (
-                <span className="text-muted">—</span>
-              ) : (
-                <span className="block max-w-48 truncate">{row.tenantName}</span>
-              )}
+              <span className="block max-w-48 truncate">{row.tenantName}</span>
             </td>
             <td className="tabular whitespace-nowrap px-4 py-3 text-muted">
               {formatDateThai(row.startDate)} – {formatDateThai(row.endDate)}
             </td>
             <td className="tabular whitespace-nowrap px-4 py-3 text-right font-medium">
-              {row.letElsewhere ? <span className="text-muted">—</span> : formatBaht(row.monthlyRent)}
+              {formatBaht(row.monthlyRent)}
             </td>
             <td className="px-4 py-3">
               <div className="flex flex-wrap items-center gap-1.5">
                 <RentalStatePill status={row.status} state={state} daysLeft={daysLeft} />
-                {row.letElsewhere ? (
-                  <Tag>{LET_ELSEWHERE_NAME}</Tag>
-                ) : (
-                  !row.rentTrackedByUs && <Tag>Rent not followed</Tag>
-                )}
-                {row.status === 'active' && !row.letElsewhere && !row.hasContract && (
+                {!row.rentTrackedByUs && <Tag>Rent not followed</Tag>}
+                {row.status === 'active' && !row.hasContract && (
                   <Tag tone="warn">No contract</Tag>
                 )}
               </div>

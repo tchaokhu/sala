@@ -59,14 +59,12 @@ function formatSize(bytes: number): string {
 export function RentalDocuments({
   slug,
   rentalId,
-  letElsewhere,
   own,
   earlier,
   capped,
 }: {
   slug: string
   rentalId: string
-  letElsewhere: boolean
   own: ShownDocument[]
   earlier: EarlierDocument[]
   capped: boolean
@@ -79,9 +77,7 @@ export function RentalDocuments({
 
       {own.length === 0 ? (
         <p className="rounded-xl border border-dashed border-border bg-surface p-6 text-center text-sm text-muted">
-          {letElsewhere
-            ? 'No Documents on this Rental. Upload one below if there is anything to keep.'
-            : 'No Documents on this Rental yet. Upload the signed contract below, and the Tenant’s ID copy with it.'}
+          No Documents on this Rental yet. Upload the signed contract below, and the Tenant’s ID copy with it.
         </p>
       ) : (
         <DocumentsTable slug={slug} docs={own} />

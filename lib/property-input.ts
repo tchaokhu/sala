@@ -12,6 +12,7 @@
 
 import type { PropertyStatus } from './properties'
 import { cleanText } from './validate'
+import { isIsoDate } from './dates'
 
 export const PROPERTY_TYPES = ['condo', 'house', 'townhome'] as const
 export type PropertyType = (typeof PROPERTY_TYPES)[number]
@@ -31,7 +32,7 @@ export const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
 /** `rented` is not one of them. A Property becomes occupied by having an active
  *  Rental (CONTEXT.md), and a row that claims a tenant without one renders as
  *  "Rented" beside an empty tenant column — a lie the list cannot correct. */
-export const CREATABLE_STATUSES = ['available', 'reserved'] as const satisfies readonly PropertyStatus[]
+export const CREATABLE_STATUSES = ['available', 'reserved', 'let_elsewhere'] as const satisfies readonly PropertyStatus[]
 export type CreatableStatus = (typeof CREATABLE_STATUSES)[number]
 
 export function isCreatableStatus(value: unknown): value is CreatableStatus {
@@ -65,6 +66,9 @@ export interface NewProperty {
    *  `ownerBelongsToOrg` before it writes. */
   owner_id: string | null
   status: CreatableStatus
+  /** When a room let by another agent is expected back — optional, and only
+   *  while the status is `let_elsewhere` (ADR 0016). */
+  free_on: string | null
 }
 
 export type Parsed<T> = { ok: true; values: T } | { ok: false; message: string }
@@ -88,7 +92,7 @@ export const MAX_DESCRIPTION = 4000
 
 /** Everything on the form except `status`, which is the one field create and
  *  edit disagree about — see `parsePropertyForm` and `parsePropertyEditForm`. */
-export type PropertyFields = Omit<NewProperty, 'status'>
+export type PropertyFields = Omit<NewProperty, 'status' | 'free_on'>
 
 /**
  * Read the form, or say what is wrong with it in words the person can act on.
@@ -112,7 +116,9 @@ export function parsePropertyForm(form: FormLike): Parsed<NewProperty> {
     status = rawStatus
   }
 
-  return { ok: true, values: { ...fields.values, status } }
+  const free = parseFreeOn(form, status)
+  if (!free.ok) return free
+  return { ok: true, values: { ...fields.values, status, free_on: free.values } }
 }
 
 /**
@@ -137,25 +143,35 @@ export function parsePropertyEditForm(
   form: FormLike,
   currentStatus: PropertyStatus,
   hasActiveRental: boolean,
-): Parsed<PropertyFields & { status: PropertyStatus }> {
+): Parsed<PropertyFields & { status: PropertyStatus; free_on: string | null }> {
   const fields = parsePropertyFields(form)
   if (!fields.ok) return fields
 
-  if (hasActiveRental) {
-    return { ok: true, values: { ...fields.values, status: currentStatus } }
-  }
-
+  let status: PropertyStatus = currentStatus
   const rawStatus = form.get('status')
-  if (rawStatus == null || rawStatus === '') {
-    return { ok: true, values: { ...fields.values, status: currentStatus } }
+  if (!hasActiveRental && rawStatus != null && rawStatus !== '') {
+    if (!isCreatableStatus(rawStatus)) return fail(STATUS_MESSAGE)
+    status = rawStatus
   }
-  if (!isCreatableStatus(rawStatus)) return fail(STATUS_MESSAGE)
 
-  return { ok: true, values: { ...fields.values, status: rawStatus } }
+  const free = parseFreeOn(form, status)
+  if (!free.ok) return free
+  return { ok: true, values: { ...fields.values, status, free_on: free.values } }
 }
 
 const STATUS_MESSAGE =
-  'Status must be Available or Reserved — a Property only becomes Rented once it has a Rental'
+  'Status must be Available, Reserved or Let elsewhere — a Property only becomes Rented once it has a Rental'
+
+/** The optional "Free from" date: read only for a room let elsewhere, and
+ *  blank for every other status whatever was posted (ADR 0016). */
+function parseFreeOn(form: FormLike, status: PropertyStatus): Parsed<string | null> {
+  if (status !== 'let_elsewhere') return { ok: true, values: null }
+  const raw = form.get('free_on')
+  const value = typeof raw === 'string' ? raw.trim() : ''
+  if (!value) return { ok: true, values: null }
+  if (!isIsoDate(value)) return fail('Free from must be a date — pick it from the calendar, or leave it blank')
+  return { ok: true, values: value }
+}
 
 function parsePropertyFields(form: FormLike): Parsed<PropertyFields> {
   const propertyType = form.get('property_type')

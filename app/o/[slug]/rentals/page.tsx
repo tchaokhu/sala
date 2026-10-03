@@ -13,14 +13,12 @@ import {
   type RentalCounts,
   type RentalFilter,
 } from '@/lib/rentals'
-import { LET_ELSEWHERE_NAME } from '@/lib/rental-input'
 import { PageHeader } from '@/components/PageHeader'
 import { FilterChip, PagerLink } from '@/components/ListControls'
 import { RentalTable } from '@/components/RentalTable'
 
 const CHIPS: { filter: RentalFilter; label: string; count: keyof RentalCounts; tone?: 'warn' }[] = [
   { filter: 'active', label: 'Active', count: 'active' },
-  { filter: 'let_elsewhere', label: LET_ELSEWHERE_NAME, count: 'letElsewhere' },
   { filter: 'ending_this_month', label: 'Ending this month', count: 'endingThisMonth' },
   { filter: 'past_end_date', label: 'Past end date', count: 'pastEndDate', tone: 'warn' },
   { filter: 'ended', label: 'Ended', count: 'ended' },
@@ -57,9 +55,9 @@ export default async function RentalsPage({
     return qs ? `${base}?${qs}` : base
   }
 
-  // Every Rental is active (ours or let elsewhere) or ended; `cancelled` is
-  // never written (TASK decision 8).
-  const total = counts.active + counts.letElsewhere + counts.ended
+  // Every Rental is active or ended; `cancelled` is never written (TASK
+  // decision 8). A room let by another agent is not a Rental (ADR 0016).
+  const total = counts.active + counts.ended
   const matching = filter ? counts[CHIPS.find((c) => c.filter === filter)!.count] : total
   const showing = page.rows.length
 

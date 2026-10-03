@@ -24,7 +24,9 @@ import type { OwnerOption } from './owners'
 
 export const PAGE_SIZE = 25
 
-export const PROPERTY_STATUSES = ['available', 'reserved', 'rented'] as const
+/** `rented` means an active Rental of ours (ADR 0009); `let_elsewhere` is a room
+ *  another agent let, marked on the Property alone (ADR 0016). */
+export const PROPERTY_STATUSES = ['available', 'reserved', 'rented', 'let_elsewhere'] as const
 export type PropertyStatus = (typeof PROPERTY_STATUSES)[number]
 
 export function isPropertyStatus(value: unknown): value is PropertyStatus {
@@ -41,6 +43,8 @@ export interface PropertyListRow {
   areaSqm: number
   priceMonthly: number
   status: PropertyStatus
+  /** When a room let elsewhere is expected back (ADR 0016); null otherwise. */
+  freeOn: string | null
   /** Whose room this is. Name only — the phone that disambiguates two Owners
    *  belongs to the picker and the Owners page, not to a column being scanned.
    *  null when no Owner is on file, which is an ordinary state. */
@@ -70,6 +74,7 @@ interface PropertyRecord {
   area_sqm: number
   price_monthly: number
   status: PropertyStatus
+  free_on: string | null
   created_at: string
   // Embedded to-one: an object in the response, typed as either because
   // PostgREST's inference decides which. `embeddedOwner` normalises it.
@@ -128,7 +133,7 @@ export async function listProperties(
   let query = supabase
     .from('properties')
     .select(
-      'id, title, room_number, property_type, bedrooms, bathrooms, area_sqm, price_monthly, status, created_at, ' +
+      'id, title, room_number, property_type, bedrooms, bathrooms, area_sqm, price_monthly, status, free_on, created_at, ' +
         // One join in the same round-trip rather than a second query keyed by
         // owner_id — the Owner column is on every row of the list.
         'owners(name), ' +
@@ -182,6 +187,7 @@ export async function listProperties(
       areaSqm: Number(p.area_sqm),
       priceMonthly: Number(p.price_monthly),
       status: p.status,
+      freeOn: p.free_on,
       ownerName: embeddedOne(p.owners)?.name ?? null,
       tenantName: p.rentals?.[0]?.tenant_name_snapshot ?? null,
       rentalEndDate: p.rentals?.[0]?.end_date ?? null,
@@ -226,6 +232,7 @@ export interface PropertyEditRow {
   description: string | null
   contactLine: string | null
   status: PropertyStatus
+  freeOn: string | null
   /** Storage keys, not URLs — the bucket is private. `signedPropertyImageUrls`
    *  turns them into something renderable. */
   images: string[]
@@ -264,7 +271,7 @@ export async function getPropertyForEdit(
     .from('properties')
     .select(
       'id, title, room_number, property_type, bedrooms, bathrooms, area_sqm, price_monthly, ' +
-        'floor, description, contact_line, status, images, owner_id, ' +
+        'floor, description, contact_line, status, free_on, images, owner_id, ' +
         'buildings(id, name, name_en, district, google_map_url), owners(id, name, phone), rentals(id)',
     )
     .eq('id', id)
@@ -296,6 +303,7 @@ export async function getPropertyForEdit(
     description: row.description,
     contactLine: row.contact_line,
     status: row.status,
+    freeOn: row.free_on,
     images: row.images ?? [],
     building: b
       ? { id: b.id, name: b.name, nameEn: b.name_en, district: b.district, googleMapUrl: b.google_map_url }
@@ -318,6 +326,7 @@ interface PropertyEditRecord {
   description: string | null
   contact_line: string | null
   status: PropertyStatus
+  free_on: string | null
   images: string[] | null
   owner_id: string | null
   buildings:
@@ -339,6 +348,7 @@ export interface PropertyCounts {
   available: number
   reserved: number
   rented: number
+  let_elsewhere: number
   /** Available rooms with no Posting at all — nobody is marketing them. */
   postedNowhere: number
 }
@@ -355,6 +365,7 @@ export async function getPropertyCounts(orgId: string): Promise<PropertyCounts> 
     available: Number(row.available),
     reserved: Number(row.reserved),
     rented: Number(row.rented),
+    let_elsewhere: Number(row.let_elsewhere),
     postedNowhere: Number(row.posted_nowhere),
   }
 }

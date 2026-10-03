@@ -31,13 +31,12 @@ import { BuildingCombobox } from '@/components/BuildingCombobox'
 import { OwnerCombobox } from '@/components/OwnerCombobox'
 import { MapPreview } from '@/components/MapPreview'
 import { PhotoPicker } from '@/components/PhotoPicker'
-import { STATUS_LABELS, StatusPill } from '@/components/StatusPill'
+import { StatusPill } from '@/components/StatusPill'
 import type { BuildingOption } from '@/lib/buildings'
 import type { OwnerOption } from '@/lib/owners'
 import type { PropertyEditRow } from '@/lib/properties'
 import type { PropertyImage } from '@/lib/property-storage'
 import {
-  CREATABLE_STATUSES,
   MAX_IMAGES,
   MAX_IMAGE_BYTES,
   MAX_IMAGES_TOTAL_BYTES,
@@ -47,6 +46,7 @@ import {
 } from '@/lib/property-input'
 import { updateProperty } from './actions'
 import { GenerateDescription } from '@/components/GenerateDescription'
+import { PropertyStatusField } from '@/components/PropertyStatusField'
 
 export function EditPropertyForm({
   slug,
@@ -168,30 +168,17 @@ export function EditPropertyForm({
                 </span>
               </div>
             ) : (
-              <Field
+              <PropertyStatusField
                 label="Status"
                 hint={
                   property.status === 'rented'
                     ? 'Marked Rented, but no Rental is recorded — set it to Available if the room is free'
                     : 'A Property is only "Rented" when it has a Rental'
                 }
-              >
-                <select
-                  name="status"
-                  disabled={pending}
-                  // Blank posts as "no change", so a stale Rented room keeps its
-                  // status until somebody picks another one.
-                  defaultValue={property.status === 'rented' ? '' : property.status}
-                  className={INPUT}
-                >
-                  {property.status === 'rented' && <option value="">{STATUS_LABELS.rented}</option>}
-                  {CREATABLE_STATUSES.map((status) => (
-                    <option key={status} value={status}>
-                      {STATUS_LABELS[status]}
-                    </option>
-                  ))}
-                </select>
-              </Field>
+                initial={property.status}
+                initialFreeOn={property.freeOn}
+                disabled={pending}
+              />
             )}
           </div>
 

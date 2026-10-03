@@ -141,6 +141,10 @@ there is none. The sentence above asking for this "in the SQL and in a test"
 is met by the gate's test, not by a clause in the dashboard's query; if a
 Rental's flag ever becomes editable, that is the day the query needs it.
 
+*Superseded by ADR 0016 (2026-10-03): a room let by another agent is now a
+Property status, `let_elsewhere`, and a Rental with both flags off is refused.
+The paragraph below is the history.*
+
 **A Rental let by another agent is `NOT rented_by_us AND NOT
 rent_tracked_by_us`** — no Deposit, no Commission, no schedule. The agency had
 no hand in the tenancy and records it only so the room comes back up as it

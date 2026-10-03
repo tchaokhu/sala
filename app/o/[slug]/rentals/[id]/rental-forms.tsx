@@ -13,7 +13,7 @@ import { previewAmount, SchedulePreview } from '@/components/SchedulePreview'
 import { buildPaymentSchedule, futureUnpaid } from '@/lib/payments'
 import { addDaysIso, isIsoDate } from '@/lib/dates'
 import { formatBaht, formatDateThai } from '@/lib/format'
-import { defaultEndDate, LET_ELSEWHERE_NAME, MAX_END_REASON, REFUND_DUE_DAYS } from '@/lib/rental-input'
+import { defaultEndDate, MAX_END_REASON, REFUND_DUE_DAYS } from '@/lib/rental-input'
 import type { RentalStatus } from '@/types'
 import { deleteRental, endRental, renewRental } from '../actions'
 import { WARN_BUTTON } from '@/components/styles'
@@ -28,7 +28,6 @@ interface ManagedRental {
   commission: number
   rentedByUs: boolean
   rentTrackedByUs: boolean
-  letElsewhere: boolean
 }
 
 type Unpaid = { due_date: string; settled_date: string | null }
@@ -101,11 +100,7 @@ function RenewCard({ slug, rental }: { slug: string; rental: ManagedRental }) {
   return (
     <Card
       title="Renew"
-      note={
-        rental.letElsewhere
-          ? `The room is still let by another agent: this Rental ends on ${formatDateThai(rental.endDate)} and the next starts on ${formatDateThai(nextStart)}.`
-          : `This Rental ends on its end date, ${formatDateThai(rental.endDate)}, and the next starts on ${formatDateThai(nextStart)} with the same Tenant. The Deposit stays with the Owner.`
-      }
+      note={`This Rental ends on its end date, ${formatDateThai(rental.endDate)}, and the next starts on ${formatDateThai(nextStart)} with the same Tenant. The Deposit stays with the Owner.`}
     >
       <form onSubmit={submitWith(action)} className="flex flex-col gap-4">
         <input type="hidden" name="slug" value={slug} />
@@ -124,20 +119,18 @@ function RenewCard({ slug, rental }: { slug: string; rental: ManagedRental }) {
               className={`${INPUT} tabular`}
             />
           </Field>
-          {!rental.letElsewhere && (
-            <Field label="Rent per month (THB)" required>
-              <input
-                type="text"
-                inputMode="decimal"
-                name="monthly_rent"
-                required
-                value={rent}
-                onChange={(e) => setRent(e.target.value)}
-                disabled={pending}
-                className={`${INPUT} tabular text-right`}
-              />
-            </Field>
-          )}
+          <Field label="Rent per month (THB)" required>
+            <input
+              type="text"
+              inputMode="decimal"
+              name="monthly_rent"
+              required
+              value={rent}
+              onChange={(e) => setRent(e.target.value)}
+              disabled={pending}
+              className={`${INPUT} tabular text-right`}
+            />
+          </Field>
           {rental.rentedByUs && (
             <Field label="Commission (THB)" hint="Charged again on a renewal">
               <input
@@ -156,11 +149,9 @@ function RenewCard({ slug, rental }: { slug: string; rental: ManagedRental }) {
         <SchedulePreview
           rows={schedule}
           empty={
-            rental.letElsewhere
-              ? `No Payments: ${LET_ELSEWHERE_NAME.toLowerCase()}`
-              : isIsoDate(end) && end > rental.endDate
-                ? 'No Payments: the rent is not followed and there is no Commission'
-                : `Choose a new end date after ${formatDateThai(rental.endDate)} to see the Payments`
+            isIsoDate(end) && end > rental.endDate
+              ? 'No Payments: the rent is not followed and there is no Commission'
+              : `Choose a new end date after ${formatDateThai(rental.endDate)} to see the Payments`
           }
         />
 

@@ -136,6 +136,9 @@ export function PropertyTable({
             </td>
             <td className="px-4 py-3">
               <StatusPill status={row.status} />
+              {row.freeOn && (
+                <span className="tabular mt-1 block text-xs text-muted">Free from {formatDateThai(row.freeOn)}</span>
+              )}
             </td>
             <td className="px-4 py-3">
               {row.tenantName ? (

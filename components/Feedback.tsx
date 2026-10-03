@@ -3,9 +3,8 @@
 // What every Save and Delete shows while it runs and when it is done.
 //
 // While an action runs: the Sala mark building itself over a dimmed page, which
-// also stops a second click. On every press, at once — the user wants to see
-// it each time (2026-10-03) — and for at least 800 ms, so a fast save still
-// reads as the mark rather than a blink.
+// also stops a second click. On every press, at once, and only until the
+// action answers — no wait before it and no minimum after (user, 2026-10-03).
 //
 // When it succeeds: a toast, bottom right (bottom centre on a phone), with a ✓,
 // the headline and the second line that says which one. Gone after 4 s — 8 s
@@ -16,7 +15,7 @@
 // doing anything. A redirecting action leaves its toast in a cookie
 // (lib/flash.ts), read here when the page it lands on mounts.
 
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { usePathname } from 'next/navigation'
 import { CheckCircle2, X } from 'lucide-react'
@@ -35,31 +34,16 @@ export function useFeedback() {
   return useContext(FeedbackContext)
 }
 
-// Long enough to see the mark draw its first tier, not a blink.
-const SHOW_AT_LEAST = 800
 const FLASH_COOKIE = 'sala_flash'
 
 export function FeedbackProvider({ children }: { children: React.ReactNode }) {
   const [busy, setBusy] = useState<string | null>(null)
-  const [shown, setShown] = useState(false)
   const [toast, setToast] = useState<(Toast & { key: number }) | null>(null)
-  const timers = useRef<{ shownAt?: number }>({})
   const pathname = usePathname()
 
-  const begin = useCallback((label: string) => {
-    timers.current.shownAt = Date.now()
-    setBusy(label)
-    setShown(true)
-  }, [])
-
-  const end = useCallback(() => {
-    const since = timers.current.shownAt ? Date.now() - timers.current.shownAt : SHOW_AT_LEAST
-    window.setTimeout(() => {
-      timers.current.shownAt = undefined
-      setShown(false)
-      setBusy(null)
-    }, Math.max(0, SHOW_AT_LEAST - since))
-  }, [])
+  const begin = useCallback((label: string) => setBusy(label), [])
+  // A tick later, so it can also be called from the landing page's effect.
+  const end = useCallback(() => void window.setTimeout(() => setBusy(null), 0), [])
 
   const show = useCallback((t: Toast) => setToast({ ...t, key: Date.now() }), [])
 
@@ -92,11 +76,14 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
     return () => window.clearTimeout(t)
   }, [toast])
 
+  // One object for the life of the provider: forms key effects on it, and a new
+  // one per render would read to them as the provider changing under them.
+  const value = useMemo(() => ({ begin, end, toast: show }), [begin, end, show])
+
   return (
-    <FeedbackContext.Provider value={{ begin, end, toast: show }}>
+    <FeedbackContext.Provider value={value}>
       {children}
-      {shown &&
-        busy &&
+      {busy &&
         createPortal(
           <div className="fixed inset-0 z-[60] flex bg-black/50">
             <SalaLoader label={busy} immediate />

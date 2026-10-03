@@ -9,7 +9,7 @@
 // keep in step — so they live here instead. Card and Field arrived the same way,
 // from the add-a-Property form, once editing one needed the same sections.
 
-import { useActionState } from 'react'
+import { useActionState, useEffect, useRef } from 'react'
 import type { ActionResult } from '@/lib/action-result'
 import { useFeedback } from './Feedback'
 import { PANEL } from './styles'
@@ -27,17 +27,28 @@ export function useFormAction(
   busyLabel = 'Saving',
 ) {
   const feedback = useFeedback()
-  return useActionState(async (_previous: ActionResult | null, formData: FormData) => {
-    feedback?.begin(busyLabel)
-    try {
-      const result = await action(formData)
-      // A redirecting action resolves with nothing; its toast comes by cookie.
-      if (result?.ok) feedback?.toast({ message: result.message, detail: result.detail })
-      return result
-    } finally {
-      feedback?.end()
-    }
+  const state = useActionState(async (_previous: ActionResult | null, formData: FormData) => {
+    const result = await action(formData)
+    // A redirecting action resolves with nothing; its toast comes by cookie.
+    if (result?.ok) feedback?.toast({ message: result.message, detail: result.detail })
+    return result
   }, null)
+
+  // The loader follows `pending`, which React paints the moment the form is
+  // sent. Started from inside the action instead, it would be a transition
+  // update — held back until the action finished, and never seen.
+  const pending = state[2]
+  const was = useRef(false)
+  useEffect(() => {
+    if (pending === was.current) return
+    was.current = pending
+    if (pending) feedback?.begin(busyLabel)
+    else feedback?.end()
+  }, [pending, feedback, busyLabel])
+  // A form that leaves mid-action — a redirect — takes its loader with it.
+  useEffect(() => () => void (was.current && feedback?.end()), [feedback])
+
+  return state
 }
 
 /** A refusal, beside the form it refuses, where what to fix can be read.

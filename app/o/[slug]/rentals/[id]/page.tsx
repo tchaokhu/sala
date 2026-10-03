@@ -3,7 +3,7 @@
 
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Home } from 'lucide-react'
+import { Home, PenLine } from 'lucide-react'
 import { requireMember } from '@/lib/supabase-server'
 import { todayBangkok } from '@/lib/dates'
 import { formatBaht, formatDateThai } from '@/lib/format'
@@ -68,13 +68,22 @@ export default async function RentalPage({
             </span>
           }
           actions={
-            <Link
-              href={`/o/${slug}/properties/${rental.propertyId}`}
-              className={`${BUTTON} inline-flex items-center gap-1.5`}
-            >
-              <Home size={14} aria-hidden />
-              View the Property
-            </Link>
+            <>
+              <Link
+                href={`/o/${slug}/templates?rental=${rental.id}`}
+                className={`${BUTTON} inline-flex items-center gap-1.5`}
+              >
+                <PenLine size={14} aria-hidden />
+                Create from template
+              </Link>
+              <Link
+                href={`/o/${slug}/properties/${rental.propertyId}`}
+                className={`${BUTTON} inline-flex items-center gap-1.5`}
+              >
+                <Home size={14} aria-hidden />
+                View the Property
+              </Link>
+            </>
           }
         />
       </div>

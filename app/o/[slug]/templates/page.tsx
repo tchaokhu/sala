@@ -1,10 +1,12 @@
-// Document Templates: the blank contracts and forms an Org keeps to reuse. A
-// library for now — upload, open, download, retitle, delete. Filling one in
-// per Rental is a later step (CONTEXT.md).
+// Document Templates: the blank contracts and forms an Org keeps to reuse —
+// upload, open, download, retitle, delete, and Fill on a Word file (ADR 0017).
+// Arriving with ?rental= makes every Fill fill from that Rental.
 
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import { requireMember } from '@/lib/supabase-server'
+import { cleanText } from '@/lib/validate'
+import { PANEL } from '@/components/styles'
 import { listTemplates } from '@/lib/document-templates'
 import { signedDocumentUrls } from '@/lib/rental-documents'
 import { PageHeader } from '@/components/PageHeader'
@@ -12,8 +14,15 @@ import { TemplateLibrary, type ShownTemplate } from './template-forms'
 
 const bangkokDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok' })
 
-export default async function TemplatesPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params
+export default async function TemplatesPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>
+  searchParams: Promise<{ rental?: string }>
+}) {
+  const [{ slug }, query] = await Promise.all([params, searchParams])
+  const rentalId = cleanText(query.rental, 40) || null
   const org = await requireMember(slug)
   const { templates, capped } = await listTemplates(org.id)
   const urls = await signedDocumentUrls(templates)
@@ -51,7 +60,13 @@ export default async function TemplatesPage({ params }: { params: Promise<{ slug
           </Link>
         }
       />
-      <TemplateLibrary slug={slug} templates={shown} />
+      {rentalId && (
+        <p className={`text-sm ${PANEL}`}>
+          Choose a Word template and press <span className="font-semibold">Fill</span> — it fills from the
+          Rental you came from.
+        </p>
+      )}
+      <TemplateLibrary slug={slug} templates={shown} rentalId={rentalId} />
       {capped && (
         <p className="text-xs text-warn">
           Showing the first {templates.length} files — there are more. Delete the ones nobody uses.

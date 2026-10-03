@@ -6,7 +6,7 @@
 
 import Link from 'next/link'
 import { startTransition, useState } from 'react'
-import { Check, Copy, Download, ExternalLink, FileText, Pencil, Trash2, Upload } from 'lucide-react'
+import { Check, Copy, Download, ExternalLink, FileText, Pencil, PenLine, Trash2, Upload } from 'lucide-react'
 import { BUTTON, Field, INPUT, Notice, PRIMARY_BUTTON, useFormAction } from '@/components/form'
 import { ConfirmAction } from '@/components/ConfirmAction'
 import { Dialog } from '@/components/Dialog'
@@ -64,7 +64,16 @@ function FileTypeChip({ name }: { name: string }) {
   )
 }
 
-export function TemplateLibrary({ slug, templates }: { slug: string; templates: ShownTemplate[] }) {
+export function TemplateLibrary({
+  slug,
+  templates,
+  rentalId,
+}: {
+  slug: string
+  templates: ShownTemplate[]
+  /** Arrived from a Rental: Fill fills from it. */
+  rentalId: string | null
+}) {
   if (templates.length === 0) {
     return (
       <p className="rounded-xl border border-dashed border-border bg-surface p-6 text-center text-sm text-muted">
@@ -91,13 +100,14 @@ export function TemplateLibrary({ slug, templates }: { slug: string; templates: 
       }
     >
       {templates.map((t) => (
-        <TemplateRow key={t.id} slug={slug} template={t} />
+        <TemplateRow key={t.id} slug={slug} template={t} rentalId={rentalId} />
       ))}
     </TableFrame>
   )
 }
 
-function TemplateRow({ slug, template: t }: { slug: string; template: ShownTemplate }) {
+function TemplateRow({ slug, template: t, rentalId }: { slug: string; template: ShownTemplate; rentalId: string | null }) {
+  const fillable = t.fileName.toLowerCase().endsWith('.docx')
   return (
     <tr className="h-12 border-b border-border last:border-0">
       <td className="px-4 py-2 font-medium">{t.title}</td>
@@ -127,6 +137,15 @@ function TemplateRow({ slug, template: t }: { slug: string; template: ShownTempl
             </>
           ) : (
             <span className="whitespace-nowrap text-xs text-muted">Unavailable — reload the page</span>
+          )}
+          {fillable && (
+            <Link
+              href={`/o/${slug}/templates/${t.id}/fill${rentalId ? `?rental=${rentalId}` : ''}`}
+              className={`${ROW_LINK} text-accent hover:text-accent`}
+            >
+              <PenLine size={14} aria-hidden />
+              Fill
+            </Link>
           )}
           <EditTemplate slug={slug} template={t} />
           <ConfirmAction

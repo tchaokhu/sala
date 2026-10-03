@@ -25,3 +25,11 @@ services:
       interval: 3s
       timeout: 3s
       retries: 20
+
+  # DOCX → PDF for Document Templates (ADR 0017). Sala reaches it at
+  # GOTENBERG_URL=http://localhost:3100; nothing else should.
+  gotenberg:
+    build: ./docker/gotenberg
+    container_name: sala-gotenberg
+    ports:
+      - '127.0.0.1:3100:3000'

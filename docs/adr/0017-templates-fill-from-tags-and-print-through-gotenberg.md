@@ -36,12 +36,21 @@ Decided with the user, 2026-10-03:
   one with a broken tag, saying where. The fill page parses again each time.
   No migration.
 - **PDF is converted by Gotenberg (LibreOffice), run by us.** A custom image
-  from `gotenberg/gotenberg:8` adds TH Sarabun New and the TLWG Thai fonts,
-  with fontconfig aliases standing in for Angsana New and TH SarabunPSK. It
-  runs in `docker-compose.yml` for now; Sala calls it at `GOTENBERG_URL`, and
+  from `gotenberg/gotenberg:8` adds `fonts-thai-tlwg`, whose own fontconfig
+  rules already stand in Kinnari for Angsana New, Umpush for Cordia New and
+  Laksaman (TH SarabunPSK's metric twin) for TH SarabunPSK and TH Sarabun
+  New — no aliases of ours, no font downloaded at build. It runs in
+  `docker-compose.yml` for now; Sala calls it at `GOTENBERG_URL`, and
   without that the PDF button says so and DOCX still works. When a
   deployment target is chosen, the same image moves there and only the URL
   changes.
+- **The PDF is longer than Word's, and that is accepted** (user, after the
+  pilot). Angsana New is narrow and short; every free Thai face is wider and
+  taller, so the pilot contract prints on 12 pages to Word's 8 — all of it,
+  text boxes and watermark in place. A Word-exact PDF comes from saving the
+  DOCX in Word. A template set in TH Sarabun New prints alike in both.
+- **A tag left empty prints as a dotted line**, so the blank can still be
+  filled by hand. Without that the pilot lost every unfilled line.
 
 Rejected: tags inserted by a developer's script per template (breaks when a
 dotted line moves; no Org can do it alone); text drawn onto the PDF at measured

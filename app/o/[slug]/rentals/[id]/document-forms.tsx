@@ -8,7 +8,7 @@ import Link from 'next/link'
 import { startTransition, useRef, useState } from 'react'
 import { Download, ExternalLink, Trash2, Upload } from 'lucide-react'
 import { BUTTON, Field, INPUT, Notice, useFormAction } from '@/components/form'
-import { formatDateThai } from '@/lib/format'
+import { formatDateThai, formatSize } from '@/lib/format'
 import { mb } from '@/lib/property-input'
 import {
   ACCEPTED_DOCUMENT_TYPES,
@@ -50,10 +50,6 @@ function submitWith(action: (formData: FormData) => void) {
     const formData = new FormData(e.currentTarget)
     startTransition(() => action(formData))
   }
-}
-
-function formatSize(bytes: number): string {
-  return bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${mb(bytes)} MB`
 }
 
 export function RentalDocuments({

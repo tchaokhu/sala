@@ -40,3 +40,10 @@ export function formatDateThai(iso: string | null | undefined): string {
     timeZone: 'UTC',
   }).format(new Date(Date.UTC(year, month - 1, day)))
 }
+
+/** A file size the way a person reads it: KB under a megabyte, MB above. */
+export function formatSize(bytes: number): string {
+  return bytes < 1024 * 1024
+    ? `${Math.max(1, Math.round(bytes / 1024))} KB`
+    : `${Math.round((bytes / (1024 * 1024)) * 10) / 10} MB`
+}

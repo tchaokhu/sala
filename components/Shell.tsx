@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import clsx from 'clsx'
 import {
   Building2,
+  FileText,
   Inbox,
   Landmark,
   LayoutGrid,
@@ -38,6 +39,7 @@ const NAV: { label: string; sub: string; icon: LucideIcon }[] = [
   { label: 'Platforms', sub: '/platforms', icon: Megaphone },
   { label: 'Rentals', sub: '/rentals', icon: ScrollText },
   { label: 'Payments', sub: '/payments', icon: Wallet },
+  { label: 'Templates', sub: '/templates', icon: FileText },
   { label: 'Inquiries', sub: '/inquiries', icon: Inbox },
 ]
 

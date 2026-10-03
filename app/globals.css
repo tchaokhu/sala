@@ -15,6 +15,8 @@
   --ok: #15803d;
   --hold: #a16207;
   --warn: #b91c1c;
+  --pdf: #be123c;
+  --word: #1d4ed8;
   /* The app card floats on the stone ground. Light needs the lift to separate
      white-on-near-white; dark separates by value alone, so the shadow there is
      a hairline rather than a glow. */
@@ -35,6 +37,8 @@
     --ok: #4ade80;
     --hold: #fbbf24;
     --warn: #f87171;
+    --pdf: #fb7185;
+    --word: #60a5fa;
     --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
   }
 }
@@ -52,6 +56,8 @@
   --ok: #15803d;
   --hold: #a16207;
   --warn: #b91c1c;
+  --pdf: #be123c;
+  --word: #1d4ed8;
   --card-shadow:
     0 1px 2px rgba(41, 37, 36, 0.04), 0 10px 28px -14px rgba(41, 37, 36, 0.16);
 }
@@ -68,6 +74,8 @@
   --ok: #4ade80;
   --hold: #fbbf24;
   --warn: #f87171;
+  --pdf: #fb7185;
+  --word: #60a5fa;
   --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 
@@ -82,6 +90,9 @@
   --color-ok: var(--ok);
   --color-hold: var(--hold);
   --color-warn: var(--warn);
+  /* File types, not status: PDF and Word in the colours people already know them by. */
+  --color-pdf: var(--pdf);
+  --color-word: var(--word);
 
   --shadow-card: var(--card-shadow);
 

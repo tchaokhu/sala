@@ -8,7 +8,10 @@ import { cleanText } from '@/lib/validate'
 import { documentExtension, documentFileName } from '@/lib/document-input'
 import { DOCS_BUCKET, discardDocuments } from '@/lib/rental-documents'
 import { parseTemplateForm, validateTemplateFiles } from '@/lib/template-input'
+import { readTemplateTags } from '@/lib/docx-template'
 import type { ActionResult } from '@/lib/action-result'
+
+const DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 
 // Uploading, editing and deleting Document Templates. The Rental Documents
 // order (ADR 0007): Membership first and the Org from that gate (ADR 0002),
@@ -38,6 +41,14 @@ export async function uploadTemplates(formData: FormData): Promise<ActionResult>
   const files = formData.getAll('files').filter((f): f is File => f instanceof File && f.size > 0)
   const valid = validateTemplateFiles(files)
   if (!valid.ok) return valid
+
+  // A broken tag is refused now, while the person is here to fix it, rather
+  // than when someone tries to fill the template (ADR 0017).
+  for (const file of files) {
+    if (file.type !== DOCX) continue
+    const read = readTemplateTags(new Uint8Array(await file.arrayBuffer()))
+    if (!read.ok) return { ok: false, message: `${file.name}: ${read.message}` }
+  }
 
   const [supabase, user] = await Promise.all([createClient(), currentUser()])
   const rows = files.map((file) => {

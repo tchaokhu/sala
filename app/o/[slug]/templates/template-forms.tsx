@@ -6,7 +6,7 @@
 
 import Link from 'next/link'
 import { startTransition, useState } from 'react'
-import { Download, ExternalLink, FileText, Pencil, Trash2, Upload } from 'lucide-react'
+import { Check, Copy, Download, ExternalLink, FileText, Pencil, Trash2, Upload } from 'lucide-react'
 import { BUTTON, Field, INPUT, Notice, PRIMARY_BUTTON, useFormAction } from '@/components/form'
 import { ConfirmAction } from '@/components/ConfirmAction'
 import { Dialog } from '@/components/Dialog'
@@ -23,6 +23,7 @@ import {
   validateTemplateFiles,
   type TemplateCategory,
 } from '@/lib/template-input'
+import { TEMPLATE_TAGS } from '@/lib/template-tags'
 import { deleteTemplate, updateTemplate, uploadTemplates } from './actions'
 
 export interface ShownTemplate {
@@ -280,5 +281,62 @@ export function UploadForm({ slug, titles }: { slug: string; titles: string[] })
         <Notice result={result} />
       </div>
     </form>
+  )
+}
+
+/** Every tag Sala fills, with what it means and a sample — the one table in
+ *  lib/template-tags.ts, so this list cannot drift from what is filled. */
+export function TagReference() {
+  const [copied, setCopied] = useState<string | null>(null)
+  function copy(tag: string) {
+    navigator.clipboard?.writeText(`{${tag}}`).then(
+      () => setCopied(tag),
+      () => setCopied(null),
+    )
+  }
+
+  return (
+    <details className={`group ${PANEL}`}>
+      <summary className="cursor-pointer list-none font-semibold">
+        Tags you can use <span className="ml-1 text-sm font-normal text-muted">{TEMPLATE_TAGS.length}</span>
+      </summary>
+      <div className="mt-3 flex flex-col gap-3 text-sm">
+        <p className="text-muted">
+          In Word, replace a dotted line with a tag in curly braces, such as{' '}
+          <code className="font-mono text-ink">{'{tenant_name}'}</code>. Use English letters, digits and _
+          only, with no spaces. A name not listed here, such as{' '}
+          <code className="font-mono text-ink">{'{late_fee}'}</code>, becomes a field to type in when the
+          template is filled. A tag left empty prints as a dotted line.
+        </p>
+        <TableFrame
+          minWidth="min-w-[36rem]"
+          head={
+            <>
+              <th scope="col" className={HEAD_CELL}>Tag</th>
+              <th scope="col" className={HEAD_CELL}>Fills in</th>
+              <th scope="col" className={HEAD_CELL}>Example</th>
+            </>
+          }
+        >
+          {TEMPLATE_TAGS.map((t) => (
+            <tr key={t.tag} className="border-b border-border last:border-0">
+              <td className="whitespace-nowrap px-4 py-1.5">
+                <button
+                  type="button"
+                  onClick={() => copy(t.tag)}
+                  className={`${ROW_LINK} font-mono`}
+                  aria-label={`Copy {${t.tag}}`}
+                >
+                  {copied === t.tag ? <Check size={13} aria-hidden /> : <Copy size={13} aria-hidden />}
+                  {`{${t.tag}}`}
+                </button>
+              </td>
+              <td className="px-4 py-1.5">{t.label}</td>
+              <td className="px-4 py-1.5 text-muted">{t.example}</td>
+            </tr>
+          ))}
+        </TableFrame>
+      </div>
+    </details>
   )
 }

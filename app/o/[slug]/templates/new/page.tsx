@@ -5,7 +5,7 @@ import { requireMember } from '@/lib/supabase-server'
 import { listTemplates } from '@/lib/document-templates'
 import { BackLink } from '@/components/BackLink'
 import { PageHeader } from '@/components/PageHeader'
-import { UploadForm } from '../template-forms'
+import { TagReference, UploadForm } from '../template-forms'
 
 export default async function NewTemplatePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -20,6 +20,7 @@ export default async function NewTemplatePage({ params }: { params: Promise<{ sl
         <PageHeader title="Add Template" summary="A blank contract or form, uploaded once and reused" />
       </div>
       <UploadForm slug={slug} titles={[...new Set(templates.map((t) => t.title))]} />
+      <TagReference />
     </div>
   )
 }

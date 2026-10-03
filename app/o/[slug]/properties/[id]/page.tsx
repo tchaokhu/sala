@@ -1,6 +1,6 @@
-// One Property: the form that edits it, opened straight away — there is no
-// separate read-only view (user, 2026-10-03) — then where it is posted, then
-// Delete. Saving goes back to the list.
+// One Property, viewed or edited on one page (user, 2026-10-03): the same form
+// either way, disabled to view and live with `?edit=1`, which also brings
+// Delete. Saving goes back to the list. Where it is posted sits below.
 //
 // requireMember first, as every route under /o/[slug] does — it is what makes a
 // hand-typed id under an Org the caller is not a Member of a refusal rather than
@@ -10,7 +10,7 @@
 
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { KeyRound, ScrollText } from 'lucide-react'
+import { KeyRound, Pencil, ScrollText, X } from 'lucide-react'
 import { requireMember } from '@/lib/supabase-server'
 import { listBuildingOptions } from '@/lib/buildings'
 import { listOwnerOptions } from '@/lib/owners'
@@ -23,16 +23,20 @@ import { BackLink } from '@/components/BackLink'
 import { PageHeader } from '@/components/PageHeader'
 import { PostingChecklist } from '@/components/PostingChecklist'
 import { StatusPill } from '@/components/StatusPill'
-import { BUTTON } from '@/components/styles'
+import { BUTTON, PRIMARY_BUTTON } from '@/components/styles'
 import { EditPropertyForm } from './edit-property-form'
 import { PropertyDeleteForm } from './property-delete-form'
 
 export default async function PropertyPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string; id: string }>
+  searchParams: Promise<{ edit?: string }>
 }) {
   const { slug, id } = await params
+  const editing = (await searchParams).edit === '1'
+  const here = `/o/${slug}/properties/${id}`
   const org = await requireMember(slug)
 
   // None of these depends on the others, so they go together. The Building,
@@ -61,23 +65,36 @@ export default async function PropertyPage({
           title={property.title}
           summary={<StatusPill status={property.status} />}
           actions={
-            property.activeRentalId ? (
-              <Link
-                href={`/o/${slug}/rentals/${property.activeRentalId}`}
-                className={`${BUTTON} inline-flex items-center gap-1.5`}
-              >
-                <ScrollText size={14} aria-hidden />
-                View the Rental
-              </Link>
-            ) : (
-              <Link
-                href={`/o/${slug}/rentals/new?property=${id}`}
-                className={`${BUTTON} inline-flex items-center gap-1.5`}
-              >
-                <KeyRound size={14} aria-hidden />
-                Rent this Property
-              </Link>
-            )
+            <>
+              {property.activeRentalId ? (
+                <Link
+                  href={`/o/${slug}/rentals/${property.activeRentalId}`}
+                  className={`${BUTTON} inline-flex items-center gap-1.5`}
+                >
+                  <ScrollText size={14} aria-hidden />
+                  View the Rental
+                </Link>
+              ) : (
+                <Link
+                  href={`/o/${slug}/rentals/new?property=${id}`}
+                  className={`${BUTTON} inline-flex items-center gap-1.5`}
+                >
+                  <KeyRound size={14} aria-hidden />
+                  Rent this Property
+                </Link>
+              )}
+              {editing ? (
+                <Link href={here} className={`${BUTTON} inline-flex items-center gap-1.5`}>
+                  <X size={14} aria-hidden />
+                  Cancel
+                </Link>
+              ) : (
+                <Link href={`${here}?edit=1`} className={`${PRIMARY_BUTTON} inline-flex items-center gap-1.5`}>
+                  <Pencil size={14} aria-hidden />
+                  Edit
+                </Link>
+              )}
+            </>
           }
         />
       </div>
@@ -90,28 +107,33 @@ export default async function PropertyPage({
         buildingsCapped={buildings.capped}
         owners={owners.options}
         ownersCapped={owners.capped}
+        readOnly={!editing}
       />
 
       {/* Its own form for the same reason as the delete one below: ticking a
           channel posts to a different action, and it should not be able to fail
           on an unrelated field in the form above. */}
-      <PostingChecklist
-        slug={slug}
-        propertyId={property.id}
-        platforms={platforms.options}
-        capped={platforms.capped}
-        current={postings}
-        today={todayBangkok()}
-      />
+      <fieldset disabled={!editing} className="contents">
+        <PostingChecklist
+          slug={slug}
+          propertyId={property.id}
+          platforms={platforms.options}
+          capped={platforms.capped}
+          current={postings}
+          today={todayBangkok()}
+        />
+      </fieldset>
 
       {/* Its own form below the edit one rather than a button inside it: the two
           post to different actions, and a nested <form> is not a thing. */}
-      <PropertyDeleteForm
-        slug={slug}
-        propertyId={property.id}
-        title={property.title}
-        photoCount={property.images.length}
-      />
+      {editing && (
+        <PropertyDeleteForm
+          slug={slug}
+          propertyId={property.id}
+          title={property.title}
+          photoCount={property.images.length}
+        />
+      )}
     </div>
   )
 }

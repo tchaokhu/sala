@@ -1,10 +1,11 @@
-// One Building: the form that edits it, opened straight away — there is no
-// separate read-only view (user, 2026-10-03) — then Delete, the map its link
-// draws, and the Properties named after it. Saving goes back to the list.
+// One Building, viewed or edited on one page (user, 2026-10-03): the same form
+// either way, disabled to view and live with `?edit=1`, which also brings
+// Delete. Saving goes back to the list. The map its link draws and the
+// Properties named after it sit below.
 
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Eye, MapPin } from 'lucide-react'
+import { Eye, MapPin, Pencil, X } from 'lucide-react'
 import { requireMember } from '@/lib/supabase-server'
 import { BUILDING_PROPERTIES_LIMIT, getBuilding, listBuildingProperties } from '@/lib/buildings'
 import { formatBaht } from '@/lib/format'
@@ -14,11 +15,19 @@ import { PageHeader } from '@/components/PageHeader'
 import { MapPreview } from '@/components/MapPreview'
 import { StatusPill } from '@/components/StatusPill'
 import { TableFrame } from '@/components/TableFrame'
-import { HEAD_CELL, PANEL } from '@/components/styles'
+import { BUTTON, HEAD_CELL, PANEL, PRIMARY_BUTTON } from '@/components/styles'
 import { DeleteBuildingForm, EditBuildingForm } from '../building-forms'
 
-export default async function BuildingPage({ params }: { params: Promise<{ slug: string; id: string }> }) {
+export default async function BuildingPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string; id: string }>
+  searchParams: Promise<{ edit?: string }>
+}) {
   const { slug, id } = await params
+  const editing = (await searchParams).edit === '1'
+  const here = `/o/${slug}/buildings/${id}`
 
   const org = await requireMember(slug)
   // Both keyed by the id from the URL and read under the Org, so they do not
@@ -44,6 +53,19 @@ export default async function BuildingPage({ params }: { params: Promise<{ slug:
         <PageHeader
           title={building.name}
           summary={[building.nameEn, area].filter(Boolean).join(' · ') || 'No area set yet'}
+          actions={
+            editing ? (
+              <Link href={here} className={`${BUTTON} inline-flex items-center gap-1.5`}>
+                <X size={14} aria-hidden />
+                Cancel
+              </Link>
+            ) : (
+              <Link href={`${here}?edit=1`} className={`${PRIMARY_BUTTON} inline-flex items-center gap-1.5`}>
+                <Pencil size={14} aria-hidden />
+                Edit
+              </Link>
+            )
+          }
         />
       </div>
 
@@ -51,18 +73,21 @@ export default async function BuildingPage({ params }: { params: Promise<{ slug:
         slug={slug}
         building={building}
         address={{ provinces: provinceList(), initial: addressInitial(building) }}
+        readOnly={!editing}
       />
 
-      <section className={`flex flex-col gap-3 ${PANEL}`}>
-        <div>
-          <h2 className="font-semibold">Delete Building</h2>
-          <p className="mt-1 text-sm text-muted">
-            Its Properties stay, but lose their Building and its map. Renaming, above, does not
-            rename them either.
-          </p>
-        </div>
-        <DeleteBuildingForm slug={slug} building={building} />
-      </section>
+      {editing && (
+        <section className={`flex flex-col gap-3 ${PANEL}`}>
+          <div>
+            <h2 className="font-semibold">Delete Building</h2>
+            <p className="mt-1 text-sm text-muted">
+              Its Properties stay, but lose their Building and its map. Renaming, above, does not
+              rename them either.
+            </p>
+          </div>
+          <DeleteBuildingForm slug={slug} building={building} />
+        </section>
+      )}
 
       <section className={`flex flex-col gap-3 ${PANEL}`}>
         <h2 className="font-semibold">Map</h2>
@@ -71,7 +96,7 @@ export default async function BuildingPage({ params }: { params: Promise<{ slug:
         ) : (
           <p className="flex items-center gap-2 text-sm text-muted">
             <MapPin size={16} aria-hidden />
-            No map link yet — paste one in the form above
+            No map link yet — paste one in the form above, under Edit
           </p>
         )}
       </section>

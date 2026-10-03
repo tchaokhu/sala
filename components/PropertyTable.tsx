@@ -10,7 +10,14 @@
 // row's anchor for the eye scanning down the column, and it is drawn from data
 // the row already has rather than from an image the list query does not fetch.
 
-import { Building, Building2, Home, Pencil, type LucideIcon } from 'lucide-react'
+import {
+  Building,
+  Building2,
+  Eye,
+  Home,
+  Pencil,
+  type LucideIcon,
+} from 'lucide-react'
 import Link from 'next/link'
 import { getRentalStatus } from '@/lib/rentals'
 import { formatBaht, formatDateThai } from '@/lib/format'
@@ -171,10 +178,18 @@ export function PropertyTable({
             </td>
             <td className="px-4 py-3 text-right">
               {/* Named for a screen reader, which hears a column of
-                  identical "Edit" links otherwise. */}
+                  identical "View"/"Edit" links otherwise. */}
               <div className="flex items-center justify-end gap-3">
                 <Link
                   href={`/o/${slug}/properties/${row.id}`}
+                  aria-label={`View ${row.title}`}
+                  className="inline-flex items-center gap-1.5 whitespace-nowrap text-muted transition-colors hover:text-ink"
+                >
+                  <Eye size={14} aria-hidden />
+                  View
+                </Link>
+                <Link
+                  href={`/o/${slug}/properties/${row.id}?edit=1`}
                   aria-label={`Edit ${row.title}`}
                   className="inline-flex items-center gap-1.5 whitespace-nowrap text-muted transition-colors hover:text-ink"
                 >

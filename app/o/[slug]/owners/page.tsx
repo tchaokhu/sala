@@ -11,6 +11,7 @@ import Link from 'next/link'
 import {
   ChevronRight,
   ChevronsLeft,
+  Eye,
   Facebook,
   Mail,
   MessageCircle,
@@ -161,6 +162,10 @@ export default async function OwnersPage({
               <td className="px-4 py-2 text-right">
                 <div className="flex items-center justify-end gap-4">
                   <Link href={`${base}/${o.id}`} className={ROW_LINK}>
+                    <Eye size={14} aria-hidden />
+                    View
+                  </Link>
+                  <Link href={`${base}/${o.id}?edit=1`} className={ROW_LINK}>
                     <Pencil size={14} aria-hidden />
                     Edit
                   </Link>

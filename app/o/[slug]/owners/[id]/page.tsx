@@ -1,10 +1,10 @@
-// One Owner: the form that edits them, opened straight away — there is no
-// separate read-only view (user, 2026-10-03) — then Delete, then the Properties
-// they own. Saving goes back to the list.
+// One Owner, viewed or edited on one page (user, 2026-10-03): the same form
+// either way, disabled to view and live with `?edit=1`, which also brings
+// Delete. Saving goes back to the list. The Properties they own sit below.
 
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Eye } from 'lucide-react'
+import { Eye, Pencil, X } from 'lucide-react'
 import { requireMember } from '@/lib/supabase-server'
 import { getOwner } from '@/lib/owners'
 import { BUILDING_PROPERTIES_LIMIT, listOwnerProperties } from '@/lib/buildings'
@@ -13,11 +13,19 @@ import { BackLink } from '@/components/BackLink'
 import { PageHeader } from '@/components/PageHeader'
 import { StatusPill } from '@/components/StatusPill'
 import { TableFrame } from '@/components/TableFrame'
-import { HEAD_CELL, PANEL, ROW_LINK } from '@/components/styles'
+import { BUTTON, HEAD_CELL, PANEL, PRIMARY_BUTTON, ROW_LINK } from '@/components/styles'
 import { DeleteOwnerForm, EditOwnerForm } from '../owner-forms'
 
-export default async function OwnerPage({ params }: { params: Promise<{ slug: string; id: string }> }) {
+export default async function OwnerPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string; id: string }>
+  searchParams: Promise<{ edit?: string }>
+}) {
   const { slug, id } = await params
+  const editing = (await searchParams).edit === '1'
+  const here = `/o/${slug}/owners/${id}`
 
   const org = await requireMember(slug)
   // Both keyed by the id from the URL and read under the Org, so neither waits
@@ -32,18 +40,33 @@ export default async function OwnerPage({ params }: { params: Promise<{ slug: st
         <PageHeader
           title={owner.name}
           summary={`${owner.propertyCount} ${owner.propertyCount === 1 ? 'Property' : 'Properties'}`}
+          actions={
+            editing ? (
+              <Link href={here} className={`${BUTTON} inline-flex items-center gap-1.5`}>
+                <X size={14} aria-hidden />
+                Cancel
+              </Link>
+            ) : (
+              <Link href={`${here}?edit=1`} className={`${PRIMARY_BUTTON} inline-flex items-center gap-1.5`}>
+                <Pencil size={14} aria-hidden />
+                Edit
+              </Link>
+            )
+          }
         />
       </div>
 
-      <EditOwnerForm slug={slug} owner={owner} />
+      <EditOwnerForm slug={slug} owner={owner} readOnly={!editing} />
 
-      <section className={`flex flex-col gap-3 ${PANEL}`}>
-        <div>
-          <h2 className="font-semibold">Delete Owner</h2>
-          <p className="mt-1 text-sm text-muted">Their Properties stay, with no Owner on file.</p>
-        </div>
-        <DeleteOwnerForm slug={slug} owner={owner} />
-      </section>
+      {editing && (
+        <section className={`flex flex-col gap-3 ${PANEL}`}>
+          <div>
+            <h2 className="font-semibold">Delete Owner</h2>
+            <p className="mt-1 text-sm text-muted">Their Properties stay, with no Owner on file.</p>
+          </div>
+          <DeleteOwnerForm slug={slug} owner={owner} />
+        </section>
+      )}
 
       <section className="flex flex-col gap-3">
         <h2 className="font-semibold">

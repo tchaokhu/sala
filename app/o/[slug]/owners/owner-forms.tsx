@@ -30,21 +30,35 @@ export function CreateOwnerForm({ slug }: { slug: string }) {
   )
 }
 
-export function EditOwnerForm({ slug, owner }: { slug: string; owner: OwnerRow }) {
+export function EditOwnerForm({
+  slug,
+  owner,
+  readOnly,
+}: {
+  slug: string
+  owner: OwnerRow
+  /** View mode: every field shown, none editable, no Save. The browser's own
+   *  <fieldset disabled> does it, so nothing inside can be missed. */
+  readOnly?: boolean
+}) {
   const [result, action, pending] = useFormAction(updateOwner)
 
   return (
     <form action={action} className={`flex flex-col gap-4 ${PANEL}`}>
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="owner_id" value={owner.id} />
-      <Fields pending={pending} owner={owner} />
+      <fieldset disabled={readOnly} className="contents">
+        <Fields pending={pending} owner={owner} />
+      </fieldset>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <button type="submit" disabled={pending} className={PRIMARY_BUTTON}>
-          {pending ? 'Saving…' : 'Save changes'}
-        </button>
-        <Notice result={result} />
-      </div>
+      {!readOnly && (
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="submit" disabled={pending} className={PRIMARY_BUTTON}>
+            {pending ? 'Saving…' : 'Save changes'}
+          </button>
+          <Notice result={result} />
+        </div>
+      )}
     </form>
   )
 }

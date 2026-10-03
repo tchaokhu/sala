@@ -10,15 +10,7 @@
 // shareable and the back button works.
 
 import Link from 'next/link'
-import {
-  ChevronRight,
-  ChevronsLeft,
-  Eye,
-  MapPin,
-  Pencil,
-  Plus,
-  Search,
-} from 'lucide-react'
+import { ChevronRight, ChevronsLeft, MapPin, Pencil, Plus, Search } from 'lucide-react'
 import { requireMember } from '@/lib/supabase-server'
 import { BUILDINGS_PAGE_SIZE, listBuildings } from '@/lib/buildings'
 import { PageHeader } from '@/components/PageHeader'
@@ -146,10 +138,6 @@ export default async function BuildingsPage({
               <td className="px-4 py-2 text-right">
                 <div className="flex items-center justify-end gap-4">
                   <Link href={`${base}/${b.id}`} className={ROW_LINK}>
-                    <Eye size={14} aria-hidden />
-                    View
-                  </Link>
-                  <Link href={`${base}/${b.id}?edit=1`} className={ROW_LINK}>
                     <Pencil size={14} aria-hidden />
                     Edit
                   </Link>

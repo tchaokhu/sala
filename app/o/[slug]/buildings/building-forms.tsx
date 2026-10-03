@@ -1,7 +1,7 @@
 'use client'
 
 // The write halves of the Buildings pages: the add form on /buildings/new, and
-// edit and delete on the Building's own page in its `?edit=1` mode.
+// edit and delete on the Building's own page, which opens as its editor.
 //
 // Deleting asks in a dialog (ConfirmAction) that says what it destroys, with the
 // number (CLAUDE.md).

@@ -169,10 +169,11 @@ export async function updateProperty(formData: FormData): Promise<ActionResult> 
 
   revalidatePath(`/o/${slug}/properties`)
   revalidatePath(`/o/${slug}/properties/${id}`)
-  revalidatePath(`/o/${slug}/properties/${id}/edit`)
   revalidatePath(`/o/${slug}/rentals/new`)
   revalidatePath(`/o/${slug}`)
-  return { ok: true, message: 'Property saved' }
+  // Saved goes back to the list (user, 2026-10-03); the toast travels by cookie.
+  await flash('Property saved', composePropertyTitle(building.name, parsed.values.room_number))
+  redirect(`/o/${slug}/properties`)
 }
 
 /**
@@ -258,6 +259,5 @@ export async function updatePostings(formData: FormData): Promise<ActionResult> 
 
   revalidatePath(`/o/${slug}/properties`)
   revalidatePath(`/o/${slug}/properties/${id}`)
-  revalidatePath(`/o/${slug}/properties/${id}/edit`)
   return { ok: true, message: 'Postings saved' }
 }

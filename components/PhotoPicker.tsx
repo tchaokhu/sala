@@ -51,15 +51,6 @@ export function PhotoPicker({
   const inputRef = useRef<HTMLInputElement>(null)
   const editing = stored.length > 0
 
-  // A saved edit stays on this page and comes back with a new stored list: what
-  // was picked here is uploaded now, so the picker starts again from that list.
-  const storedKey = stored.map((p) => p.path).join('\n')
-  const [savedKey, setSavedKey] = useState(storedKey)
-  if (savedKey !== storedKey) {
-    setSavedKey(storedKey)
-    setItems(fromStored(stored))
-  }
-
   const newFiles = items.flatMap((i) => (i.kind === 'new' ? [i.file] : []))
   const kept = items.filter((i) => i.kind === 'stored' && !i.removed).length
   const check = validatePropertyImageEdit(kept, newFiles)

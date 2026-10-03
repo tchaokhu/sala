@@ -45,7 +45,7 @@ import {
   PROPERTY_TYPES,
   PROPERTY_TYPE_LABELS,
 } from '@/lib/property-input'
-import { updateProperty } from '../actions'
+import { updateProperty } from './actions'
 import { GenerateDescription } from '@/components/GenerateDescription'
 
 export function EditPropertyForm({

@@ -1,33 +1,33 @@
-// Viewing one Property, read-only.
+// One Property: the form that edits it, opened straight away — there is no
+// separate read-only view (user, 2026-10-03) — then where it is posted, then
+// Delete. Saving goes back to the list.
 //
-// The same read the edit page uses — a view and an edit of the same row need
-// the same columns, so this shares getPropertyForEdit rather than a second
-// near-identical query. What differs is only the rendering: no form, no
-// Server Action, nothing here can change the row.
-//
-// requireMember first, as every route under /o/[slug] does — a hand-typed id
-// under an Org the caller is not a Member of is a refusal, not a page. The
-// read is org-scoped on top of that: a row belonging to somebody else and a
-// row that never existed both come back as null, and both become the same
-// notFound() (CLAUDE.md — a probe learns nothing from the difference).
+// requireMember first, as every route under /o/[slug] does — it is what makes a
+// hand-typed id under an Org the caller is not a Member of a refusal rather than
+// a form. The read is org-scoped on top of that, and a row that belongs to
+// somebody else comes back as null, which is the same notFound() as a row that
+// never existed: a probe learns nothing from the difference.
 
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { KeyRound, MapPin, Pencil, Phone, ScrollText } from 'lucide-react'
+import { KeyRound, ScrollText } from 'lucide-react'
 import { requireMember } from '@/lib/supabase-server'
+import { listBuildingOptions } from '@/lib/buildings'
+import { listOwnerOptions } from '@/lib/owners'
+import { listActivePlatforms } from '@/lib/platforms'
+import { listPostingsForProperty } from '@/lib/postings'
+import { todayBangkok } from '@/lib/dates'
 import { getPropertyForEdit } from '@/lib/properties'
 import { signedPropertyImageUrls } from '@/lib/property-storage'
-import { formatBaht } from '@/lib/format'
-import { PROPERTY_TYPE_LABELS } from '@/lib/property-input'
 import { BackLink } from '@/components/BackLink'
-import { Fact } from '@/components/Fact'
 import { PageHeader } from '@/components/PageHeader'
-import { MapPreview } from '@/components/MapPreview'
-import { BUTTON, PANEL, PRIMARY_BUTTON } from '@/components/styles'
+import { PostingChecklist } from '@/components/PostingChecklist'
 import { StatusPill } from '@/components/StatusPill'
-import { PropertyPhotoGallery } from './photo-gallery'
+import { BUTTON } from '@/components/styles'
+import { EditPropertyForm } from './edit-property-form'
+import { PropertyDeleteForm } from './property-delete-form'
 
-export default async function PropertyViewPage({
+export default async function PropertyPage({
   params,
 }: {
   params: Promise<{ slug: string; id: string }>
@@ -35,9 +35,22 @@ export default async function PropertyViewPage({
   const { slug, id } = await params
   const org = await requireMember(slug)
 
-  const property = await getPropertyForEdit(org.id, id)
+  // None of these depends on the others, so they go together. The Building,
+  // Owner and Platform lists are small and bounded and get filtered in the
+  // browser, as on the add form. The Postings read is keyed by an id that came
+  // from the route, not from the Property row, so it does not have to wait for
+  // it either (CLAUDE.md: never chain independent queries).
+  const [property, buildings, owners, platforms, postings] = await Promise.all([
+    getPropertyForEdit(org.id, id),
+    listBuildingOptions(org.id),
+    listOwnerOptions(org.id),
+    listActivePlatforms(org.id),
+    listPostingsForProperty(org.id, id),
+  ])
   if (!property) notFound()
 
+  // This one genuinely waits: the paths to sign are the ones the row just
+  // returned. One batched call for all of them, not one per photo.
   const photos = await signedPropertyImageUrls(property.images)
 
   return (
@@ -48,105 +61,57 @@ export default async function PropertyViewPage({
           title={property.title}
           summary={<StatusPill status={property.status} />}
           actions={
-            <>
-              {property.activeRentalId ? (
-                <Link
-                  href={`/o/${slug}/rentals/${property.activeRentalId}`}
-                  className={`${BUTTON} inline-flex items-center gap-1.5`}
-                >
-                  <ScrollText size={14} aria-hidden />
-                  View the Rental
-                </Link>
-              ) : (
-                <Link
-                  href={`/o/${slug}/rentals/new?property=${id}`}
-                  className={`${BUTTON} inline-flex items-center gap-1.5`}
-                >
-                  <KeyRound size={14} aria-hidden />
-                  Rent this Property
-                </Link>
-              )}
+            property.activeRentalId ? (
               <Link
-                href={`/o/${slug}/properties/${id}/edit`}
-                className={`${PRIMARY_BUTTON} inline-flex items-center gap-1.5`}
+                href={`/o/${slug}/rentals/${property.activeRentalId}`}
+                className={`${BUTTON} inline-flex items-center gap-1.5`}
               >
-                <Pencil size={14} aria-hidden />
-                Edit
+                <ScrollText size={14} aria-hidden />
+                View the Rental
               </Link>
-            </>
+            ) : (
+              <Link
+                href={`/o/${slug}/rentals/new?property=${id}`}
+                className={`${BUTTON} inline-flex items-center gap-1.5`}
+              >
+                <KeyRound size={14} aria-hidden />
+                Rent this Property
+              </Link>
+            )
           }
         />
       </div>
 
-      <section className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-4 ${PANEL}`}>
-        <Fact label="Type" value={PROPERTY_TYPE_LABELS[property.propertyType]} />
-        <Fact
-          label="Size"
-          value={`${property.bedrooms} bed · ${property.bathrooms} bath · ${property.areaSqm} sq m`}
-        />
-        <Fact label="Floor" value={property.floor != null ? String(property.floor) : '—'} />
-        <Fact label="Rent/month" value={formatBaht(property.priceMonthly)} tabular />
-      </section>
+      <EditPropertyForm
+        slug={slug}
+        property={property}
+        photos={photos}
+        buildings={buildings.options}
+        buildingsCapped={buildings.capped}
+        owners={owners.options}
+        ownersCapped={owners.capped}
+      />
 
-      {property.description && (
-        <section className={PANEL}>
-          <h2 className="font-semibold">Description</h2>
-          <p className="mt-2 whitespace-pre-wrap text-sm text-muted">{property.description}</p>
-        </section>
-      )}
+      {/* Its own form for the same reason as the delete one below: ticking a
+          channel posts to a different action, and it should not be able to fail
+          on an unrelated field in the form above. */}
+      <PostingChecklist
+        slug={slug}
+        propertyId={property.id}
+        platforms={platforms.options}
+        capped={platforms.capped}
+        current={postings}
+        today={todayBangkok()}
+      />
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <section className={`flex flex-col gap-3 ${PANEL}`}>
-          <h2 className="font-semibold">Building</h2>
-          {property.building ? (
-            <>
-              <p className="text-sm">{property.building.name}</p>
-              <p className="flex items-center gap-1.5 text-sm text-muted">
-                <MapPin size={14} aria-hidden />
-                {property.building.district}
-              </p>
-              <MapPreview url={property.building.googleMapUrl} title={`Map of ${property.building.name}`} />
-            </>
-          ) : (
-            <p className="text-sm text-muted">No Building on file — this Property came from the import.</p>
-          )}
-        </section>
-
-        <section className={`flex flex-col gap-3 ${PANEL}`}>
-          <h2 className="font-semibold">Owner</h2>
-          {property.owner ? (
-            <>
-              <Link
-                href={`/o/${slug}/owners/${property.owner.id}`}
-                className="w-fit text-sm underline-offset-4 hover:underline"
-              >
-                {property.owner.name}
-              </Link>
-              {property.owner.phone && (
-                <p className="tabular flex items-center gap-1.5 text-sm text-muted">
-                  <Phone size={14} aria-hidden />
-                  {property.owner.phone}
-                </p>
-              )}
-            </>
-          ) : (
-            <p className="text-sm text-muted">No Owner on file.</p>
-          )}
-          {property.contactLine && (
-            <p className="text-sm text-muted">LINE: {property.contactLine}</p>
-          )}
-        </section>
-      </div>
-
-      {photos.length > 0 && (
-        <section className={PANEL}>
-          <h2 className="font-semibold">Photos</h2>
-          <div className="mt-3">
-            <PropertyPhotoGallery photos={photos} />
-          </div>
-        </section>
-      )}
+      {/* Its own form below the edit one rather than a button inside it: the two
+          post to different actions, and a nested <form> is not a thing. */}
+      <PropertyDeleteForm
+        slug={slug}
+        propertyId={property.id}
+        title={property.title}
+        photoCount={property.images.length}
+      />
     </div>
   )
 }
-

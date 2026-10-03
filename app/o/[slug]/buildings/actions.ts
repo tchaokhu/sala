@@ -87,7 +87,9 @@ export async function updateBuilding(formData: FormData): Promise<ActionResult> 
   revalidatePath(`/o/${slug}/buildings`)
   revalidatePath(`/o/${slug}/buildings/${id}`)
   revalidatePath(`/o/${slug}/properties/new`)
-  return { ok: true, message: 'Building saved', detail: parsed.values.name }
+  // Saved goes back to the list (user, 2026-10-03); the toast travels by cookie.
+  await flash('Building saved', parsed.values.name)
+  redirect(`/o/${slug}/buildings`)
 }
 
 /**

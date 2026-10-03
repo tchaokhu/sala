@@ -11,7 +11,7 @@
 import { Trash2 } from 'lucide-react'
 import { Card } from '@/components/form'
 import { ConfirmAction } from '@/components/ConfirmAction'
-import { deleteProperty } from '../actions'
+import { deleteProperty } from './actions'
 
 export function PropertyDeleteForm({
   slug,

@@ -67,7 +67,9 @@ export async function updateOwner(formData: FormData): Promise<ActionResult> {
 
   revalidate(slug)
   revalidatePath(`/o/${slug}/owners/${id}`)
-  return { ok: true, message: 'Owner saved', detail: parsed.values.name }
+  // Saved goes back to the list (user, 2026-10-03); the toast travels by cookie.
+  await flash('Owner saved', parsed.values.name)
+  redirect(`/o/${slug}/owners`)
 }
 
 /**

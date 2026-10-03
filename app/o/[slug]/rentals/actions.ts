@@ -70,7 +70,6 @@ function revalidateRental(slug: string, propertyId: string, rentalIds: string[])
   for (const id of rentalIds) revalidatePath(`/o/${slug}/rentals/${id}`)
   revalidatePath(`/o/${slug}/properties`)
   revalidatePath(`/o/${slug}/properties/${propertyId}`)
-  revalidatePath(`/o/${slug}/properties/${propertyId}/edit`)
   revalidatePath(`/o/${slug}`)
 }
 

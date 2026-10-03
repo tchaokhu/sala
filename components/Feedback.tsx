@@ -3,8 +3,9 @@
 // What every Save and Delete shows while it runs and when it is done.
 //
 // While an action runs: the Sala mark building itself over a dimmed page, which
-// also stops a second click. Only after 300 ms — a fast save does not flash it —
-// and, once shown, for at least 800 ms so it reads as the mark, not a blink.
+// also stops a second click. On every press, at once — the user wants to see
+// it each time (2026-10-03) — and for at least 800 ms, so a fast save still
+// reads as the mark rather than a blink.
 //
 // When it succeeds: a toast, bottom right (bottom centre on a phone), with a ✓,
 // the headline and the second line that says which one. Gone after 4 s — 8 s
@@ -34,7 +35,6 @@ export function useFeedback() {
   return useContext(FeedbackContext)
 }
 
-const SHOW_AFTER = 300
 // Long enough to see the mark draw its first tier, not a blink.
 const SHOW_AT_LEAST = 800
 const FLASH_COOKIE = 'sala_flash'
@@ -43,20 +43,16 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
   const [busy, setBusy] = useState<string | null>(null)
   const [shown, setShown] = useState(false)
   const [toast, setToast] = useState<(Toast & { key: number }) | null>(null)
-  const timers = useRef<{ show?: number; shownAt?: number }>({})
+  const timers = useRef<{ shownAt?: number }>({})
   const pathname = usePathname()
 
   const begin = useCallback((label: string) => {
+    timers.current.shownAt = Date.now()
     setBusy(label)
-    window.clearTimeout(timers.current.show)
-    timers.current.show = window.setTimeout(() => {
-      timers.current.shownAt = Date.now()
-      setShown(true)
-    }, SHOW_AFTER)
+    setShown(true)
   }, [])
 
   const end = useCallback(() => {
-    window.clearTimeout(timers.current.show)
     const since = timers.current.shownAt ? Date.now() - timers.current.shownAt : SHOW_AT_LEAST
     window.setTimeout(() => {
       timers.current.shownAt = undefined

@@ -64,6 +64,12 @@ template's tags in a column (a migration and a backfill for a list the file
 already holds); Thai tag names (Word's AutoCorrect and Thai vowel marks split
 them into runs).
 
+The download is a Route Handler, `/o/[slug]/templates/[id]/file`, not a
+Server Action: it writes nothing and answers with a file, which an action
+cannot hand to the browser as a download. It is gated as a page is — Membership
+from the session and the slug (ADR 0002), the template looked up under that
+Org — and fills only the tags the file itself has.
+
 The filled values carry a Tenant's ID number. They are never logged. A failed
 fill or conversion logs the template id. Gotenberg is reached only from the
 server, never exposed to the browser.

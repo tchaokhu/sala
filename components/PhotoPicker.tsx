@@ -140,9 +140,16 @@ export function PhotoPicker({
                 className={`relative flex flex-col items-center gap-1 ${dragging === index ? 'opacity-40' : ''}`}
               >
                 {item.url ? (
-                  <button
-                    type="button"
-                    onClick={() => setPreview({ src: item.url as string, alt: `Photo ${index + 1}` })}
+                  // A link, not a button: a disabled <fieldset> (the record's View
+                  // mode) switches off its buttons but not its links, and a
+                  // photo should still open there.
+                  <a
+                    href={item.url}
+                    draggable={false}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      setPreview({ src: item.url as string, alt: `Photo ${index + 1}` })
+                    }}
                     className="block cursor-zoom-in"
                   >
                     {/* Object URLs and signed Storage URLs, never through
@@ -157,7 +164,7 @@ export function PhotoPicker({
                         (removed ? 'border-warn/60 opacity-30' : 'border-border')
                       }
                     />
-                  </button>
+                  </a>
                 ) : (
                   <span
                     className={
